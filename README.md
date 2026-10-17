@@ -5,7 +5,7 @@ instance that is reachable only through a Cloudflare Tunnel.
 
 | | |
 |---|---|
-| STG | https://api.stg.medusa.fabianalula.site |
+| STG | https://api-stg-medusa.fabianalula.site |
 | Runtime | Bun 1.4.3 |
 | Infra | [`medusa-platform`](https://github.com/fahlula/medusa-platform) (Terraform) |
 
@@ -62,7 +62,7 @@ Minted by `medusa-platform` — never hand-written.
 ## How traffic reaches this service
 
 ```
-client → Cloudflare edge (api.stg.medusa.fabianalula.site)
+client → Cloudflare edge (api-stg-medusa.fabianalula.site)
        → Cloudflare Tunnel (outbound-only connection from the VM)
        → cloudflared container on the VM
        → app container :8080

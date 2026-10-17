@@ -23,7 +23,7 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: stg
-      url: https://api.stg.medusa.fabianalula.site
+      url: https://api-stg-medusa.fabianalula.site
     steps:
       - uses: actions/checkout@v4
 
@@ -76,7 +76,7 @@ jobs:
       - name: Verify the public endpoint serves this commit
         run: |
           for i in $(seq 1 30); do
-            BODY=$(curl -fsS https://api.stg.medusa.fabianalula.site/ 2>/dev/null || true)
+            BODY=$(curl -fsS https://api-stg-medusa.fabianalula.site/ 2>/dev/null || true)
             if echo "$BODY" | grep -q "${{ github.sha }}"; then
               echo "✅ live and serving ${{ github.sha }}"
               echo "$BODY"
