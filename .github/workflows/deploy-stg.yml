@@ -11,6 +11,7 @@ concurrency:
 
 permissions:
   contents: read
+  id-token: write   # required to mint the OIDC token WIF exchanges
 
 env:
   SERVICE: medusa-backend
@@ -26,12 +27,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # Scoped deployer key, minted by the platform repo's Terraform and
-      # stored here as a secret. Only roles: AR writer + compute instanceAdmin.
+      # Keyless. The org enforces iam.disableServiceAccountKeyCreation, so there
+      # is no JSON key anywhere: GitHub's OIDC token is exchanged for a
+      # short-lived credential, and only this repository can make that trade.
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v2
         with:
-          credentials_json: ${{ secrets.GCP_SA_KEY }}
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
 
       - uses: google-github-actions/setup-gcloud@v2
 
@@ -68,7 +71,7 @@ jobs:
             --project="${{ secrets.GCP_PROJECT_ID }}" \
             --tunnel-through-iap \
             --quiet \
-            --command="sudo /opt/medusa/deploy.sh ${IMAGE}:${{ github.sha }}"
+            --command="sudo /bin/bash /var/lib/medusa/deploy.sh ${IMAGE}:${{ github.sha }}"
 
       - name: Verify the public endpoint serves this commit
         run: |
