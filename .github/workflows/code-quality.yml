@@ -1,0 +1,79 @@
+name: code-quality
+
+on:
+  pull_request:
+    branches: [main, STG]
+  push:
+    branches: [main]
+
+concurrency:
+  group: code-quality-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    name: typecheck · lint · test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.3
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Typecheck
+        run: bun run typecheck
+
+      - name: Lint
+        run: bun run lint
+
+      - name: Test
+        run: bun test
+
+  docker:
+    name: docker build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-buildx-action@v3
+
+      # Builds every stage including `test`, so the image cannot go green
+      # while the suite inside it is red. Never pushed — PRs only prove it builds.
+      - name: Build image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: false
+          load: true
+          tags: medusa-backend:pr-${{ github.event.number || github.sha }}
+          build-args: |
+            APP_VERSION=pr-${{ github.event.number || 'local' }}
+            APP_COMMIT=${{ github.sha }}
+            APP_ENV=ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Smoke test the built image
+        run: |
+          docker run -d --name smoke -p 8080:8080 \
+            medusa-backend:pr-${{ github.event.number || github.sha }}
+          for i in $(seq 1 30); do
+            if curl -fsS http://localhost:8080/health > /dev/null 2>&1; then
+              echo "container healthy after ${i}s"
+              curl -fsS http://localhost:8080/ | tee /dev/stderr
+              docker rm -f smoke
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "::error::container never became healthy"
+          docker logs smoke
+          docker rm -f smoke
+          exit 1
