@@ -71,7 +71,7 @@ jobs:
             --project="${{ secrets.GCP_PROJECT_ID }}" \
             --tunnel-through-iap \
             --quiet \
-            --command="sudo /bin/bash /var/lib/medusa/deploy.sh ${IMAGE}:${{ github.sha }}"
+            --command="sudo /etc/medusa/deploy.sh ${IMAGE}:${{ github.sha }}"
 
       - name: Verify the public endpoint serves this commit
         run: |
