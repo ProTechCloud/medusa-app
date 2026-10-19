@@ -5,7 +5,7 @@ instance that is reachable only through a Cloudflare Tunnel.
 
 | | |
 |---|---|
-| STG | https://api-stg-medusa.fabianalula.site |
+| stg | https://api-stg-medusa.fabianalula.site |
 | Runtime | Bun 1.4.3 |
 | Infra | [`medusa-platform`](https://github.com/fahlula/medusa-platform) (Terraform) |
 
@@ -43,9 +43,9 @@ docker run --rm -p 8080:8080 medusa-backend
 
 | Workflow | Trigger | Does |
 |---|---|---|
-| `code-quality` | PR → `dev` / `STG` | typecheck, lint, test, docker build + container smoke test |
-| `gitleaks` | every PR, push → `dev` / `STG` | secret scan (PR commits; full history after merge) |
-| `deploy-stg` | push → `STG` | build, push to Artifact Registry, roll out over IAP, verify the public URL serves the new commit |
+| `code-quality` | PR → `dev` / `stg` | typecheck, lint, test, docker build + container smoke test |
+| `gitleaks` | every PR, push → `dev` / `stg` | secret scan (PR commits; full history after merge) |
+| `deploy-stg` | push → `stg` | build, push to Artifact Registry, roll out over IAP, verify the public URL serves the new commit |
 
 ### Required repository secrets
 

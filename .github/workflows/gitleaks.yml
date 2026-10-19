@@ -3,7 +3,7 @@ name: gitleaks
 on:
   pull_request:
   push:
-    branches: [dev, STG]
+    branches: [dev, stg]
   workflow_dispatch:
 
 concurrency:

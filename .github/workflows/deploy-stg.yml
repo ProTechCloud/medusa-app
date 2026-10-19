@@ -2,7 +2,7 @@ name: deploy-stg
 
 on:
   push:
-    branches: [STG]
+    branches: [stg]
   workflow_dispatch:
 
 concurrency:
