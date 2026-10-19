@@ -71,3 +71,5 @@ client → Cloudflare edge (api-stg-medusa.fabianalula.site)
 The instance has **no static IP and no inbound firewall rule**. `cloudflared` dials *out*
 to Cloudflare, so there is no listening port exposed to the internet. Deploys reach the
 box over IAP, not SSH-from-anywhere.
+
+<!-- CodeRabbit integration test - safe to close -->
