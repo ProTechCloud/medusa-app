@@ -2,9 +2,9 @@ name: code-quality
 
 on:
   pull_request:
-    branches: [main, STG]
+    branches: [dev, STG]
   push:
-    branches: [main]
+    branches: [dev]
 
 concurrency:
   group: code-quality-${{ github.ref }}

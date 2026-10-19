@@ -43,7 +43,8 @@ docker run --rm -p 8080:8080 medusa-backend
 
 | Workflow | Trigger | Does |
 |---|---|---|
-| `code-quality` | PR → `main` / `STG` | typecheck, lint, test, docker build + container smoke test |
+| `code-quality` | PR → `dev` / `STG` | typecheck, lint, test, docker build + container smoke test |
+| `gitleaks` | every PR, push → `dev` / `STG` | secret scan (PR commits; full history after merge) |
 | `deploy-stg` | push → `STG` | build, push to Artifact Registry, roll out over IAP, verify the public URL serves the new commit |
 
 ### Required repository secrets
