@@ -70,7 +70,7 @@ jobs:
       # without the hook installed.
       - name: Lint the pull request's commits
         run: |
-          bunx --bun --no -- commitlint --verbose \
+          bunx --bun --no-install commitlint --verbose \
             --from "${{ github.event.pull_request.base.sha }}" \
             --to "${{ github.event.pull_request.head.sha }}"
 
