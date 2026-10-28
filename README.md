@@ -31,8 +31,9 @@ bun test
 
 ## Container
 
-The Dockerfile has a `test` stage that runs typecheck, lint and the suite **inside the
-build**. A broken suite fails the image build, so a green image cannot carry red tests.
+The Dockerfile's `test` stage runs typecheck, lint and the suite, but BuildKit only builds
+the stages the final image needs, and `runtime` does not need `test`. It runs only when
+targeted explicitly (`docker build --target test .`); CI runs the same checks as jobs instead.
 
 ```bash
 docker build -t medusa-backend .
@@ -43,22 +44,42 @@ docker run --rm -p 8080:8080 medusa-backend
 
 | Workflow | Trigger | Does |
 |---|---|---|
-| `code-quality` | PR → `dev` / `stg` | typecheck, lint, test, docker build + container smoke test |
-| `gitleaks` | every PR, push → `dev` / `stg` | secret scan (PR commits; full history after merge) |
-| `deploy-stg` | push → `stg` | build, push to Artifact Registry, roll out over IAP, verify the public URL serves the new commit |
+| `backend-code-quality` | PR → `dev` / `stg`, when `BACKEND_CODE_QUALITY_ENABLED` is `true` | secret scan → commit messages → typecheck + lint → tests with coverage → docker build (no push); each job runs only after the previous one passes |
+| `deploy-stg` | push → `stg`, when `BACKEND_CD_ENABLED` is `true` | build the image tagged with the commit, trivy scan (fails on CRITICAL), push, roll out over IAP, then check on the VM that `127.0.0.1:8080/` answers with this commit |
 
-### Required repository secrets
+Deploys run one at a time and are never cancelled. Actions are pinned to commit SHAs;
+Dependabot proposes updates weekly.
 
-Minted by `medusa-platform` — never hand-written.
+Commit messages follow [Conventional Commits](https://www.conventionalcommits.org). `bun install`
+sets up a husky `commit-msg` hook that runs commitlint locally; CI runs the same check.
 
-| Secret | Purpose |
+### Deploy identity
+
+There are no keys. The `deploy` job, in the `stg` environment, exchanges GitHub's OIDC token
+for a sign-in as the **hub** service account, which holds no permissions of its own. Every
+gcloud and docker call then impersonates the **spoke** in the stg project, which can push to
+the registry and roll out this one VM. `medusa-platform` trusts only
+`medusa-backend | .github/workflows/deploy-stg.yml | stg | refs/heads/stg`, so renaming the
+workflow, the environment or the branch breaks the sign-in.
+
+### Repository variables
+
+Variables, not secrets: none of these is a credential. Values come from `medusa-platform`.
+
+| Variable | Purpose |
 |---|---|
-| `GCP_SA_KEY` | Scoped deployer service-account key (AR writer + compute instanceAdmin) |
-| `GCP_PROJECT_ID` | Target project |
-| `GCP_REGION` | Artifact Registry region |
-| `GCP_ZONE` | Instance zone |
+| `GCP_WIF_PROVIDER` | Workload Identity provider the OIDC token is exchanged with |
+| `GCP_WIF_AUDIENCE` | Audience the provider accepts |
+| `GCP_DEPLOY_HUB` | Service account the job signs in as |
+| `GCP_DEPLOY_SPOKE` | Service account every gcloud and docker call impersonates |
+| `GCP_PROJECT_ID` | stg project |
+| `GCP_REGISTRY` | Artifact Registry repository the image is pushed to |
 | `GCP_VM_NAME` | Instance to roll out to |
-| `GCP_AR_REPOSITORY` | Artifact Registry repository name |
+| `GCP_ZONE` | Instance zone |
+| `BACKEND_CODE_QUALITY_ENABLED` | `true` turns on `backend-code-quality` |
+| `BACKEND_CD_ENABLED` | `true` turns on `deploy-stg` |
+
+No repository secrets are needed.
 
 ## How traffic reaches this service
 
