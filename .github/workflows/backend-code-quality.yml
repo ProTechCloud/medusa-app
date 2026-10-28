@@ -1,0 +1,141 @@
+name: Backend - Code Quality
+
+on:
+  pull_request:
+    branches: [dev, stg]
+
+concurrency:
+  group: backend-code-quality-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  BUN_VERSION: 1.4.3
+  GITLEAKS_VERSION: 8.30.1
+
+# A chain, not a fan-out: each job needs the one before it, so a cheap failure
+# stops the run before the expensive jobs start. Only the first job reads the
+# switch — a job whose need was skipped is skipped too.
+jobs:
+  secret-scan:
+    name: Security — Secret Scan
+    if: vars.BACKEND_CODE_QUALITY_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      # The binary, not gitleaks-action: that action requires a paid licence
+      # for organisation repositories.
+      - name: Install gitleaks
+        shell: bash
+        run: |
+          set -euo pipefail
+          base="https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}"
+          tarball="gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz"
+          curl -sSfLO "$base/$tarball"
+          curl -sSfL "$base/gitleaks_${GITLEAKS_VERSION}_checksums.txt" \
+            | grep " $tarball\$" | sha256sum -c -
+          tar -xzf "$tarball" gitleaks
+          sudo mv gitleaks /usr/local/bin/
+
+      - name: Scan the pull request's commits
+        shell: bash
+        run: |
+          gitleaks git --redact --verbose \
+            --log-opts="${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }}"
+
+  commit-messages:
+    name: Quality — Commit Messages
+    needs: secret-scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: ${{ env.BUN_VERSION }}
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      # The same check the commit-msg hook runs locally, for commits made
+      # without the hook installed.
+      - name: Lint the pull request's commits
+        run: |
+          bunx --no -- commitlint --verbose \
+            --from "${{ github.event.pull_request.base.sha }}" \
+            --to "${{ github.event.pull_request.head.sha }}"
+
+  lint:
+    name: Quality — Lint
+    needs: commit-messages
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: ${{ env.BUN_VERSION }}
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Typecheck
+        run: bun run typecheck
+
+      - name: Lint
+        run: bun run lint
+
+  tests:
+    name: Quality — Tests
+    needs: lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: ${{ env.BUN_VERSION }}
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Test
+        run: bun test --coverage
+
+  docker-image:
+    name: Build — Docker Image
+    needs: tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+
+      - uses: docker/setup-buildx-action@v3
+
+      # Never pushed: a pull request only proves the image builds.
+      - name: Build image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: false
+          tags: medusa-backend:pr-${{ github.event.number }}
+          build-args: |
+            APP_VERSION=pr-${{ github.event.number }}
+            APP_COMMIT=${{ github.event.pull_request.head.sha }}
+            APP_ENV=ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
