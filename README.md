@@ -5,12 +5,12 @@ The Medusa workspace: a [Yarn 4](https://yarnpkg.com) monorepo run by
 [Hono](https://hono.dev) — deployed to a GCE instance that is reachable only through a
 Cloudflare Tunnel.
 
-| | |
-|---|---|
-| stg | https://api-stg-medusa.fabianalula.site |
-| Node (tooling) | 22, from `.nvmrc` |
-| Bun (runtime) | 1.4.4 |
-| Infra | [`medusa-platform`](https://github.com/fahlula/medusa-platform) (Terraform) |
+|                |                                                                             |
+| -------------- | --------------------------------------------------------------------------- |
+| stg            | https://api-stg-medusa.fabianalula.site                                     |
+| Node (tooling) | 22.18+, from `.nvmrc`                                                       |
+| Bun (runtime)  | 1.4.4                                                                       |
+| Infra          | [`medusa-platform`](https://github.com/fahlula/medusa-platform) (Terraform) |
 
 ```
 apps/backend/     @medusa/backend — the API
@@ -22,8 +22,10 @@ See [`docs/`](docs/index.md) for the structure and how to add an app or a packag
 
 ## Getting started
 
-Node 22 runs the tooling; Bun runs the API and its tests. Yarn comes from corepack, at the
-version pinned in `package.json`. Node 25 and later no longer bundle corepack, so install it
+Node 22.18 or later runs the tooling and the tests; Bun runs the API. 22.18 is the floor
+because ESLint loads `@medusa/eslint-plugin` straight from its TypeScript source, which
+earlier Node 22 releases cannot do without a flag. Yarn comes from corepack, at the version
+pinned in `package.json`. Node 25 and later no longer bundle corepack, so install it
 once if `corepack` is missing:
 
 ```bash
@@ -38,20 +40,26 @@ From the repository root. Each runs the matching script in every workspace throu
 which caches results: a task whose inputs did not change replays its last output.
 
 ```bash
-yarn dev          # the API on http://localhost:8080
+yarn dev            # the API on http://localhost:8080
 yarn typecheck
-yarn lint         # yarn lint:fix to apply
-yarn test
+yarn lint           # ESLint, with the @medusa/eslint-plugin rules
+yarn format         # Biome; yarn format:write to apply
+yarn test           # vitest
+yarn test:coverage  # coverage per workspace, merged into coverage/
+yarn fallow         # unused code, duplication and complexity
 ```
+
+A husky `pre-commit` hook runs `format`, `lint`, `typecheck` and `test` before every commit,
+and `commit-msg` runs commitlint on the message.
 
 To run one workspace only: `yarn turbo run test --filter=@medusa/backend`.
 
 ## Routes
 
-| Method | Path | Response |
-|---|---|---|
-| `GET` | `/` | `{ message, service, version, commit, environment }` |
-| `GET` | `/health` | `{ status, uptime }` — liveness, no dependencies |
+| Method | Path      | Response                                             |
+| ------ | --------- | ---------------------------------------------------- |
+| `GET`  | `/`       | `{ message, service, version, commit, environment }` |
+| `GET`  | `/health` | `{ status, uptime }` — liveness, no dependencies     |
 
 ## Container
 
@@ -69,16 +77,16 @@ base images are pinned by digest.
 
 ## CI/CD
 
-| Workflow | Trigger | Does |
-|---|---|---|
-| `backend-code-quality` | every PR → `dev` / `stg`, when `BACKEND_CODE_QUALITY_ENABLED` is `true` | discover → secret scan → commit messages → typecheck + lint → tests with coverage → docker build (no push) → summary |
-| `deploy-stg` | push → `stg` touching the backend, when `BACKEND_CD_ENABLED` is `true` | build the image tagged with the commit, trivy scan (fails on CRITICAL), push, roll out over IAP, then check on the VM that `127.0.0.1:8080/` answers with this commit |
+| Workflow               | Trigger                                                                 | Does                                                                                                                                                                  |
+| ---------------------- | ----------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `backend-code-quality` | every PR → `dev` / `stg`, when `BACKEND_CODE_QUALITY_ENABLED` is `true` | discover → secret scan → commit messages → typecheck + lint + format → tests with coverage, then fallow → docker build (no push) → summary                             |
+| `deploy-stg`           | push → `stg` touching the backend, when `BACKEND_CD_ENABLED` is `true`  | build the image tagged with the commit, trivy scan (fails on CRITICAL), push, roll out over IAP, then check on the VM that `127.0.0.1:8080/` answers with this commit |
 
 **Only `Backend - Code Quality Summary` is required by branch protection.** The quality
 workflow has no path filter on its trigger: a workflow that never starts reports nothing, and
 a required check that never reports blocks the merge forever. Instead, `Discover — Changes`
 works out whether the pull request touches the backend — `apps/backend/**`, `packages/**`, the root
-manifests and configs, or the workflow itself. Lint, tests and the image build skip when it
+manifests, configs and tooling, `.github/actions/`, or the workflow itself. Lint, tests and the image build skip when it
 does not; secret scan and commit messages run on every pull request. The summary always runs
 and fails unless every job passed or was skipped on purpose.
 
@@ -102,18 +110,18 @@ workflow, the environment or the branch breaks the sign-in.
 
 Variables, not secrets: none of these is a credential. Values come from `medusa-platform`.
 
-| Variable | Purpose |
-|---|---|
-| `GCP_WIF_PROVIDER` | Workload Identity provider the OIDC token is exchanged with |
-| `GCP_WIF_AUDIENCE` | Audience the provider accepts |
-| `GCP_DEPLOY_HUB` | Service account the job signs in as |
-| `GCP_DEPLOY_SPOKE` | Service account every gcloud and docker call impersonates |
-| `GCP_PROJECT_ID` | stg project |
-| `GCP_REGISTRY` | Artifact Registry repository the image is pushed to |
-| `GCP_VM_NAME` | Instance to roll out to |
-| `GCP_ZONE` | Instance zone |
-| `BACKEND_CODE_QUALITY_ENABLED` | `true` turns on `backend-code-quality` |
-| `BACKEND_CD_ENABLED` | `true` turns on `deploy-stg` |
+| Variable                       | Purpose                                                     |
+| ------------------------------ | ----------------------------------------------------------- |
+| `GCP_WIF_PROVIDER`             | Workload Identity provider the OIDC token is exchanged with |
+| `GCP_WIF_AUDIENCE`             | Audience the provider accepts                               |
+| `GCP_DEPLOY_HUB`               | Service account the job signs in as                         |
+| `GCP_DEPLOY_SPOKE`             | Service account every gcloud and docker call impersonates   |
+| `GCP_PROJECT_ID`               | stg project                                                 |
+| `GCP_REGISTRY`                 | Artifact Registry repository the image is pushed to         |
+| `GCP_VM_NAME`                  | Instance to roll out to                                     |
+| `GCP_ZONE`                     | Instance zone                                               |
+| `BACKEND_CODE_QUALITY_ENABLED` | `true` turns on `backend-code-quality`                      |
+| `BACKEND_CD_ENABLED`           | `true` turns on `deploy-stg`                                |
 
 No repository secrets are needed.
 
@@ -126,6 +134,6 @@ client → Cloudflare edge (api-stg-medusa.fabianalula.site)
        → app container :8080
 ```
 
-The instance has **no static IP and no inbound firewall rule**. `cloudflared` dials *out*
+The instance has **no static IP and no inbound firewall rule**. `cloudflared` dials _out_
 to Cloudflare, so there is no listening port exposed to the internet. Deploys reach the
 box over IAP, not SSH-from-anywhere.
