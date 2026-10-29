@@ -12,3 +12,4 @@ build/
 .yarn/*
 !.yarn/patches
 !.yarn/releases
+coverage/

@@ -22,12 +22,12 @@ Root files hold what every workspace shares. A workspace holds only what is its 
 
 ## Apps and packages
 
-| | `apps/` | `packages/` |
-|---|---|---|
-| What | something that runs: a server, a job, a frontend | code other workspaces import |
-| Deployed | yes, each on its own | never on its own, only inside an app |
-| Imported by others | no | yes |
-| Name | `@medusa/<name>` | `@medusa/<name>` |
+|                    | `apps/`                                          | `packages/`                          |
+| ------------------ | ------------------------------------------------ | ------------------------------------ |
+| What               | something that runs: a server, a job, a frontend | code other workspaces import         |
+| Deployed           | yes, each on its own                             | never on its own, only inside an app |
+| Imported by others | no                                               | yes                                  |
+| Name               | `@medusa/<name>`                                 | `@medusa/<name>`                     |
 
 An app depends on packages; a package never depends on an app. If two apps need the same
 code, that code becomes a package rather than one app importing from the other.
@@ -38,11 +38,11 @@ A package exports its TypeScript source, not a build of it:
 
 ```json
 {
-  "name": "@medusa/example",
-  "type": "module",
-  "exports": {
-    ".": "./src/index.ts"
-  }
+	"name": "@medusa/example",
+	"type": "module",
+	"exports": {
+		".": "./src/index.ts"
+	}
 }
 ```
 
@@ -54,14 +54,16 @@ here does.
 
 ## Tasks
 
-`turbo.json` defines `dev`, `test`, `typecheck`, `lint` and `lint:fix`. From the root,
-`yarn <task>` runs it in every workspace that has a script of that name; a workspace without
-the script is skipped.
+`turbo.json` defines `dev`, `typecheck`, `lint`, `format`, `format:write`, `test` and
+`test:coverage`. From the root, `yarn <task>` runs it in every workspace that has a script of
+that name; a workspace without the script is skipped.
 
 Turbo caches a task by hashing its inputs. `globalDependencies` lists the root files whose
-change invalidates every workspace's cache: `tsconfig.json`, `biome.json` and `.nvmrc`.
-`dev` and `lint:fix` are never cached: one is a server that keeps running, the other changes
-files.
+change invalidates every workspace's cache: `tsconfig.json`, `biome.json`,
+`eslint.config.mjs`, `vitest.shared.ts` and `.nvmrc`. `test:coverage` caches its
+`coverage/` folder too, so a replayed run still leaves the report for the root merge.
+`dev` and `format:write` are never cached: one is a server that keeps running, the other
+changes files.
 
 To run one workspace only:
 
@@ -82,9 +84,12 @@ yarn turbo run test --filter=@medusa/backend
      "type": "module",
      "exports": { ".": "./src/index.ts" },
      "scripts": {
+       "test": "vitest run",
+       "test:coverage": "vitest run --coverage",
        "typecheck": "tsc --noEmit",
-       "lint": "biome check .",
-       "lint:fix": "biome check --write ."
+       "lint": "eslint .",
+       "format": "biome check --error-on-warnings .",
+       "format:write": "biome check --write ."
      }
    }
    ```
@@ -98,8 +103,11 @@ yarn turbo run test --filter=@medusa/backend
    }
    ```
 
-   and `src/index.ts`.
-2. Add a `test` script if the package has tests.
+   and `src/index.ts`, plus a `vitest.config.ts` that uses `coverage` from
+   `vitest.shared.ts`.
+2. Add the tools those scripts call to the package's own `devDependencies`: `vitest`,
+   `@vitest/coverage-istanbul`, `vite`, `typescript`, `eslint` and `@biomejs/biome`. A
+   workspace runs only its own dependencies' binaries, not the root's.
 3. Run `yarn install` from the root. Yarn links the new workspace; `yarn.lock` changes, and
    that change is committed.
 
