@@ -1,22 +1,25 @@
 # syntax=docker/dockerfile:1
 
-# ---- deps: resolved once, cached independently of source churn ----
-FROM oven/bun:1.4.4-alpine AS deps
-WORKDIR /app
-COPY package.json bun.lock* ./
-# --ignore-scripts: `prepare` calls husky, a dev dependency absent from a production install.
-RUN bun install --frozen-lockfile --production --ignore-scripts
+# Built from the repository root (`docker build -f apps/backend/Dockerfile .`):
+# the lockfile, .yarnrc.yml and the workspace manifest all live there.
+#
+# Both base images are pinned by digest, not only by tag: a tag can be moved to
+# another image, a digest names exactly one. The tag stays beside it so a
+# reader can tell what the digest is.
 
-# ---- test: typecheck + lint + unit tests run inside the image ----
-FROM oven/bun:1.4.4-alpine AS test
+# ---- deps: production dependencies of this one workspace ----
+# Node only to run Yarn. `workspaces focus --production` installs what
+# @medusa/backend needs at runtime and nothing for the other workspaces.
+FROM node:22-alpine@sha256:fe4f6d74e20370acb04ad889077d14d0f64a9c8ea6a42bc60cddf1e844699914 AS deps
 WORKDIR /app
-COPY package.json bun.lock* ./
-RUN bun install --frozen-lockfile
-COPY . .
-RUN bun run typecheck && bun run lint && bun test
+ENV COREPACK_ENABLE_DOWNLOAD_PROMPT=0
+RUN corepack enable
+COPY package.json yarn.lock .yarnrc.yml ./
+COPY apps/backend/package.json apps/backend/
+RUN yarn workspaces focus @medusa/backend --production
 
 # ---- runtime ----
-FROM oven/bun:1.4.4-alpine AS runtime
+FROM oven/bun:1.4.4-alpine@sha256:4cf82f5686b196504fe119db3fcd9185b191f82ece82c40680e597228ec6070a AS runtime
 WORKDIR /app
 
 ARG APP_VERSION=dev
@@ -28,9 +31,14 @@ ENV APP_VERSION=$APP_VERSION \
     NODE_ENV=production \
     PORT=8080
 
+# The workspace keeps its place in the tree, so Bun finds the hoisted
+# node_modules by walking up from apps/backend, as it does locally.
 COPY --from=deps /app/node_modules ./node_modules
-COPY package.json tsconfig.json ./
-COPY src ./src
+COPY tsconfig.json ./
+COPY apps/backend/package.json apps/backend/tsconfig.json apps/backend/
+COPY apps/backend/src apps/backend/src
+
+WORKDIR /app/apps/backend
 
 # Drop privileges: the `bun` user ships with the base image.
 USER bun
