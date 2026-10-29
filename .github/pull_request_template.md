@@ -16,6 +16,7 @@ PR title = squash commit message. Use Conventional Commits: feat|fix|chore|docs|
 For deploys to stg: does this need new env vars, secrets or a config change first? -->
 
 ## Checklist
+- [ ] `yarn install`, then `yarn typecheck`, `yarn lint` and `yarn test` pass from the repository root
 - [ ] New env vars, secrets or config are listed above and set before deploy
 - [ ] No secrets in code, logs or screenshots
 - [ ] README/docs updated if behaviour or a manual step changed
