@@ -4,9 +4,9 @@ import { logger } from "hono/logger";
 /** Build-time metadata, injected by the Dockerfile at image build. */
 export const meta = {
 	service: "medusa-backend",
-	version: Bun.env.APP_VERSION ?? "dev",
-	commit: Bun.env.APP_COMMIT ?? "local",
-	environment: Bun.env.APP_ENV ?? "development",
+	version: process.env.APP_VERSION ?? "dev",
+	commit: process.env.APP_COMMIT ?? "local",
+	environment: process.env.APP_ENV ?? "development",
 };
 
 export const app = new Hono();

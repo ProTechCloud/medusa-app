@@ -1,4 +1,4 @@
-import { describe, expect, it } from "bun:test";
+import { describe, expect, it } from "vitest";
 import { app } from "./app.ts";
 
 /** `Response.json()` is typed `unknown`; these shapes are what the routes promise. */
