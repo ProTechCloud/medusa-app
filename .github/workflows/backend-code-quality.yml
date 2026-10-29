@@ -36,8 +36,9 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
-      # What the backend is built from: its own directory, the root manifests
-      # and configs every workspace inherits, and this workflow.
+      # What the backend is built from: its own directory, the shared packages
+      # it may import, the root manifests and configs every workspace inherits,
+      # and this workflow.
       - name: Does this PR touch the backend?
         id: scope
         shell: bash
@@ -46,7 +47,7 @@ jobs:
           changed=$(git diff --name-only \
             "${{ github.event.pull_request.base.sha }}" \
             "${{ github.event.pull_request.head.sha }}")
-          pattern='^(apps/backend/|package\.json$|yarn\.lock$|\.yarnrc\.yml$|\.nvmrc$|turbo\.json$|tsconfig\.json$|biome\.json$|commitlint\.config\.mjs$|\.dockerignore$|\.github/workflows/backend-code-quality\.yml$)'
+          pattern='^(apps/backend/|packages/|package\.json$|yarn\.lock$|\.yarnrc\.yml$|\.nvmrc$|turbo\.json$|tsconfig\.json$|biome\.json$|commitlint\.config\.mjs$|\.dockerignore$|\.github/workflows/backend-code-quality\.yml$)'
           if echo "$changed" | grep -qE "$pattern"; then
             echo "backend=true" >> "$GITHUB_OUTPUT"
           else
