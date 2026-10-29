@@ -1,16 +1,16 @@
-# medusa-backend
+# medusa-app
 
 The Medusa workspace: a [Yarn 4](https://yarnpkg.com) monorepo run by
 [Turborepo](https://turborepo.com). Today it holds one app, the API — [Bun](https://bun.sh) +
 [Hono](https://hono.dev) — deployed to a GCE instance that is reachable only through a
 Cloudflare Tunnel.
 
-|                |                                                                             |
-| -------------- | --------------------------------------------------------------------------- |
-| stg            | https://api-stg-medusa.fabianalula.site                                     |
-| Node (tooling) | 22.18+, from `.nvmrc`                                                       |
-| Bun (runtime)  | 1.4.4                                                                       |
-| Infra          | [`medusa-platform`](https://github.com/fahlula/medusa-platform) (Terraform) |
+|                |                                                                                  |
+| -------------- | -------------------------------------------------------------------------------- |
+| stg            | https://api-stg-medusa.fabianalula.site                                          |
+| Node (tooling) | 22.18+, from `.nvmrc`                                                            |
+| Bun (runtime)  | 1.4.4                                                                            |
+| Infra          | [`medusa-platform`](https://github.com/ProTechCloud/medusa-platform) (Terraform) |
 
 ```
 apps/backend/     @medusa/backend — the API
@@ -77,10 +77,10 @@ base images are pinned by digest.
 
 ## CI/CD
 
-| Workflow               | Trigger                                                                 | Does                                                                                                                                                                  |
-| ---------------------- | ----------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `backend-code-quality` | every PR → `dev` / `stg`, when `BACKEND_CODE_QUALITY_ENABLED` is `true` | discover → secret scan → commit messages → typecheck + lint + format → tests with coverage, then fallow → docker build (no push) → summary                             |
-| `deploy-stg`           | push → `stg` touching the backend, when `BACKEND_CD_ENABLED` is `true`  | build the image tagged with the commit, trivy scan (fails on CRITICAL), push, roll out over IAP, then check on the VM that `127.0.0.1:8080/` answers with this commit |
+| Workflow               | Trigger                                                                                     | Does                                                                                                                                                                  |
+| ---------------------- | ------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `backend-code-quality` | every PR → `dev` / `stg`, when `BACKEND_CODE_QUALITY_ENABLED` is `true`                     | discover → secret scan → commit messages → typecheck + lint + format → tests with coverage, then fallow → docker build (no push) → summary                            |
+| `deploy-stg`           | push → `stg` touching the backend, or by hand on `stg`, when `BACKEND_CD_ENABLED` is `true` | build the image tagged with the commit, trivy scan (fails on CRITICAL), push, roll out over IAP, then check on the VM that `127.0.0.1:8080/` answers with this commit |
 
 **Only `Backend - Code Quality Summary` is required by branch protection.** The quality
 workflow has no path filter on its trigger: a workflow that never starts reports nothing, and
@@ -90,7 +90,9 @@ manifests, configs and tooling, `.github/actions/`, or the workflow itself. Lint
 does not; secret scan and commit messages run on every pull request. The summary always runs
 and fails unless every job passed or was skipped on purpose.
 
-Deploys run one at a time and are never cancelled. Actions are pinned to commit SHAs;
+Deploys run one at a time and are never cancelled. To redeploy `stg` after a change the path
+filter skips, run `deploy-stg` by hand from the Actions tab on the `stg` branch; any other
+branch is refused. Actions are pinned to commit SHAs;
 Dependabot proposes updates weekly.
 
 Commit messages follow [Conventional Commits](https://www.conventionalcommits.org).
@@ -103,8 +105,9 @@ There are no keys. The `deploy` job, in the `stg` environment, exchanges GitHub'
 for a sign-in as the **hub** service account, which holds no permissions of its own. Every
 gcloud and docker call then impersonates the **spoke** in the stg project, which can push to
 the registry and roll out this one VM. `medusa-platform` trusts only
-`medusa-backend | .github/workflows/deploy-stg.yml | stg | refs/heads/stg`, so renaming the
-workflow, the environment or the branch breaks the sign-in.
+`medusa-app | .github/workflows/deploy-stg.yml | stg | refs/heads/stg`, so renaming the
+repository, the workflow, the environment or the branch breaks the sign-in. To rename one,
+apply the new name in `medusa-platform` first, then rename.
 
 ### Repository variables
 
