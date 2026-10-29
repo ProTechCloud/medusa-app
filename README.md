@@ -1,16 +1,16 @@
-# medusa-backend
+# medusa-app
 
 The Medusa workspace: a [Yarn 4](https://yarnpkg.com) monorepo run by
 [Turborepo](https://turborepo.com). Today it holds one app, the API — [Bun](https://bun.sh) +
 [Hono](https://hono.dev) — deployed to a GCE instance that is reachable only through a
 Cloudflare Tunnel.
 
-|                |                                                                             |
-| -------------- | --------------------------------------------------------------------------- |
-| stg            | https://api-stg-medusa.fabianalula.site                                     |
-| Node (tooling) | 22.18+, from `.nvmrc`                                                       |
-| Bun (runtime)  | 1.4.4                                                                       |
-| Infra          | [`medusa-platform`](https://github.com/fahlula/medusa-platform) (Terraform) |
+|                |                                                                                  |
+| -------------- | -------------------------------------------------------------------------------- |
+| stg            | https://api-stg-medusa.fabianalula.site                                          |
+| Node (tooling) | 22.18+, from `.nvmrc`                                                            |
+| Bun (runtime)  | 1.4.4                                                                            |
+| Infra          | [`medusa-platform`](https://github.com/ProTechCloud/medusa-platform) (Terraform) |
 
 ```
 apps/backend/     @medusa/backend — the API
@@ -103,8 +103,9 @@ There are no keys. The `deploy` job, in the `stg` environment, exchanges GitHub'
 for a sign-in as the **hub** service account, which holds no permissions of its own. Every
 gcloud and docker call then impersonates the **spoke** in the stg project, which can push to
 the registry and roll out this one VM. `medusa-platform` trusts only
-`medusa-backend | .github/workflows/deploy-stg.yml | stg | refs/heads/stg`, so renaming the
-workflow, the environment or the branch breaks the sign-in.
+`medusa-app | .github/workflows/deploy-stg.yml | stg | refs/heads/stg`, so renaming the
+repository, the workflow, the environment or the branch breaks the sign-in. To rename one,
+apply the new name in `medusa-platform` first, then rename.
 
 ### Repository variables
 
