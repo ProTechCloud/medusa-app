@@ -9,7 +9,9 @@ create a package.
    modules of the same app use lives there.
 
 2. **`packages/` is for code two or more apps use, and only once they do.** Do not promote
-   code because it *could* be reused. Promote it when a second app imports it.
+   code because it *could* be reused. Promote it when a second app imports it. Repository
+   tooling is the exception: `@medusa/eslint-plugin` is a package because the root ESLint
+   config loads it for every workspace, not because an app imports it.
 
 ## Exports
 
@@ -48,5 +50,6 @@ create a package.
    import { generateUser } from "@medusa/example/testing";
    ```
 
-5. **No build step.** Packages export `.ts` source, not compiled output. Bun runs it and `tsc`
+5. **No build step.** Packages export `.ts` source, not compiled output. Whatever consumes the
+   package runs it directly — Bun for the API, Node for tooling such as ESLint — and `tsc`
    type-checks it in place, so there is no `dist/` to rebuild or keep in sync.

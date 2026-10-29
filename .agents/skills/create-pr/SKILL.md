@@ -16,7 +16,7 @@ description: Open a pull request from the current feature branch into dev. Use w
 1. Stop if `git branch --show-current` is `dev` or `stg`: a PR comes from a feature branch.
 2. The base is always `dev`; `stg` only receives promotions from `dev`.
 3. Stop if `git diff --quiet dev...HEAD` shows no change, or if the branch has commits that are not pushed.
-4. Build the body with the `pr-description` skill, from the real diff against `dev`.
+4. Build the body with the `pr-description` skill, from the real diff against `dev`, and write it to the body file without the outer code fence, so GitHub renders the headings and the checklist.
 5. Write the title as a Conventional Commit, because the squash merge uses it as the commit message.
 6. Open it with `gh pr create --base dev --head "$(git branch --show-current)" --title "<title>" --body-file <file>`.
 7. Never claim testing that did not run, in the title, the body or the reply.

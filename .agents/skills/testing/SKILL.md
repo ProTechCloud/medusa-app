@@ -15,7 +15,7 @@ description: Rules and required reading for writing or changing tests in any app
 ## Key rules
 
 1. No inline mocks: every mock is a `mock-*.ts` file in `__mocks__/`, imported by the test.
-2. Faker generates all test data, in `generate-*.ts` factories that take overrides.
+2. Faker generates test data, in `generate-*.ts` factories that take overrides; only a parser or validator test whose exact payload is under test uses a literal.
 3. Cases that differ only in their inputs are one `it.each` table, not copied `it` blocks.
 4. Test names describe behaviour from the product's point of view, not the implementation.
 5. Assert on behaviour the caller sees, never on internal state or which helper ran.

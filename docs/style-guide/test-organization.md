@@ -46,7 +46,8 @@ Where tests, mocks and factories live, and the rules every test follows.
    A test never defines a mock implementation itself.
 
 7. **Every factory uses faker.** No hardcoded test data: `@faker-js/faker` generates every
-   value, and a test overrides only the fields that matter to it.
+   value, and a test overrides only the fields that matter to it. faker is not installed yet:
+   the first workspace that writes a factory adds `@faker-js/faker` to its `devDependencies`.
 
 ## Test rules
 
@@ -54,4 +55,5 @@ Where tests, mocks and factories live, and the rules every test follows.
    table, not several copied `it` blocks.
 
 9. **Randomize inputs.** Generate them with faker, so a test does not pass only for the one
-   value it was written with.
+   value it was written with. **Exception:** a parser or validator test whose exact payload is
+   the thing under test uses a hardcoded literal.

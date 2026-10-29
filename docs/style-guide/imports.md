@@ -31,14 +31,16 @@ match.
    import { config } from "src/config";
    ```
 
-2. **Use `./` only for siblings**, files in the same folder.
+2. **Use `./` only for siblings**, files in the same folder. A module's own `lib/` and child
+   modules are inside its folder, so its `index.ts` reaches them with `./` too:
+   `./lib/to-row`.
 
    ```ts
-   // good — users/index.ts importing users/lib/to-row.ts
-   import { toRow } from "./lib/to-row";
+   // good — users/lib/to-row.ts importing users/lib/format-email.ts
+   import { formatEmail } from "./format-email";
 
    // bad — a sibling reached through the alias hides that it is local
-   import { toRow } from "@/users/lib/to-row";
+   import { formatEmail } from "@/users/lib/format-email";
    ```
 
 3. **Never `../`.** If you need `../`, use `@/` instead.

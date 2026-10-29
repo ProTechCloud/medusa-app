@@ -33,9 +33,10 @@ bug and the test passes, the test is bad.
 1. **Every assertion maps to a requirement.** If you cannot phrase it as something the
    product or the caller cares about, reconsider what you are testing.
 
-2. **Mocks live in files.** Every mock is a separate file in `__mocks__/`, and only network
-   and process boundaries are mocked. Over-mocking means testing that the mocks work, not the
-   code.
+2. **Mocks live in files.** Every mock is a separate file in `__mocks__/`. An integration test
+   mocks only network and process boundaries; a unit test may also replace the collaborators
+   of the unit under test, such as a use case or the clock. Over-mocking means testing that
+   the mocks work, not the code.
 
 3. **A test that does not fail on a real bug is deleted.** It gives false confidence.
 
@@ -74,7 +75,7 @@ between modules, which no unit test reaches.
 | ---------------------- | ---------------------------------------------------------------------------------- | ------------------------------------------------------------------ |
 | Snapshot abuse         | Breaks on every refactor, gets approved unread, and real bugs get lost in the diff | Assert explicitly on the behaviour that matters                    |
 | Testing internal state | A refactor breaks the test while the behaviour is unchanged                        | Assert on what the caller sees                                     |
-| Over-mocking           | The test checks that the mocks work, not the code                                  | Mock only network and process boundaries                           |
+| Over-mocking           | The test checks that the mocks work, not the code                                  | In integration tests, mock only network and process boundaries     |
 | Dead mocks             | Noise, false confidence, drift copied from other tests                             | Mock only what the code under test actually calls; delete the rest |
 | Inside knowledge       | The test is coupled to the implementation and passes when the behaviour breaks     | Write every test knowing only the requirement, not the code        |
 
