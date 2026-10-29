@@ -7,7 +7,12 @@ name: deploy-stg
 # The path filter is safe here, unlike on the quality workflow: nothing waits
 # on this run as a required check. A push that touches none of these — a
 # docs-only promotion — has nothing new to deploy.
+#
+# workflow_dispatch redeploys the current `stg` on demand, for a change the path
+# filter skips. The build job refuses any other branch, and Google would refuse
+# its sign-in anyway.
 on:
+  workflow_dispatch:
   push:
     branches: [stg]
     paths:
@@ -41,7 +46,7 @@ jobs:
   # an image that passed reaches the job that can push it.
   build:
     name: build
-    if: vars.BACKEND_CD_ENABLED == 'true'
+    if: vars.BACKEND_CD_ENABLED == 'true' && github.ref == 'refs/heads/stg'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
