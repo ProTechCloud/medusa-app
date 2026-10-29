@@ -1,10 +1,16 @@
-node_modules
+# The build context is the repository root. Patterns without **/ match only
+# at the root, so every generated directory is listed at any depth.
+**/node_modules
+**/.turbo
+**/dist
+**/build
+.yarn
 .git
 .github
-dist
-build
+.husky
 *.log
-.env
-.env.*
+**/.env
+**/.env.*
 .DS_Store
 README.md
+docs
