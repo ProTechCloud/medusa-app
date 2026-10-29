@@ -8,7 +8,7 @@ Cloudflare Tunnel.
 |                |                                                                             |
 | -------------- | --------------------------------------------------------------------------- |
 | stg            | https://api-stg-medusa.fabianalula.site                                     |
-| Node (tooling) | 22, from `.nvmrc`                                                           |
+| Node (tooling) | 22.18+, from `.nvmrc`                                                       |
 | Bun (runtime)  | 1.4.4                                                                       |
 | Infra          | [`medusa-platform`](https://github.com/fahlula/medusa-platform) (Terraform) |
 
@@ -22,8 +22,10 @@ See [`docs/`](docs/index.md) for the structure and how to add an app or a packag
 
 ## Getting started
 
-Node 22 runs the tooling; Bun runs the API and its tests. Yarn comes from corepack, at the
-version pinned in `package.json`. Node 25 and later no longer bundle corepack, so install it
+Node 22.18 or later runs the tooling and the tests; Bun runs the API. 22.18 is the floor
+because ESLint loads `@medusa/eslint-plugin` straight from its TypeScript source, which
+earlier Node 22 releases cannot do without a flag. Yarn comes from corepack, at the version
+pinned in `package.json`. Node 25 and later no longer bundle corepack, so install it
 once if `corepack` is missing:
 
 ```bash

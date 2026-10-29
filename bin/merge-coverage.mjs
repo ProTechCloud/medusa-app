@@ -9,9 +9,12 @@ import {
 	writeFileSync,
 } from "node:fs";
 import { join } from "node:path";
+import { fileURLToPath } from "node:url";
 import libCoverage from "istanbul-lib-coverage";
 
-const root = new URL("..", import.meta.url).pathname;
+// fileURLToPath, not URL.pathname: pathname keeps %20 for a space, so a
+// checkout under a path with a space would look for a folder that isn't there.
+const root = fileURLToPath(new URL("..", import.meta.url));
 const map = libCoverage.createCoverageMap({});
 const merged = [];
 

@@ -64,20 +64,9 @@ const rule: Rule.RuleModule = {
 		// Drop the last segment (filename itself)
 		segments.pop();
 
-		// Also check components/ directory in packages/ui
-		const componentsIndex = filename.lastIndexOf("/components/");
-		let extraSegments: string[] = [];
-		if (componentsIndex !== -1 && srcIndex === -1) {
-			const afterComponents = filename.slice(componentsIndex + 12);
-			extraSegments = afterComponents.split("/");
-			extraSegments.pop();
-		}
-
 		return {
 			Program() {
-				const allSegments = extraSegments.length > 0 ? extraSegments : segments;
-
-				for (const seg of allSegments) {
+				for (const seg of segments) {
 					if (!seg || seg === "." || seg === "") continue;
 					if (isAllowed(seg)) continue;
 

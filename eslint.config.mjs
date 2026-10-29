@@ -26,10 +26,7 @@ export default [
 		...medusaPlugin.configs.recommended,
 	},
 	{
-		files: [
-			"packages/*/src/**/*.{ts,tsx}",
-			"packages/*/components/**/*.{ts,tsx}",
-		],
+		files: ["packages/*/src/**/*.{ts,tsx}"],
 		plugins: { "@medusa": medusaPlugin },
 		rules: {
 			"@medusa/kebab-case-folders": "error",

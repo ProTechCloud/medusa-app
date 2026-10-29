@@ -82,9 +82,12 @@ yarn turbo run test --filter=@medusa/backend
      "type": "module",
      "exports": { ".": "./src/index.ts" },
      "scripts": {
+       "test": "vitest run",
+       "test:coverage": "vitest run --coverage",
        "typecheck": "tsc --noEmit",
-       "lint": "biome check .",
-       "lint:fix": "biome check --write ."
+       "lint": "eslint .",
+       "format": "biome check --error-on-warnings .",
+       "format:write": "biome check --write ."
      }
    }
    ```
@@ -98,8 +101,11 @@ yarn turbo run test --filter=@medusa/backend
    }
    ```
 
-   and `src/index.ts`.
-2. Add a `test` script if the package has tests.
+   and `src/index.ts`, plus a `vitest.config.ts` that uses `coverage` from
+   `vitest.shared.ts`.
+2. Add the tools those scripts call to the package's own `devDependencies`: `vitest`,
+   `@vitest/coverage-istanbul`, `vite`, `typescript`, `eslint` and `@biomejs/biome`. A
+   workspace runs only its own dependencies' binaries, not the root's.
 3. Run `yarn install` from the root. Yarn links the new workspace; `yarn.lock` changes, and
    that change is committed.
 

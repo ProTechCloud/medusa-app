@@ -4,6 +4,7 @@
 		"tsconfig.json",
 		"biome.json",
 		"eslint.config.mjs",
+		"vitest.shared.ts",
 		".nvmrc"
 	],
 	"globalEnv": ["NODE_ENV"],
