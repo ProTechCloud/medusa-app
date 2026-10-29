@@ -1,0 +1,69 @@
+# Import Conventions
+
+## Alias
+
+Inside an app or package, `@/` resolves to `src/`. Each workspace that uses it sets it in its
+own `tsconfig.json`, as `apps/backend/tsconfig.json` does:
+
+```json
+{
+	"compilerOptions": {
+		"baseUrl": ".",
+		"paths": {
+			"@/*": ["src/*"]
+		}
+	}
+}
+```
+
+vitest needs the same alias, so the workspace's `vitest.config.ts` sets `resolve.alias` to
+match.
+
+## Rules
+
+1. **Use `@/` for anything outside the current folder.**
+
+   ```ts
+   // good
+   import { config } from "@/config";
+
+   // bad — a path from the workspace root, which `baseUrl` happens to allow
+   import { config } from "src/config";
+   ```
+
+2. **Use `./` only for siblings**, files in the same folder.
+
+   ```ts
+   // good — users/index.ts importing users/lib/to-row.ts
+   import { toRow } from "./lib/to-row";
+
+   // bad — a sibling reached through the alias hides that it is local
+   import { toRow } from "@/users/lib/to-row";
+   ```
+
+3. **Never `../`.** If you need `../`, use `@/` instead.
+
+   ```ts
+   // good
+   import { createApp } from "@/app";
+
+   // bad
+   import { createApp } from "../../app";
+   ```
+
+4. **Packages are imported by bare name, with a subpath only when the package exposes one.**
+   A package's `exports` in its `package.json` lists what exists.
+
+   ```ts
+   // good — the root entry
+   import medusaPlugin from "@medusa/eslint-plugin";
+
+   // bad — invents a subpath the package does not export
+   import placement from "@medusa/eslint-plugin/rules/placement";
+   ```
+
+## What enforces it
+
+`no-relative-parent-imports` in `@medusa/eslint-plugin` reports every `../` import in
+`apps/*/src/**`, with the message `Use @/ instead of relative parent import '<source>'.`
+TypeScript reports a subpath a package does not export.
