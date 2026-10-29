@@ -43,7 +43,8 @@ match.
    import { formatEmail } from "@/users/lib/format-email";
    ```
 
-3. **Never `../`.** If you need `../`, use `@/` instead.
+3. **Inside `src/`, never `../`.** If you need `../` there, use `@/` instead. Files outside
+   `src/` that have no alias, such as `packages/eslint-plugin/tests/`, import `../src/`.
 
    ```ts
    // good

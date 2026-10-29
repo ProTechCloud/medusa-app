@@ -7,7 +7,8 @@ short snippet. The snippets use vitest and Hono, as `apps/backend` does.
 ## A factory in `__mocks__/`, with faker and overrides
 
 Every `generate-*.ts` builds a valid value with faker and lets the test override only the
-fields it cares about.
+fields it cares about. faker is not installed yet: the workspace that writes the first
+factory adds `@faker-js/faker` to its `devDependencies`.
 
 ```ts
 // src/users/__mocks__/generate-user.ts

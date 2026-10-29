@@ -19,5 +19,5 @@ description: Write the description for a pull request from the current branch. U
 5. *How I tested it* lists only what actually ran; if nothing ran, it says so.
 6. Leave the checklist unchecked unless you were told which commands ran.
 7. *Risk and rollback* names real risks from the diff, such as a new variable or secret, a manual apply or an order-dependent step, and how to undo the change.
-8. Output the whole description as one fenced markdown code block, ready to paste.
+8. Output the whole description as one fenced markdown code block, ready to paste; `create-pr` removes that fence before it writes the body file.
 9. Do not open the PR.
