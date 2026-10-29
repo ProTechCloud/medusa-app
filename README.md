@@ -77,10 +77,10 @@ base images are pinned by digest.
 
 ## CI/CD
 
-| Workflow               | Trigger                                                                 | Does                                                                                                                                                                  |
-| ---------------------- | ----------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `backend-code-quality` | every PR → `dev` / `stg`, when `BACKEND_CODE_QUALITY_ENABLED` is `true` | discover → secret scan → commit messages → typecheck + lint + format → tests with coverage, then fallow → docker build (no push) → summary                             |
-| `deploy-stg`           | push → `stg` touching the backend, when `BACKEND_CD_ENABLED` is `true`  | build the image tagged with the commit, trivy scan (fails on CRITICAL), push, roll out over IAP, then check on the VM that `127.0.0.1:8080/` answers with this commit |
+| Workflow               | Trigger                                                                                     | Does                                                                                                                                                                  |
+| ---------------------- | ------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `backend-code-quality` | every PR → `dev` / `stg`, when `BACKEND_CODE_QUALITY_ENABLED` is `true`                     | discover → secret scan → commit messages → typecheck + lint + format → tests with coverage, then fallow → docker build (no push) → summary                            |
+| `deploy-stg`           | push → `stg` touching the backend, or by hand on `stg`, when `BACKEND_CD_ENABLED` is `true` | build the image tagged with the commit, trivy scan (fails on CRITICAL), push, roll out over IAP, then check on the VM that `127.0.0.1:8080/` answers with this commit |
 
 **Only `Backend - Code Quality Summary` is required by branch protection.** The quality
 workflow has no path filter on its trigger: a workflow that never starts reports nothing, and
