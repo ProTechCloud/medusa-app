@@ -19,9 +19,10 @@ updates:
     commit-message:
       prefix: "ci(deps)"
 
-  # The oven/bun base image in the Dockerfile.
+  # The node and oven/bun base images in the backend's Dockerfile. Pinned by
+  # digest; Dependabot updates the digest and the tag beside it together.
   - package-ecosystem: docker
-    directory: /
+    directory: /apps/backend
     schedule:
       interval: weekly
       day: monday
