@@ -54,14 +54,16 @@ here does.
 
 ## Tasks
 
-`turbo.json` defines `dev`, `test`, `typecheck`, `lint` and `lint:fix`. From the root,
-`yarn <task>` runs it in every workspace that has a script of that name; a workspace without
-the script is skipped.
+`turbo.json` defines `dev`, `typecheck`, `lint`, `format`, `format:write`, `test` and
+`test:coverage`. From the root, `yarn <task>` runs it in every workspace that has a script of
+that name; a workspace without the script is skipped.
 
 Turbo caches a task by hashing its inputs. `globalDependencies` lists the root files whose
-change invalidates every workspace's cache: `tsconfig.json`, `biome.json` and `.nvmrc`.
-`dev` and `lint:fix` are never cached: one is a server that keeps running, the other changes
-files.
+change invalidates every workspace's cache: `tsconfig.json`, `biome.json`,
+`eslint.config.mjs`, `vitest.shared.ts` and `.nvmrc`. `test:coverage` caches its
+`coverage/` folder too, so a replayed run still leaves the report for the root merge.
+`dev` and `format:write` are never cached: one is a server that keeps running, the other
+changes files.
 
 To run one workspace only:
 
