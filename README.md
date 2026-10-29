@@ -38,11 +38,17 @@ From the repository root. Each runs the matching script in every workspace throu
 which caches results: a task whose inputs did not change replays its last output.
 
 ```bash
-yarn dev          # the API on http://localhost:8080
+yarn dev            # the API on http://localhost:8080
 yarn typecheck
-yarn lint         # yarn lint:fix to apply
-yarn test
+yarn lint           # ESLint, with the @medusa/eslint-plugin rules
+yarn format         # Biome; yarn format:write to apply
+yarn test           # vitest
+yarn test:coverage  # coverage per workspace, merged into coverage/
+yarn fallow         # unused code, duplication and complexity
 ```
+
+A husky `pre-commit` hook runs `format`, `lint`, `typecheck` and `test` before every commit,
+and `commit-msg` runs commitlint on the message.
 
 To run one workspace only: `yarn turbo run test --filter=@medusa/backend`.
 
@@ -78,7 +84,7 @@ base images are pinned by digest.
 workflow has no path filter on its trigger: a workflow that never starts reports nothing, and
 a required check that never reports blocks the merge forever. Instead, `Discover — Changes`
 works out whether the pull request touches the backend — `apps/backend/**`, `packages/**`, the root
-manifests and configs, or the workflow itself. Lint, tests and the image build skip when it
+manifests, configs and tooling, `.github/actions/`, or the workflow itself. Lint, tests and the image build skip when it
 does not; secret scan and commit messages run on every pull request. The summary always runs
 and fails unless every job passed or was skipped on purpose.
 
