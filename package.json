@@ -1,27 +1,23 @@
 {
-  "name": "medusa-backend",
-  "version": "1.0.0",
+  "name": "medusa",
   "private": true,
-  "type": "module",
+  "packageManager": "yarn@4.18.1",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
   "scripts": {
-    "dev": "bun --watch src/index.ts",
-    "start": "bun run src/index.ts",
-    "test": "bun test",
-    "typecheck": "tsc --noEmit",
-    "lint": "biome check .",
-    "lint:fix": "biome check --write .",
-    "prepare": "husky"
-  },
-  "dependencies": {
-    "hono": "^4.6.14"
+    "dev": "turbo run dev",
+    "test": "turbo run test",
+    "typecheck": "turbo run typecheck",
+    "lint": "turbo run lint",
+    "lint:fix": "turbo run lint:fix",
+    "postinstall": "husky"
   },
   "devDependencies": {
-    "@biomejs/biome": "^1.9.4",
     "@commitlint/cli": "^21.2.4",
     "@commitlint/config-conventional": "^21.2.4",
-    "@types/bun": "^1.1.14",
     "husky": "^9.1.7",
-    "typescript": "^5.7.2"
-  },
-  "trustedDependencies": ["@biomejs/biome"]
+    "turbo": "^2.11.10"
+  }
 }
