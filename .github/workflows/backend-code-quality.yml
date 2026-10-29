@@ -14,14 +14,51 @@ permissions:
 env:
   BUN_VERSION: 1.4.4
   GITLEAKS_VERSION: 8.30.1
+  TURBO_TELEMETRY_DISABLED: 1
 
-# A chain, not a fan-out: each job needs the one before it, so a cheap failure
-# stops the run before the expensive jobs start. Only the first job reads the
-# switch — a job whose need was skipped is skipped too.
+# No path filter on the trigger. Branch protection requires a check, and a
+# workflow that never starts reports nothing, so a pull request outside the
+# filter would wait for it forever. `discover` decides instead, and `summary`
+# is the check protection requires: it always runs.
+#
+# The quality jobs are a chain, not a fan-out: each needs the one before it,
+# so a cheap failure stops the run before the expensive jobs start.
 jobs:
+  discover:
+    name: Discover — Changes
+    if: vars.BACKEND_CODE_QUALITY_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    outputs:
+      backend: ${{ steps.scope.outputs.backend }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      # What the backend is built from: its own directory, the shared packages
+      # it may import, the root manifests and configs every workspace inherits,
+      # and this workflow.
+      - name: Does this PR touch the backend?
+        id: scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          changed=$(git diff --name-only \
+            "${{ github.event.pull_request.base.sha }}" \
+            "${{ github.event.pull_request.head.sha }}")
+          pattern='^(apps/backend/|packages/|package\.json$|yarn\.lock$|\.yarnrc\.yml$|\.nvmrc$|turbo\.json$|tsconfig\.json$|biome\.json$|commitlint\.config\.mjs$|\.dockerignore$|\.github/workflows/backend-code-quality\.yml$)'
+          if echo "$changed" | grep -qE "$pattern"; then
+            echo "backend=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "backend=false" >> "$GITHUB_OUTPUT"
+          fi
+
+  # Secrets and commit messages apply to every change, so these two run on
+  # every pull request, whatever it touches.
   secret-scan:
     name: Security — Secret Scan
-    if: vars.BACKEND_CODE_QUALITY_ENABLED == 'true'
+    needs: discover
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -59,65 +96,79 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
-      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+      # corepack first: the Yarn cache below asks `yarn` for its cache folder,
+      # and `yarn` exists only once corepack has put it on the path. The
+      # version comes from packageManager in package.json.
+      - run: corepack enable
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
-          bun-version: ${{ env.BUN_VERSION }}
+          node-version-file: .nvmrc
+          cache: yarn
 
       - name: Install dependencies
-        run: bun install --frozen-lockfile
+        run: yarn install --immutable
 
       # The same check the commit-msg hook runs locally, for commits made
       # without the hook installed.
       - name: Lint the pull request's commits
         run: |
-          bunx --bun --no-install commitlint --verbose \
+          yarn commitlint --verbose \
             --from "${{ github.event.pull_request.base.sha }}" \
             --to "${{ github.event.pull_request.head.sha }}"
 
   lint:
     name: Quality — Lint
-    needs: commit-messages
+    needs: [discover, commit-messages]
+    if: needs.discover.outputs.backend == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
 
-      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+      - run: corepack enable
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
-          bun-version: ${{ env.BUN_VERSION }}
+          node-version-file: .nvmrc
+          cache: yarn
 
       - name: Install dependencies
-        run: bun install --frozen-lockfile
+        run: yarn install --immutable
 
-      - name: Typecheck
-        run: bun run typecheck
-
-      - name: Lint
-        run: bun run lint
+      - name: Typecheck and lint
+        run: yarn turbo run typecheck lint --filter=@medusa/backend
 
   tests:
     name: Quality — Tests
-    needs: lint
+    needs: [discover, lint]
+    if: needs.discover.outputs.backend == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
 
+      - run: corepack enable
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: yarn
+
+      # Yarn installs; Bun runs the suite, as the package's test script says.
       - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
         with:
           bun-version: ${{ env.BUN_VERSION }}
 
       - name: Install dependencies
-        run: bun install --frozen-lockfile
+        run: yarn install --immutable
 
       - name: Test
-        run: bun test --coverage
+        run: yarn turbo run test --filter=@medusa/backend -- --coverage
 
   docker-image:
     name: Build — Docker Image
-    needs: tests
+    needs: [discover, tests]
+    if: needs.discover.outputs.backend == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -126,16 +177,43 @@ jobs:
 
       - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
 
-      # Never pushed: a pull request only proves the image builds.
+      # Never pushed: a pull request only proves the image builds. The context
+      # is the repository root, where the lockfile and workspace manifest live.
       - name: Build image
         uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
         with:
           context: .
+          file: apps/backend/Dockerfile
           push: false
           tags: medusa-backend:pr-${{ github.event.number }}
           build-args: |
             APP_VERSION=pr-${{ github.event.number }}
             APP_COMMIT=${{ github.event.pull_request.head.sha }}
             APP_ENV=ci
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+
+  # The only check branch protection requires. It always runs and fails unless
+  # every job above succeeded or was skipped on purpose — a skipped job counts
+  # as passed to protection, so requiring the chain directly would let a pull
+  # request through on jobs that never ran.
+  summary:
+    name: Backend - Code Quality Summary
+    if: always()
+    needs: [discover, secret-scan, commit-messages, lint, tests, docker-image]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require every check to have passed
+        shell: bash
+        env:
+          RESULTS: ${{ toJSON(needs) }}
+        run: |
+          set -euo pipefail
+          echo "$RESULTS"
+          failed=$(echo "$RESULTS" | jq -r '
+            to_entries[]
+            | select(.value.result != "success" and .value.result != "skipped")
+            | .key')
+          if [ -n "$failed" ]; then
+            echo "::error::failed or cancelled: $(echo "$failed" | tr '\n' ' ')"
+            exit 1
+          fi
+          echo "all checks passed or were not needed"
