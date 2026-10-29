@@ -13,3 +13,13 @@ build/
 !.yarn/patches
 !.yarn/releases
 coverage/
+
+# Agents: the shared skills are committed, personal settings are not.
+CLAUDE.md
+.claude/settings.json
+.claude/settings.local.json
+.mcp.json
+
+# Tool output
+.fallow/
+.gstack/
