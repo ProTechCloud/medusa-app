@@ -22,12 +22,12 @@ Root files hold what every workspace shares. A workspace holds only what is its 
 
 ## Apps and packages
 
-| | `apps/` | `packages/` |
-|---|---|---|
-| What | something that runs: a server, a job, a frontend | code other workspaces import |
-| Deployed | yes, each on its own | never on its own, only inside an app |
-| Imported by others | no | yes |
-| Name | `@medusa/<name>` | `@medusa/<name>` |
+|                    | `apps/`                                          | `packages/`                          |
+| ------------------ | ------------------------------------------------ | ------------------------------------ |
+| What               | something that runs: a server, a job, a frontend | code other workspaces import         |
+| Deployed           | yes, each on its own                             | never on its own, only inside an app |
+| Imported by others | no                                               | yes                                  |
+| Name               | `@medusa/<name>`                                 | `@medusa/<name>`                     |
 
 An app depends on packages; a package never depends on an app. If two apps need the same
 code, that code becomes a package rather than one app importing from the other.
@@ -38,11 +38,11 @@ A package exports its TypeScript source, not a build of it:
 
 ```json
 {
-  "name": "@medusa/example",
-  "type": "module",
-  "exports": {
-    ".": "./src/index.ts"
-  }
+	"name": "@medusa/example",
+	"type": "module",
+	"exports": {
+		".": "./src/index.ts"
+	}
 }
 ```
 

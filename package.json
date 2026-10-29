@@ -1,24 +1,24 @@
 {
-  "name": "medusa",
-  "private": true,
-  "packageManager": "yarn@4.18.1",
-  "workspaces": [
-    "apps/*",
-    "packages/*"
-  ],
-  "scripts": {
-    "dev": "turbo run dev",
-    "test": "turbo run test",
-    "typecheck": "turbo run typecheck",
-    "lint": "turbo run lint",
-    "lint:fix": "turbo run lint:fix",
-    "postinstall": "husky"
-  },
-  "devDependencies": {
-    "@biomejs/biome": "^2.6.3",
-    "@commitlint/cli": "^21.2.4",
-    "@commitlint/config-conventional": "^21.2.4",
-    "husky": "^9.1.7",
-    "turbo": "^2.11.10"
-  }
+	"name": "medusa",
+	"private": true,
+	"packageManager": "yarn@4.18.1",
+	"workspaces": [
+		"apps/*",
+		"packages/*"
+	],
+	"scripts": {
+		"dev": "turbo run dev",
+		"test": "turbo run test",
+		"typecheck": "turbo run typecheck",
+		"lint": "turbo run lint",
+		"lint:fix": "turbo run lint:fix",
+		"postinstall": "husky"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "^2.6.3",
+		"@commitlint/cli": "^21.2.4",
+		"@commitlint/config-conventional": "^21.2.4",
+		"husky": "^9.1.7",
+		"turbo": "^2.11.10"
+	}
 }
