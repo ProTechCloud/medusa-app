@@ -13,8 +13,8 @@ export const app = new Hono();
 
 app.use("*", logger());
 
-app.get("/", (c) =>
-	c.json({
+app.get("/", (context) =>
+	context.json({
 		message: "Hello World",
 		...meta,
 	}),
@@ -25,11 +25,15 @@ app.get("/", (c) =>
  * downstream services are degraded — the tunnel uses it to decide if the
  * origin is reachable at all.
  */
-app.get("/health", (c) => c.json({ status: "ok", uptime: process.uptime() }));
+app.get("/health", (context) =>
+	context.json({ status: "ok", uptime: process.uptime() }),
+);
 
-app.notFound((c) => c.json({ error: "not_found", path: c.req.path }, 404));
+app.notFound((context) =>
+	context.json({ error: "not_found", path: context.req.path }, 404),
+);
 
-app.onError((err, c) => {
+app.onError((err, context) => {
 	console.error("unhandled", err);
-	return c.json({ error: "internal_error" }, 500);
+	return context.json({ error: "internal_error" }, 500);
 });

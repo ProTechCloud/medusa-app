@@ -20,6 +20,9 @@
 		"@biomejs/biome": "^2.6.3",
 		"@commitlint/cli": "^21.2.4",
 		"@commitlint/config-conventional": "^21.2.4",
+		"@medusa/eslint-plugin": "workspace:*",
+		"@typescript-eslint/parser": "^8.0.0",
+		"eslint": "^9.0.0",
 		"husky": "^9.1.7",
 		"istanbul-lib-coverage": "^3.2.2",
 		"turbo": "^2.11.10"
