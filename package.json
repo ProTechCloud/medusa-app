@@ -9,9 +9,11 @@
 	"scripts": {
 		"dev": "turbo run dev",
 		"test": "turbo run test",
+		"test:coverage": "turbo run test:coverage && node bin/merge-coverage.mjs",
 		"typecheck": "turbo run typecheck",
 		"lint": "turbo run lint",
-		"lint:fix": "turbo run lint:fix",
+		"format": "turbo run format",
+		"format:write": "turbo run format:write",
 		"postinstall": "husky"
 	},
 	"devDependencies": {
@@ -19,6 +21,7 @@
 		"@commitlint/cli": "^21.2.4",
 		"@commitlint/config-conventional": "^21.2.4",
 		"husky": "^9.1.7",
+		"istanbul-lib-coverage": "^3.2.2",
 		"turbo": "^2.11.10"
 	}
 }
