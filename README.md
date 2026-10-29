@@ -90,7 +90,9 @@ manifests, configs and tooling, `.github/actions/`, or the workflow itself. Lint
 does not; secret scan and commit messages run on every pull request. The summary always runs
 and fails unless every job passed or was skipped on purpose.
 
-Deploys run one at a time and are never cancelled. Actions are pinned to commit SHAs;
+Deploys run one at a time and are never cancelled. To redeploy `stg` after a change the path
+filter skips, run `deploy-stg` by hand from the Actions tab on the `stg` branch; any other
+branch is refused. Actions are pinned to commit SHAs;
 Dependabot proposes updates weekly.
 
 Commit messages follow [Conventional Commits](https://www.conventionalcommits.org).
