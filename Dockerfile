@@ -1,14 +1,14 @@
 # syntax=docker/dockerfile:1
 
 # ---- deps: resolved once, cached independently of source churn ----
-FROM oven/bun:1.4.3-alpine AS deps
+FROM oven/bun:1.4.4-alpine AS deps
 WORKDIR /app
 COPY package.json bun.lock* ./
 # --ignore-scripts: `prepare` calls husky, a dev dependency absent from a production install.
 RUN bun install --frozen-lockfile --production --ignore-scripts
 
 # ---- test: typecheck + lint + unit tests run inside the image ----
-FROM oven/bun:1.4.3-alpine AS test
+FROM oven/bun:1.4.4-alpine AS test
 WORKDIR /app
 COPY package.json bun.lock* ./
 RUN bun install --frozen-lockfile
@@ -16,7 +16,7 @@ COPY . .
 RUN bun run typecheck && bun run lint && bun test
 
 # ---- runtime ----
-FROM oven/bun:1.4.3-alpine AS runtime
+FROM oven/bun:1.4.4-alpine AS runtime
 WORKDIR /app
 
 ARG APP_VERSION=dev

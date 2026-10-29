@@ -6,7 +6,7 @@ instance that is reachable only through a Cloudflare Tunnel.
 | | |
 |---|---|
 | stg | https://api-stg-medusa.fabianalula.site |
-| Runtime | Bun 1.4.3 |
+| Runtime | Bun 1.4.4 |
 | Infra | [`medusa-platform`](https://github.com/fahlula/medusa-platform) (Terraform) |
 
 ## Routes
