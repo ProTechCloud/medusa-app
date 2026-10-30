@@ -10,7 +10,7 @@
 		"packages/*"
 	],
 	"scripts": {
-		"dev": "turbo run dev",
+		"dev": "bin/dev.sh",
 		"test": "turbo run test",
 		"test:coverage": "turbo run test:coverage && node bin/merge-coverage.mjs",
 		"typecheck": "turbo run typecheck",
@@ -30,6 +30,6 @@
 		"husky": "^9.1.7",
 		"istanbul-lib-coverage": "^3.2.2",
 		"turbo": "^2.11.10",
-		"typescript": "^5.7.2"
+		"typescript": "~6.0.3"
 	}
 }

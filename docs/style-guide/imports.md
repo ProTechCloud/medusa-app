@@ -8,16 +8,15 @@ own `tsconfig.json`, as `apps/backend/tsconfig.json` does:
 ```json
 {
 	"compilerOptions": {
-		"baseUrl": ".",
 		"paths": {
-			"@/*": ["src/*"]
+			"@/*": ["./src/*"]
 		}
 	}
 }
 ```
 
-vitest needs the same alias, so the workspace's `vitest.config.ts` sets `resolve.alias` to
-match.
+The test runner needs the same alias: `resolve.alias` in the workspace's `vitest.config.ts`,
+or `moduleNameMapper` in `apps/native/jest.config.js`.
 
 ## Rules
 
@@ -27,7 +26,7 @@ match.
    // good
    import { config } from "@/config";
 
-   // bad — a path from the workspace root, which `baseUrl` happens to allow
+   // bad — a path from the workspace root
    import { config } from "src/config";
    ```
 

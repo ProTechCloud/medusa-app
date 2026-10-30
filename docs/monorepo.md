@@ -8,12 +8,13 @@ from one `yarn.lock`; Turborepo runs their scripts and caches the results.
 ```
 .
 ├── apps/
-│   └── backend/          @medusa/backend — the API
+│   ├── backend/          @medusa/backend — the API
+│   └── native/           @medusa/native — the iOS and Android app
 ├── packages/             shared code; none yet
 ├── docs/
 ├── package.json          the workspace: lists apps/* and packages/*, pins Yarn
 ├── turbo.json            the tasks turbo runs in every workspace
-├── tsconfig.json         the base every workspace's tsconfig extends
+├── tsconfig.json         the base the backend and the packages extend; the app extends Expo's
 ├── biome.json            lint and format rules for the whole repository
 └── .yarnrc.yml           Yarn settings
 ```
@@ -31,6 +32,15 @@ Root files hold what every workspace shares. A workspace holds only what is its 
 
 An app depends on packages; a package never depends on an app. If two apps need the same
 code, that code becomes a package rather than one app importing from the other.
+
+## Route files in the native app
+
+Expo Router owns `apps/native/src/app/`: every file there is a route, named by the
+framework (`index.tsx`, `_layout.tsx`, `settings.tsx`, `(tabs)/`), so a folder holds route
+files side by side. That is the one exception to the
+[placement rule](./style-guide/placement-rule.md)'s module shape. A route file keeps the
+framework's shape and stays a thin wrapper: it renders a screen from `src/screens/`, and the
+screen holds the logic, the hooks and the tests. The full Expo style guide is CUBE-266.
 
 ## Source-first exports
 

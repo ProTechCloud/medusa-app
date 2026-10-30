@@ -1,0 +1,10 @@
+{
+	"title": "Settings",
+	"about": {
+		"heading": "About",
+		"version": "Version",
+		"build": "Build",
+		"environment": "Environment",
+		"unknown": "—"
+	}
+}
