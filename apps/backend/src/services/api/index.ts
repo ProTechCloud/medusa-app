@@ -32,9 +32,12 @@ export function buildApp(): Hono {
 	return app;
 }
 
-function start(): void {
-	const config = getConfig();
-	initUseCaseContext({ config, logger });
+async function start(): Promise<void> {
+	// Every client the use cases need is built here, before the port opens.
+	const { config } = await initUseCaseContext(async () => ({
+		config: getConfig(),
+		logger,
+	}));
 
 	const server = Bun.serve({
 		hostname: "0.0.0.0",
@@ -52,7 +55,7 @@ function start(): void {
 // Serve only when run, not when a test imports `buildApp`.
 if (import.meta.main) {
 	try {
-		start();
+		await start();
 	} catch (error) {
 		// A bad environment is the usual cause; its message lists every variable.
 		console.error(error instanceof Error ? error.message : error);

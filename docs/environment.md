@@ -3,8 +3,9 @@
 The API reads its settings from environment variables, and only at startup:
 
 - [`apps/backend/src/config/index.ts`](../apps/backend/src/config/index.ts) parses `APP_ENV`,
-  `PORT`, `APP_VERSION` and `APP_COMMIT`. The entry point calls `getConfig()` before it
-  serves, so a missing or bad value stops the boot.
+  `PORT`, `APP_VERSION` and `APP_COMMIT`. The entry point awaits `initUseCaseContext()`,
+  whose builder calls `getConfig()`, before it serves, so a missing or bad value stops the
+  boot.
 - [`apps/backend/src/logger/index.ts`](../apps/backend/src/logger/index.ts) parses
   `LOG_LEVEL` and `LOG_FORMAT` when it is first imported.
 

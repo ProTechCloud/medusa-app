@@ -1,11 +1,12 @@
 import { faker } from "@faker-js/faker";
 import { describe, expect, it } from "vitest";
 import { generateConfig } from "@/shared/__mocks__/generate-config";
-import { createCapturingLogger } from "@/testing/test-logger";
+import { createCapturingLogger, testLogger } from "@/testing/test-logger";
 import { useCaseContextForEachTest } from "@/testing/use-case-context";
 import {
 	ctxForTests,
 	defineUseCase,
+	initUseCaseContext,
 	resetCtx,
 	setCtxForTests,
 } from "@/use-cases";
@@ -76,7 +77,66 @@ describe("defineUseCase", () => {
 		resetCtx();
 		const work = defineUseCase(async function workUseCase() {});
 
-		expect(ctxForTests()).toBeNull();
 		await expect(work()).rejects.toThrow(/initUseCaseContext/);
+	});
+
+	it("a test that reads the context before registering one fails at that read", () => {
+		resetCtx();
+
+		expect(() => ctxForTests()).toThrow(/setCtxForTests/);
+	});
+});
+
+describe("initUseCaseContext", () => {
+	useCaseContextForEachTest();
+
+	it("builds once, however many callers ask while the build runs", async () => {
+		resetCtx();
+		const context = { config: generateConfig(), logger: testLogger };
+		let builds = 0;
+		const build = async () => {
+			builds += 1;
+			return context;
+		};
+
+		const contexts = await Promise.all([
+			initUseCaseContext(build),
+			initUseCaseContext(build),
+		]);
+
+		expect(builds).toBe(1);
+		expect(contexts).toEqual([context, context]);
+	});
+
+	it("a use case called while the context is still building waits for it", async () => {
+		resetCtx();
+		const config = generateConfig();
+		const built = initUseCaseContext(async () => ({
+			config,
+			logger: testLogger,
+		}));
+		const environment = defineUseCase(async function environmentUseCase(ctx) {
+			return ctx.config.environment;
+		});
+
+		const answer = environment();
+
+		await built;
+		await expect(answer).resolves.toBe(config.environment);
+	});
+
+	it("a failed build fails the boot, and the next call builds again", async () => {
+		resetCtx();
+		const failure = new Error(faker.lorem.sentence());
+		const context = { config: generateConfig(), logger: testLogger };
+
+		await expect(
+			initUseCaseContext(async () => {
+				throw failure;
+			}),
+		).rejects.toBe(failure);
+		await expect(initUseCaseContext(async () => context)).resolves.toBe(
+			context,
+		);
 	});
 });

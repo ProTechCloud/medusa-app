@@ -2,7 +2,7 @@
 
 Every route the API serves lives under `routes/`. The entry point,
 [`../index.ts`](../index.ts), adds what applies to every request: the request logger, the
-health check at `HEALTH_PATH`, the JSON 404 and the 500 from `lib/request-errors.ts`.
+health check at `HEALTH_PATH`, the JSON 404 and the JSON 500 from `lib/request-errors.ts`.
 
 ## Rules
 

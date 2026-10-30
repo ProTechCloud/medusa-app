@@ -15,18 +15,27 @@ const schema = z.object({
 // variables; everything else comes from `@/config`.
 const env = parseEnv(schema, process.env);
 
+// Both destinations write in-process and synchronously. A pino `transport`
+// runs in a worker thread, which has misbehaved under Bun, and a crash could
+// lose the last lines still queued for it. pino-pretty is imported only when
+// asked for, so the image, which does not ship it, never loads it.
+const destination =
+	env.LOG_FORMAT === "pretty"
+		? (await import("pino-pretty")).default({ sync: true })
+		: pino.destination({ dest: 1, sync: true });
+
 /**
  * The process logger. Every line carries `time` as ISO 8601 in UTC and
  * `level` by name (`"info"`, not `30`), so a line reads the same in a
  * terminal, in Cloud Logging and in a test.
  */
-export const logger = pino({
-	level: env.LOG_LEVEL,
-	timestamp: pino.stdTimeFunctions.isoTime,
-	formatters: {
-		level: (label) => ({ level: label }),
+export const logger = pino(
+	{
+		level: env.LOG_LEVEL,
+		timestamp: pino.stdTimeFunctions.isoTime,
+		formatters: {
+			level: (label) => ({ level: label }),
+		},
 	},
-	...(env.LOG_FORMAT === "pretty" && {
-		transport: { target: "pino-pretty" },
-	}),
-});
+	destination,
+);

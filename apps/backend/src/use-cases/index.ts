@@ -16,37 +16,69 @@ export type TUseCase<TArgs, TResult> = (
 	args: TArgs,
 ) => Promise<TResult>;
 
-// Process-wide, set once at startup by `initUseCaseContext`, or per test by
-// `setCtxForTests`.
+// Process-wide, built once at startup by `initUseCaseContext`, or set per test
+// by `setCtxForTests`.
 let ctx: TUseCaseContext | null = null;
+// The build in flight. Concurrent callers share it instead of starting a
+// second one, which would build every client twice and throw one set away.
+let building: Promise<TUseCaseContext> | null = null;
 
-function getCtx(): TUseCaseContext {
-	if (!ctx) {
-		throw new Error(
-			"use-cases: no context. The entry point must call `initUseCaseContext()` before serving; tests must call `setCtxForTests()`.",
-		);
-	}
-	return ctx;
+async function getCtx(): Promise<TUseCaseContext> {
+	if (ctx) return ctx;
+	if (building) return building;
+	throw new Error(
+		"use-cases: no context. The entry point must await `initUseCaseContext()` before serving; tests must call `setCtxForTests()`.",
+	);
 }
 
-/** Startup: register the context every use case runs with. */
-export function initUseCaseContext(context: TUseCaseContext): void {
-	ctx = context;
+/**
+ * Startup: build the context every use case runs with, now rather than on
+ * the first call, so a bad environment or an unreachable client fails the
+ * boot. The builder is async because clients are: a database pool, a
+ * secret read. The entry point awaits this before it serves.
+ *
+ * Called again while the build runs, or after it succeeded, it returns the
+ * same context and ignores the new builder. A failed build is forgotten, so
+ * the next call starts from a clean slate.
+ */
+export function initUseCaseContext(
+	build: () => Promise<TUseCaseContext>,
+): Promise<TUseCaseContext> {
+	if (ctx) return Promise.resolve(ctx);
+	building ??= build()
+		.then((context) => {
+			ctx = context;
+			return context;
+		})
+		.finally(() => {
+			building = null;
+		});
+	return building;
 }
 
 /** Tests only: register a fixture context. */
 export function setCtxForTests(context: TUseCaseContext): void {
 	ctx = context;
+	building = null;
 }
 
-/** Tests only: the registered context, or `null`, without throwing. */
-export function ctxForTests(): TUseCaseContext | null {
+/**
+ * Tests only: the registered context. Throws when there is none, so a test
+ * that forgot to register one fails at this line, not later on a `null`.
+ */
+export function ctxForTests(): TUseCaseContext {
+	if (!ctx) {
+		throw new Error(
+			"use-cases: no context registered. Call `setCtxForTests()` first.",
+		);
+	}
 	return ctx;
 }
 
 /** Tests only: drop the context, so the next use case call throws until one is set. */
 export function resetCtx(): void {
 	ctx = null;
+	building = null;
 }
 
 /**
@@ -74,7 +106,7 @@ export function defineUseCase<TArgs = void, TResult = unknown>(
 	}
 
 	return async (args: TArgs) => {
-		const context = getCtx();
+		const context = await getCtx();
 		const started = performance.now();
 		const elapsed = () => Math.round(performance.now() - started);
 

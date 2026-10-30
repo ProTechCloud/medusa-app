@@ -65,7 +65,8 @@ To run one workspace only: `yarn turbo run test --filter=@medusa/backend`.
 | `GET`  | `/version` | `{ message, service, version, commit, environment }` |
 | `GET`  | `/health`  | `{ status, uptime }` — liveness, no dependencies     |
 
-Anything else answers `404` with `{ error: "not_found", path }`. How routes are laid out:
+Anything else answers `404` with `{ error: "not_found", path }`, and an error no route
+handled answers `500` with `{ error: "internal_error" }`. How routes are laid out:
 [`apps/backend/src/services/api/http/README.md`](apps/backend/src/services/api/http/README.md).
 
 ## Container
