@@ -58,15 +58,18 @@ src/
 ├── config/         the build's config, parsed once
 ├── i18n/           every string, one namespace per area, in resources/en/
 ├── shared/
-│   ├── theme/      colour roles, spacing, font sizes, radii; lib/palette.ts holds every colour value
+│   ├── theme/      the tokens as constants: colors, spacing, fontSizes, radii, iconSizes;
+│   │               lib/palette.json holds every colour value
 │   ├── components/ ScreenContainer, PrimaryButton, InfoCard, InfoRow
 │   ├── vector-icons/ the Icon wrapper
 │   └── zustand/    createAppStore and the store resets
 └── testing/        Jest setup and the shared mocks
 ```
 
-A colour value outside `palette.ts` fails lint (`no-restricted-syntax` in
-`eslint.config.mjs`); screens use a role from `@/shared/theme`.
+Components build their styles from those constants with `StyleSheet.create` at module
+level. The app is light only (`userInterfaceStyle: "light"`). A colour value outside the
+palette fails lint (`no-restricted-syntax` in `eslint.config.mjs`); screens use a role from
+`@/shared/theme`. `app.config.ts` reads the brand colour from `palette.json` too.
 
 ## Tests
 

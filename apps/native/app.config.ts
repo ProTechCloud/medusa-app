@@ -2,6 +2,7 @@ import path from "node:path";
 import dotenv from "dotenv";
 import type { ExpoConfig } from "expo/config";
 import { z } from "zod";
+import palette from "./src/shared/theme/lib/palette.json";
 
 // `APP_ENV` picks the build: `dev` on a laptop, `stg` and `prd` for the
 // builds that ship. Each reads its own `.env.<APP_ENV>`, which is gitignored;
@@ -55,11 +56,9 @@ const env = parsed.data;
 
 const NAMES = { dev: "Medusa Dev", stg: "Medusa Stg", prd: "Medusa" } as const;
 
-// The brand colour behind the Android icon and the splash: `palette.brand`.
-// Expo loads this file on its own and cannot import the palette, which is
-// TypeScript, so the value is repeated here and nowhere else.
-// eslint-disable-next-line no-restricted-syntax
-const BRAND = "#4F46E5";
+// The brand colour behind the Android icon and the splash. Expo loads this
+// file on its own, so it reads the palette's JSON rather than `palette.ts`.
+const BRAND = palette.brand;
 
 const config: ExpoConfig = {
 	name: NAMES[appEnv],
@@ -67,7 +66,7 @@ const config: ExpoConfig = {
 	scheme: "medusa",
 	version: "1.0.0",
 	orientation: "portrait",
-	userInterfaceStyle: "automatic",
+	userInterfaceStyle: "light",
 	platforms: ["ios", "android"],
 	icon: "./assets/icon.png",
 	ios: {

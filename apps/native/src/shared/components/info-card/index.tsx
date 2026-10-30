@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
-import { Text, View } from "react-native";
-import { useTheme } from "@/shared/theme";
+import { StyleSheet, Text, View } from "react-native";
+import { colors, fontSizes, radii, spacing } from "@/shared/theme";
 
 type TInfoCardProps = {
 	title: string;
@@ -9,29 +9,22 @@ type TInfoCardProps = {
 
 /** A titled card that groups related facts, such as rows of `InfoRow`. */
 export function InfoCard({ title, children }: TInfoCardProps) {
-	const { colors, spacing, fontSize, radius } = useTheme();
-
 	return (
-		<View
-			style={{
-				gap: spacing.sm,
-				padding: spacing.md,
-				borderRadius: radius.md,
-				borderWidth: 1,
-				borderColor: colors.border,
-				backgroundColor: colors.surface,
-			}}
-		>
-			<Text
-				style={{
-					color: colors.text,
-					fontSize: fontSize.lg,
-					fontWeight: "600",
-				}}
-			>
-				{title}
-			</Text>
+		<View style={styles.card}>
+			<Text style={styles.title}>{title}</Text>
 			{children}
 		</View>
 	);
 }
+
+const styles = StyleSheet.create({
+	card: {
+		gap: spacing.sm,
+		padding: spacing.md,
+		borderRadius: radii.md,
+		borderWidth: 1,
+		borderColor: colors.border,
+		backgroundColor: colors.surface,
+	},
+	title: { color: colors.text, fontSize: fontSizes.lg, fontWeight: "600" },
+});

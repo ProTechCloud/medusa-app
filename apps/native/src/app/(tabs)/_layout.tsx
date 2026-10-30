@@ -1,6 +1,6 @@
 import { Tabs } from "expo-router";
 import { useTranslation } from "react-i18next";
-import { useTheme } from "@/shared/theme";
+import { colors } from "@/shared/theme";
 import { Icon, type TIconName } from "@/shared/vector-icons";
 
 /**
@@ -16,7 +16,6 @@ const TABS: ReadonlyArray<{ name: string; titleKey: string; icon: TIconName }> =
 
 export default function TabsLayout() {
 	const { t } = useTranslation("navigation");
-	const { colors } = useTheme();
 
 	return (
 		<Tabs

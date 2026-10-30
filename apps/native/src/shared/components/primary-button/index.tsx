@@ -1,5 +1,5 @@
-import { Pressable, Text } from "react-native";
-import { useTheme } from "@/shared/theme";
+import { Pressable, StyleSheet, Text } from "react-native";
+import { colors, fontSizes, radii, spacing } from "@/shared/theme";
 
 type TPrimaryButtonProps = {
 	label: string;
@@ -15,8 +15,6 @@ export function PrimaryButton({
 	disabled = false,
 	testID,
 }: TPrimaryButtonProps) {
-	const { colors, spacing, fontSize, radius } = useTheme();
-
 	return (
 		<Pressable
 			accessibilityRole="button"
@@ -24,24 +22,25 @@ export function PrimaryButton({
 			disabled={disabled}
 			onPress={onPress}
 			testID={testID}
-			style={({ pressed }) => ({
-				alignItems: "center",
-				paddingVertical: spacing.sm + spacing.xs,
-				paddingHorizontal: spacing.md,
-				borderRadius: radius.md,
-				backgroundColor: colors.primary,
-				opacity: disabled ? 0.5 : pressed ? 0.8 : 1,
-			})}
+			style={({ pressed }) => [
+				styles.button,
+				disabled ? styles.disabled : pressed && styles.pressed,
+			]}
 		>
-			<Text
-				style={{
-					color: colors.onPrimary,
-					fontSize: fontSize.md,
-					fontWeight: "600",
-				}}
-			>
-				{label}
-			</Text>
+			<Text style={styles.label}>{label}</Text>
 		</Pressable>
 	);
 }
+
+const styles = StyleSheet.create({
+	button: {
+		alignItems: "center",
+		paddingVertical: spacing.sm + spacing.xs,
+		paddingHorizontal: spacing.md,
+		borderRadius: radii.md,
+		backgroundColor: colors.primary,
+	},
+	pressed: { opacity: 0.8 },
+	disabled: { opacity: 0.5 },
+	label: { color: colors.onPrimary, fontSize: fontSizes.md, fontWeight: "600" },
+});

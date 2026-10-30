@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
-import { ScrollView, Text } from "react-native";
+import { ScrollView, StyleSheet, Text } from "react-native";
 import { type Edge, SafeAreaView } from "react-native-safe-area-context";
-import { useTheme } from "@/shared/theme";
+import { colors, fontSizes, spacing } from "@/shared/theme";
 
 type TScreenContainerProps = {
 	title: string;
@@ -18,26 +18,12 @@ export function ScreenContainer({
 	insideTabs = false,
 	testID,
 }: TScreenContainerProps) {
-	const { colors, spacing, fontSize } = useTheme();
 	const edges: Edge[] = insideTabs ? ["top"] : ["top", "bottom"];
 
 	return (
-		<SafeAreaView
-			edges={edges}
-			style={{ flex: 1, backgroundColor: colors.background }}
-			testID={testID}
-		>
-			<ScrollView
-				contentContainerStyle={{ padding: spacing.md, gap: spacing.md }}
-			>
-				<Text
-					accessibilityRole="header"
-					style={{
-						color: colors.text,
-						fontSize: fontSize.xl,
-						fontWeight: "700",
-					}}
-				>
+		<SafeAreaView edges={edges} style={styles.screen} testID={testID}>
+			<ScrollView contentContainerStyle={styles.content}>
+				<Text accessibilityRole="header" style={styles.title}>
 					{title}
 				</Text>
 				{children}
@@ -45,3 +31,9 @@ export function ScreenContainer({
 		</SafeAreaView>
 	);
 }
+
+const styles = StyleSheet.create({
+	screen: { flex: 1, backgroundColor: colors.background },
+	content: { padding: spacing.md, gap: spacing.md },
+	title: { color: colors.text, fontSize: fontSizes.xl, fontWeight: "700" },
+});

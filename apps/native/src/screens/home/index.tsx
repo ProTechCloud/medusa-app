@@ -1,32 +1,29 @@
 import { useTranslation } from "react-i18next";
-import { ActivityIndicator, Text, View } from "react-native";
+import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
 import { InfoCard } from "@/shared/components/info-card";
 import { InfoRow } from "@/shared/components/info-row";
 import { PrimaryButton } from "@/shared/components/primary-button";
 import { ScreenContainer } from "@/shared/components/screen-container";
-import { useTheme } from "@/shared/theme";
+import { colors, fontSizes, spacing } from "@/shared/theme";
 import { useApiVersion } from "./hooks/use-api-version";
 
 /** Home: what the stg API says is running. */
 export function HomeScreen() {
 	const { t } = useTranslation("home");
-	const { colors, spacing, fontSize } = useTheme();
 	const { status, version, check } = useApiVersion();
 
 	return (
 		<ScreenContainer title={t("title")} insideTabs>
 			<InfoCard title={t("api.heading")}>
 				{status === "checking" && (
-					<View testID="home-api-checking" style={{ gap: spacing.sm }}>
+					<View testID="home-api-checking" style={styles.checking}>
 						<ActivityIndicator color={colors.primary} />
-						<Text style={{ color: colors.textMuted, fontSize: fontSize.md }}>
-							{t("api.checking")}
-						</Text>
+						<Text style={styles.muted}>{t("api.checking")}</Text>
 					</View>
 				)}
 
 				{status === "ok" && version && (
-					<View testID="home-api-version" style={{ gap: spacing.xs }}>
+					<View testID="home-api-version" style={styles.version}>
 						<InfoRow label={t("api.service")} value={version.service} />
 						<InfoRow label={t("api.version")} value={version.version} />
 						<InfoRow
@@ -38,10 +35,8 @@ export function HomeScreen() {
 				)}
 
 				{status === "failed" && (
-					<View testID="home-api-failed" style={{ gap: spacing.md }}>
-						<Text style={{ color: colors.danger, fontSize: fontSize.md }}>
-							{t("api.failed")}
-						</Text>
+					<View testID="home-api-failed" style={styles.failed}>
+						<Text style={styles.danger}>{t("api.failed")}</Text>
 						<PrimaryButton
 							label={t("api.tryAgain")}
 							onPress={check}
@@ -53,3 +48,11 @@ export function HomeScreen() {
 		</ScreenContainer>
 	);
 }
+
+const styles = StyleSheet.create({
+	checking: { gap: spacing.sm },
+	version: { gap: spacing.xs },
+	failed: { gap: spacing.md },
+	muted: { color: colors.textMuted, fontSize: fontSizes.md },
+	danger: { color: colors.danger, fontSize: fontSizes.md },
+});

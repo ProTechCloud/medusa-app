@@ -30,22 +30,22 @@ export default [
 		...medusaPlugin.configs.recommended,
 	},
 	{
-		// A colour is a role from `@/shared/theme`; its value lives only in the
-		// palette, so a theme change is a change in one file.
+		// A colour is a role from `@/shared/theme`; its value lives only in
+		// `palette.json`, which ESLint does not read, so a theme change is a
+		// change in one file.
 		files: ["apps/native/**/*.{ts,tsx,js}"],
-		ignores: ["apps/native/src/shared/theme/lib/palette.ts"],
 		rules: {
 			"no-restricted-syntax": [
 				"error",
 				{
 					selector: "Literal[value=/^#([0-9a-fA-F]{3,4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/]",
 					message:
-						"Colour values live in src/shared/theme/lib/palette.ts. Use a role from @/shared/theme.",
+						"Colour values live in src/shared/theme/lib/palette.json. Use a role from @/shared/theme.",
 				},
 				{
 					selector: "Literal[value=/^rgba?\\(/i]",
 					message:
-						"Colour values live in src/shared/theme/lib/palette.ts. Use a role from @/shared/theme.",
+						"Colour values live in src/shared/theme/lib/palette.json. Use a role from @/shared/theme.",
 				},
 			],
 		},
