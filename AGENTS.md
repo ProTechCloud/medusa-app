@@ -83,7 +83,7 @@ From the repository root.
 | Run the API in watch mode | `yarn dev`; `yarn dev --native` also starts the app's Metro                                        |
 | Run the app on the iPhone | `yarn workspace @medusa/native ios --device` once, then `yarn dev --native`                        |
 | Tests with coverage       | `yarn test:coverage`                                                                               |
-| Fallow, as CI runs it     | `yarn fallow --fail-on-issues --coverage coverage/coverage-final.json`, after `yarn test:coverage` |
+| Fallow, with coverage     | `yarn fallow --fail-on-issues --coverage coverage/coverage-final.json`, after `yarn test:coverage` |
 
 ## Commits
 

@@ -20,7 +20,7 @@ type TApiVersionState = {
  * comes into focus and whenever `check` is called. A non-2xx answer, a
  * network error, a body that does not parse and no answer within
  * `REQUEST_TIMEOUT_MS` all end as `failed`. Leaving the screen cancels the
- * request in flight.
+ * request in flight and sets nothing.
  */
 export function useApiVersion(): TApiVersionState & { check: () => void } {
 	const [state, setState] = useState<TApiVersionState>({
@@ -58,7 +58,13 @@ export function useApiVersion(): TApiVersionState & { check: () => void } {
 	useFocusEffect(
 		useCallback(() => {
 			check();
-			return () => latest.current?.abort();
+			// Leaving the screen cancels the request without a result: with no
+			// latest request, its abort passes no guard, and the state stays as
+			// it was until the next focus asks again.
+			return () => {
+				latest.current?.abort();
+				latest.current = null;
+			};
 		}, [check]),
 	);
 

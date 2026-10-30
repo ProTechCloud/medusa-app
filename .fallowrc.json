@@ -14,7 +14,6 @@
 	},
 	"ignoreDependencies": [
 		"expo-dev-client",
-		"babel-preset-expo",
-		"react-refresh"
+		"babel-preset-expo"
 	]
 }

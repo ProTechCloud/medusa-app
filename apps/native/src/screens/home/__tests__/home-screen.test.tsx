@@ -2,7 +2,7 @@ import { faker } from "@faker-js/faker";
 import { act, render, screen, userEvent } from "@testing-library/react-native";
 import { HomeScreen } from "@/screens/home";
 import { generateVersion } from "@/screens/home/__mocks__/generate-version";
-import { mockRefocus } from "@/testing/mock-expo-router-with-replace";
+import { mockBlur, mockFocus } from "@/testing/mock-expo-router-with-replace";
 import { mockFetch } from "@/testing/mock-fetch";
 
 describe("HomeScreen", () => {
@@ -76,23 +76,40 @@ describe("HomeScreen", () => {
 		expect(mockFetch.cancelled("/version")).toBe(1);
 	});
 
-	it("cancels the request in flight when the screen loses focus", async () => {
+	it("cancels the request in flight when the screen loses focus, without showing a failure", async () => {
 		mockFetch.on("/version", { body: generateVersion(), delayMs: 5000 });
 		await render(<HomeScreen />);
 
-		await act(async () => mockRefocus());
+		await act(async () => mockBlur());
 
 		expect(mockFetch.cancelled("/version")).toBe(1);
+		expect(screen.queryByTestId("home-api-failed")).not.toBeOnTheScreen();
+		expect(screen.getByTestId("home-api-checking")).toBeOnTheScreen();
+	});
+
+	it("asks again when the screen comes back into focus", async () => {
+		mockFetch.on("/version", { body: generateVersion(), delayMs: 5000 });
+		await render(<HomeScreen />);
+		const version = generateVersion();
+		mockFetch.on("/version", { body: version });
+		await act(async () => mockBlur());
+
+		await act(async () => mockFocus());
+
+		expect(await screen.findByText(version.service)).toBeOnTheScreen();
 		expect(mockFetch.calls("/version")).toBe(2);
 	});
 
-	it("never lets the earlier request's end overwrite the newer one", async () => {
+	it("never lets the cancelled earlier request overwrite the newer one after a quick tab switch", async () => {
 		mockFetch.on("/version", { body: generateVersion(), delayMs: 5000 });
 		await render(<HomeScreen />);
 		const version = generateVersion();
 		mockFetch.on("/version", { body: version, delayMs: 1000 });
 
-		await act(async () => mockRefocus());
+		await act(async () => {
+			mockBlur();
+			mockFocus();
+		});
 
 		expect(screen.getByTestId("home-api-checking")).toBeOnTheScreen();
 		expect(screen.queryByTestId("home-api-failed")).not.toBeOnTheScreen();
