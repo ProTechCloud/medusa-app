@@ -12,9 +12,10 @@ const appEnv = z
 	.default("dev")
 	.parse(process.env.APP_ENV || undefined);
 
-// The selected file wins over the shell: a variable left set from another
-// build must never give this one its bundle ID. dotenv writes into `fromFile`
-// instead of `process.env`, where it would not replace a value already set.
+// The build's values come from its file alone, never the shell: a variable
+// left set from another build must never give this one its bundle ID. dotenv
+// writes into `fromFile` instead of `process.env`, which it would not read
+// past, and the shell is never consulted.
 const fromFile: Record<string, string> = {};
 const loaded = dotenv.config({
 	path: path.resolve(__dirname, `.env.${appEnv}`),
@@ -27,10 +28,7 @@ if (loaded.error) {
 		`.env.${appEnv} not found in apps/native. Create it from .env.dev.example with the ${appEnv} values.`,
 	);
 }
-const source: Record<string, string | undefined> = {
-	...process.env,
-	...fromFile,
-};
+const source: Record<string, string | undefined> = fromFile;
 
 const schema = z.object({
 	APP_BUNDLE_ID: z

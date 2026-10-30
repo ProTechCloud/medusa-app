@@ -28,9 +28,25 @@ if [[ "$NATIVE" != true ]]; then
 	exec "${TURBO[@]}"
 fi
 
-# The API in the background, stopped with Metro.
-"${TURBO[@]}" &
-TURBO_PID=$!
-trap 'kill "$TURBO_PID" 2>/dev/null || true' EXIT INT TERM
+# Metro replaces this shell below, so it keeps the terminal and receives every
+# signal sent to it. A supervisor in the background starts the API and pairs
+# the two: when the API exits, for any reason, it stops Metro; when Metro
+# exits, it stops the API, so neither keeps holding its port. The supervisor
+# is the API's parent, so `wait` sees it exit; Metro, which never reaps,
+# could not.
+METRO_PID=$$
+(
+	"${TURBO[@]}" &
+	TURBO_PID=$!
+	(
+		while kill -0 "$METRO_PID" 2>/dev/null; do sleep 1; done
+		kill -TERM "$TURBO_PID" 2>/dev/null || true
+	) &
+	wait "$TURBO_PID" 2>/dev/null || true
+	if kill -0 "$METRO_PID" 2>/dev/null; then
+		echo "dev: the API stopped, so Metro stops too" >&2
+		kill -TERM "$METRO_PID" 2>/dev/null || true
+	fi
+) &
 
-yarn workspace @medusa/native dev
+exec yarn workspace @medusa/native dev
