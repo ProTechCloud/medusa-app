@@ -48,7 +48,7 @@ jobs:
           changed=$(git diff --no-renames --name-only \
             "${{ github.event.pull_request.base.sha }}" \
             "${{ github.event.pull_request.head.sha }}")
-          pattern='^(apps/native/|packages/|package\.json$|yarn\.lock$|\.yarnrc\.yml$|\.nvmrc$|turbo\.json$|tsconfig\.json$|biome\.json$|eslint\.config\.mjs$|\.fallowrc\.json$|bin/|commitlint\.config\.mjs$|\.github/actions/|\.github/workflows/mobile-code-quality\.yml$)'
+          pattern='^(apps/native/|packages/|package\.json$|yarn\.lock$|\.yarnrc\.yml$|\.nvmrc$|turbo\.json$|tsconfig\.json$|biome\.json$|eslint\.config\.mjs$|\.fallowrc\.json$|bin/|commitlint\.config\.mjs$|vitest\.shared\.ts$|\.github/actions/|\.github/workflows/mobile-code-quality\.yml$)'
           if echo "$changed" | grep -qE "$pattern"; then
             echo "mobile=true" >> "$GITHUB_OUTPUT"
           else
