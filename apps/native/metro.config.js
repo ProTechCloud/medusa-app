@@ -17,6 +17,13 @@ config.resolver.nodeModulesPaths = [
 ];
 config.resolver.disableHierarchicalLookup = true;
 
+// One React in the bundle: `react` and `react-native` always resolve to the
+// root copy, so a package that brings its own can never load a second one.
+config.resolver.extraNodeModules = {
+	react: path.resolve(monorepoRoot, "node_modules/react"),
+	"react-native": path.resolve(monorepoRoot, "node_modules/react-native"),
+};
+
 // Tests and their mocks never reach the bundle.
 config.resolver.blockList = [/src\/.*\/__mocks__\//, /src\/.*\/__tests__\//];
 

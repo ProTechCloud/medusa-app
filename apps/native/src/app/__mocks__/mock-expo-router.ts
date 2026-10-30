@@ -11,7 +11,8 @@ type TScreenProps = {
  * registered screen renders its title under its tab button's `testID`, so a
  * test reads which tabs a layout registered without a navigation container.
  * A test wires it with
- * `jest.mock("expo-router", () => require(<this file>))`.
+ * `jest.mock("expo-router/js-tabs", () => require(<this file>))`, or the
+ * same for `expo-router` when it needs `Stack`.
  */
 function Navigator({ children }: { children?: ReactNode }) {
 	return children;

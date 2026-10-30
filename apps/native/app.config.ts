@@ -71,6 +71,11 @@ const config: ExpoConfig = {
 	icon: "./assets/icon.png",
 	ios: {
 		bundleIdentifier: env.APP_BUNDLE_ID,
+		infoPlist: {
+			// The app uses only the encryption iOS provides, which is exempt;
+			// saying so here answers TestFlight's question on every upload.
+			ITSAppUsesNonExemptEncryption: false,
+		},
 	},
 	android: {
 		package: env.APP_BUNDLE_ID,

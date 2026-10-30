@@ -3,7 +3,9 @@ import TabsLayout from "@/app/(tabs)/_layout";
 import HomeRoute from "@/app/(tabs)/index";
 import SettingsRoute from "@/app/(tabs)/settings";
 
-jest.mock("expo-router", () => require("@/app/__mocks__/mock-expo-router"));
+jest.mock("expo-router/js-tabs", () =>
+	require("@/app/__mocks__/mock-expo-router"),
+);
 jest.mock("@/screens/home", () => require("@/app/__mocks__/mock-screens"));
 jest.mock("@/screens/settings", () => require("@/app/__mocks__/mock-screens"));
 

@@ -53,7 +53,7 @@ committed. Inside the app, `src/config/app-config` parses what the build wrote i
 ```
 src/
 ├── app/            routes only: Expo Router turns each file into a screen
-│   └── (tabs)/     the tab bar, from the TABS table in its _layout.tsx
+│   └── (tabs)/     the tab bar (expo-router/js-tabs), from the TABS table in its _layout.tsx
 ├── screens/        the screens the routes render, with their hooks
 ├── config/         the build's config, parsed once
 ├── i18n/           every string, one namespace per area, in resources/en/
@@ -62,6 +62,7 @@ src/
 │   │               lib/palette.json holds every colour value
 │   ├── components/ ScreenContainer, PrimaryButton, Card, ListRow
 │   ├── vector-icons/ the Icon wrapper
+│   ├── splash-screen/ keepSplashScreenUntilReady and hideSplashScreen
 │   └── zustand/    createAppStore and the store resets
 └── testing/        Jest setup and the shared mocks
 ```
