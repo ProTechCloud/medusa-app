@@ -1,0 +1,13 @@
+{
+	"title": "Home",
+	"api": {
+		"heading": "Staging API",
+		"checking": "Checking the API…",
+		"service": "Service",
+		"version": "Version",
+		"commit": "Commit",
+		"environment": "Environment",
+		"failed": "The API did not answer.",
+		"tryAgain": "Try again"
+	}
+}
