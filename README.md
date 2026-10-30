@@ -32,7 +32,11 @@ once if `corepack` is missing:
 npm install -g corepack   # only on Node 25+
 corepack enable
 yarn install              # also installs the commit-msg hook
+cp apps/backend/.env.local.example apps/backend/.env.local
 ```
+
+`yarn dev` reads `apps/backend/.env.local`; [`docs/environment.md`](docs/environment.md) lists
+every variable.
 
 ## Commands
 
@@ -56,10 +60,14 @@ To run one workspace only: `yarn turbo run test --filter=@medusa/backend`.
 
 ## Routes
 
-| Method | Path      | Response                                             |
-| ------ | --------- | ---------------------------------------------------- |
-| `GET`  | `/`       | `{ message, service, version, commit, environment }` |
-| `GET`  | `/health` | `{ status, uptime }` — liveness, no dependencies     |
+| Method | Path       | Response                                             |
+| ------ | ---------- | ---------------------------------------------------- |
+| `GET`  | `/version` | `{ message, service, version, commit, environment }` |
+| `GET`  | `/health`  | `{ status, uptime }` — liveness, no dependencies     |
+
+Anything else answers `404` with `{ error: "not_found", path }`, and an error no route
+handled answers `500` with `{ error: "internal_error" }`. How routes are laid out:
+[`apps/backend/src/services/api/http/README.md`](apps/backend/src/services/api/http/README.md).
 
 ## Container
 
@@ -67,8 +75,11 @@ Built from the repository root, because the lockfile and the workspace manifest 
 
 ```bash
 docker build -f apps/backend/Dockerfile -t medusa-backend .
-docker run --rm -p 8080:8080 medusa-backend
+docker run --rm -e APP_ENV=local -p 8080:8080 medusa-backend
 ```
+
+A build without `--build-arg APP_ENV` sets no `APP_ENV`, and the API refuses to start until
+it is told where it runs. `deploy-stg` builds with `APP_ENV=stg`, and the VM passes it too.
 
 A Node stage runs `yarn workspaces focus @medusa/backend --production`, which installs only
 what the API needs at runtime. The Bun stage copies that `node_modules` and `apps/backend`
@@ -77,10 +88,10 @@ base images are pinned by digest.
 
 ## CI/CD
 
-| Workflow               | Trigger                                                                                     | Does                                                                                                                                                                  |
-| ---------------------- | ------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `backend-code-quality` | every PR → `dev` / `stg`, when `BACKEND_CODE_QUALITY_ENABLED` is `true`                     | discover → secret scan → commit messages → typecheck + lint + format → tests with coverage, then fallow → docker build (no push) → summary                            |
-| `deploy-stg`           | push → `stg` touching the backend, or by hand on `stg`, when `BACKEND_CD_ENABLED` is `true` | build the image tagged with the commit, trivy scan (fails on CRITICAL), push, roll out over IAP, then check on the VM that `127.0.0.1:8080/` answers with this commit |
+| Workflow               | Trigger                                                                                     | Does                                                                                                                                                                         |
+| ---------------------- | ------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `backend-code-quality` | every PR → `dev` / `stg`, when `BACKEND_CODE_QUALITY_ENABLED` is `true`                     | discover → secret scan → commit messages → typecheck + lint + format → tests with coverage, then fallow → docker build (no push) → summary                                   |
+| `deploy-stg`           | push → `stg` touching the backend, or by hand on `stg`, when `BACKEND_CD_ENABLED` is `true` | build the image tagged with the commit, trivy scan (fails on CRITICAL), push, roll out over IAP, then check on the VM that `127.0.0.1:8080/version` answers with this commit |
 
 **Only `Backend - Code Quality Summary` is required by branch protection.** The quality
 workflow has no path filter on its trigger: a workflow that never starts reports nothing, and

@@ -11,6 +11,8 @@ export default defineConfig({
 	test: {
 		environment: "node",
 		globals: true,
+		// The logger parses these at import; tests that read logs use their own.
+		env: { LOG_LEVEL: "silent", LOG_FORMAT: "json" },
 		coverage,
 	},
 });
