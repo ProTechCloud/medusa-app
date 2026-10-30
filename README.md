@@ -1,9 +1,10 @@
 # medusa-app
 
 The Medusa workspace: a [Yarn 4](https://yarnpkg.com) monorepo run by
-[Turborepo](https://turborepo.com). Today it holds one app, the API — [Bun](https://bun.sh) +
+[Turborepo](https://turborepo.com). It holds two apps: the API — [Bun](https://bun.sh) +
 [Hono](https://hono.dev) — deployed to a GCE instance that is reachable only through a
-Cloudflare Tunnel.
+Cloudflare Tunnel, and the iOS and Android app — [Expo](https://expo.dev) SDK 57 — which
+for now runs only as a development build on a phone.
 
 |                |                                                                                  |
 | -------------- | -------------------------------------------------------------------------------- |
@@ -14,6 +15,7 @@ Cloudflare Tunnel.
 
 ```
 apps/backend/     @medusa/backend — the API
+apps/native/      @medusa/native — the iOS and Android app
 packages/         shared code, none yet
 docs/             how the workspace is put together
 ```
@@ -44,11 +46,11 @@ From the repository root. Each runs the matching script in every workspace throu
 which caches results: a task whose inputs did not change replays its last output.
 
 ```bash
-yarn dev            # the API on http://localhost:8080
+yarn dev            # the API on http://localhost:8080 and the app's Metro server
 yarn typecheck
 yarn lint           # ESLint, with the @medusa/eslint-plugin rules
 yarn format         # Biome; yarn format:write to apply
-yarn test           # vitest
+yarn test           # vitest, and Jest for apps/native
 yarn test:coverage  # coverage per workspace, merged into coverage/
 yarn fallow         # unused code, duplication and complexity
 ```
@@ -57,6 +59,13 @@ A husky `pre-commit` hook runs `format`, `lint`, `typecheck` and `test` before e
 and `commit-msg` runs commitlint on the message.
 
 To run one workspace only: `yarn turbo run test --filter=@medusa/backend`.
+
+## The native app
+
+`apps/native` is an Expo app with two tabs: Home shows what the stg API answers at
+`/version`, Settings shows the app's version, build and environment. It builds on a Mac with
+Xcode, signed by the team's Apple account, and installs on a phone in Developer Mode. How to
+run it: [`apps/native/README.md`](apps/native/README.md).
 
 ## Routes
 
@@ -91,15 +100,18 @@ base images are pinned by digest.
 | Workflow               | Trigger                                                                                     | Does                                                                                                                                                                         |
 | ---------------------- | ------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `backend-code-quality` | every PR → `dev` / `stg`, when `BACKEND_CODE_QUALITY_ENABLED` is `true`                     | discover → secret scan → commit messages → typecheck + lint + format → tests with coverage, then fallow → docker build (no push) → summary                                   |
+| `mobile-code-quality`  | every PR → `dev` / `stg`, when `MOBILE_CODE_QUALITY_ENABLED` is `true`                      | discover → secret scan → commit messages → typecheck + lint + format → tests with coverage, then fallow → summary. Nothing is built or signed                                |
 | `deploy-stg`           | push → `stg` touching the backend, or by hand on `stg`, when `BACKEND_CD_ENABLED` is `true` | build the image tagged with the commit, trivy scan (fails on CRITICAL), push, roll out over IAP, then check on the VM that `127.0.0.1:8080/version` answers with this commit |
 
-**Only `Backend - Code Quality Summary` is required by branch protection.** The quality
-workflow has no path filter on its trigger: a workflow that never starts reports nothing, and
-a required check that never reports blocks the merge forever. Instead, `Discover — Changes`
-works out whether the pull request touches the backend — `apps/backend/**`, `packages/**`, the root
-manifests, configs and tooling, `.github/actions/`, or the workflow itself. Lint, tests and the image build skip when it
-does not; secret scan and commit messages run on every pull request. The summary always runs
-and fails unless every job passed or was skipped on purpose.
+**Only `Backend - Code Quality Summary` and `Mobile - Code Quality Summary` are required by
+branch protection.** Neither quality workflow has a path filter on its trigger: a workflow
+that never starts reports nothing, and a required check that never reports blocks the merge
+forever. Instead, each one's `Discover — Changes` works out whether the pull request touches
+its app — `apps/backend/**` or `apps/native/**`, plus `packages/**`, the root manifests,
+configs and tooling, `.github/actions/`, or the workflow itself. Lint, tests and the image
+build skip when it does not; secret scan and commit messages run on every pull request. The
+summary always runs and fails unless every job passed or was skipped on purpose. A change to
+a root file runs both, since both apps are built from it.
 
 Deploys run one at a time and are never cancelled. To redeploy `stg` after a change the path
 filter skips, run `deploy-stg` by hand from the Actions tab on the `stg` branch; any other
@@ -136,6 +148,7 @@ Variables, not secrets: none of these is a credential. Values come from `medusa-
 | `GCP_ZONE`                     | Instance zone                                               |
 | `BACKEND_CODE_QUALITY_ENABLED` | `true` turns on `backend-code-quality`                      |
 | `BACKEND_CD_ENABLED`           | `true` turns on `deploy-stg`                                |
+| `MOBILE_CODE_QUALITY_ENABLED`  | `true` turns on `mobile-code-quality`                       |
 
 No repository secrets are needed.
 

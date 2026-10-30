@@ -15,13 +15,14 @@ Start here:
 ## Workspace overview
 
 Yarn 4 workspaces run by Turborepo. Node 22 (22.18 or later, from `.nvmrc`) runs the tooling
-and the tests; Bun is the runtime for the API only.
+and the tests; Bun is the runtime for the API only; Expo builds the native app.
 
 ### Apps
 
-| App               | Path           | Framework | Runtime |
-| ----------------- | -------------- | --------- | ------- |
-| `@medusa/backend` | `apps/backend` | Hono 4    | Bun     |
+| App               | Path           | Framework                | Runtime         |
+| ----------------- | -------------- | ------------------------ | --------------- |
+| `@medusa/backend` | `apps/backend` | Hono 4                   | Bun             |
+| `@medusa/native`  | `apps/native`  | Expo SDK 57, Expo Router | iOS and Android |
 
 ### Packages
 
@@ -35,6 +36,7 @@ Every package exports its TypeScript source; there is no build step.
 
 - [`docs/monorepo.md`](./docs/monorepo.md) — layout, apps vs packages, source-first exports, adding a workspace.
 - [`docs/api/style-guide/index.md`](./docs/api/style-guide/index.md) — the API's routes, use cases, tests and production rules.
+- [`apps/native/README.md`](./apps/native/README.md) — running the native app on a phone, its env file and its layout.
 - [`apps/backend/src/services/api/http/README.md`](./apps/backend/src/services/api/http/README.md) — how the API's routes are laid out.
 - [`docs/style-guide/index.md`](./docs/style-guide/index.md) — the index of the style guide.
 - [`docs/style-guide/placement-rule.md`](./docs/style-guide/placement-rule.md) — where a unit lives, and what a module holds.
@@ -79,6 +81,7 @@ From the repository root.
 | Lint                      | `yarn lint`                                                                                        |
 | Format (check)            | `yarn format`; `yarn format:write` to apply                                                        |
 | Run the API in watch mode | `yarn dev`                                                                                         |
+| Run the app on the iPhone | `yarn workspace @medusa/native ios --device`, then `yarn workspace @medusa/native dev`             |
 | Tests with coverage       | `yarn test:coverage`                                                                               |
 | Fallow, as CI runs it     | `yarn fallow --fail-on-issues --coverage coverage/coverage-final.json`, after `yarn test:coverage` |
 

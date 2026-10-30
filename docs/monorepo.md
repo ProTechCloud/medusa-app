@@ -8,7 +8,8 @@ from one `yarn.lock`; Turborepo runs their scripts and caches the results.
 ```
 .
 ├── apps/
-│   └── backend/          @medusa/backend — the API
+│   ├── backend/          @medusa/backend — the API
+│   └── native/           @medusa/native — the iOS and Android app
 ├── packages/             shared code; none yet
 ├── docs/
 ├── package.json          the workspace: lists apps/* and packages/*, pins Yarn

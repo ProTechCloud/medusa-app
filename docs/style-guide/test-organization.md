@@ -6,9 +6,12 @@ Where tests, mocks and factories live, and the rules every test follows.
 
 ## Test runner
 
-1. **vitest, in every workspace.** Each workspace has a `vitest.config.ts` that uses the
-   shared coverage config from `vitest.shared.ts`. `yarn test` runs them all; `yarn
-   test:coverage` also merges coverage into `coverage/` at the root.
+1. **vitest, in every workspace but the native app.** Each workspace has a
+   `vitest.config.ts` that uses the shared coverage config from `vitest.shared.ts`.
+   `apps/native` runs Jest on the `jest-expo` preset instead, because that is the runner
+   Expo and React Native support; its `jest.config.js` sets the same 50% thresholds.
+   `yarn test` runs them all; `yarn test:coverage` also merges every workspace's coverage
+   into `coverage/` at the root.
 
 ## Structure
 
