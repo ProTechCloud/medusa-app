@@ -1,7 +1,7 @@
 import { useTranslation } from "react-i18next";
 import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
-import { InfoCard } from "@/shared/components/info-card";
-import { InfoRow } from "@/shared/components/info-row";
+import { Card } from "@/shared/components/card";
+import { ListRow } from "@/shared/components/list-row";
 import { PrimaryButton } from "@/shared/components/primary-button";
 import { ScreenContainer } from "@/shared/components/screen-container";
 import { colors, fontSizes, spacing } from "@/shared/theme";
@@ -13,8 +13,8 @@ export function HomeScreen() {
 	const { status, version, check } = useApiVersion();
 
 	return (
-		<ScreenContainer title={t("title")} insideTabs>
-			<InfoCard title={t("api.heading")}>
+		<ScreenContainer title={t("title")} testID="home-screen" insideTabs>
+			<Card title={t("api.heading")}>
 				{status === "checking" && (
 					<View testID="home-api-checking" style={styles.checking}>
 						<ActivityIndicator color={colors.primary} />
@@ -24,13 +24,13 @@ export function HomeScreen() {
 
 				{status === "ok" && version && (
 					<View testID="home-api-version" style={styles.version}>
-						<InfoRow label={t("api.service")} value={version.service} />
-						<InfoRow label={t("api.version")} value={version.version} />
-						<InfoRow
+						<ListRow label={t("api.service")} value={version.service} />
+						<ListRow label={t("api.version")} value={version.version} />
+						<ListRow
 							label={t("api.commit")}
 							value={version.commit.slice(0, 7)}
 						/>
-						<InfoRow label={t("api.environment")} value={version.environment} />
+						<ListRow label={t("api.environment")} value={version.environment} />
 					</View>
 				)}
 
@@ -44,7 +44,7 @@ export function HomeScreen() {
 						/>
 					</View>
 				)}
-			</InfoCard>
+			</Card>
 		</ScreenContainer>
 	);
 }

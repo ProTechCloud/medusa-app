@@ -1,8 +1,8 @@
 import * as Application from "expo-application";
 import { useTranslation } from "react-i18next";
 import { appConfig } from "@/config/app-config";
-import { InfoCard } from "@/shared/components/info-card";
-import { InfoRow } from "@/shared/components/info-row";
+import { Card } from "@/shared/components/card";
+import { ListRow } from "@/shared/components/list-row";
 import { ScreenContainer } from "@/shared/components/screen-container";
 
 /** Settings: which build of the app this is. */
@@ -11,24 +11,24 @@ export function SettingsScreen() {
 	const unknown = t("about.unknown");
 
 	return (
-		<ScreenContainer title={t("title")} insideTabs>
-			<InfoCard title={t("about.heading")}>
-				<InfoRow
+		<ScreenContainer title={t("title")} testID="settings-screen" insideTabs>
+			<Card title={t("about.heading")}>
+				<ListRow
 					testID="settings-version"
 					label={t("about.version")}
 					value={Application.nativeApplicationVersion ?? unknown}
 				/>
-				<InfoRow
+				<ListRow
 					testID="settings-build"
 					label={t("about.build")}
 					value={Application.nativeBuildVersion ?? unknown}
 				/>
-				<InfoRow
+				<ListRow
 					testID="settings-environment"
 					label={t("about.environment")}
 					value={appConfig.appEnv}
 				/>
-			</InfoCard>
+			</Card>
 		</ScreenContainer>
 	);
 }

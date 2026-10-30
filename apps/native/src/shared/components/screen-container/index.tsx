@@ -6,22 +6,29 @@ import { colors, fontSizes, spacing } from "@/shared/theme";
 type TScreenContainerProps = {
 	title: string;
 	children: ReactNode;
+	testID: string;
 	/** Inside the tab bar, which already keeps clear of the bottom edge. */
 	insideTabs?: boolean;
-	testID?: string;
 };
+
+// The sides too, so a notch or a rounded corner never covers content in
+// landscape.
+const TAB_EDGES: Edge[] = ["top", "left", "right"];
+const FULL_EDGES: Edge[] = [...TAB_EDGES, "bottom"];
 
 /** Every screen's frame: clear of the notch, scrollable, with its title. */
 export function ScreenContainer({
 	title,
 	children,
-	insideTabs = false,
 	testID,
+	insideTabs = false,
 }: TScreenContainerProps) {
-	const edges: Edge[] = insideTabs ? ["top"] : ["top", "bottom"];
-
 	return (
-		<SafeAreaView edges={edges} style={styles.screen} testID={testID}>
+		<SafeAreaView
+			edges={insideTabs ? TAB_EDGES : FULL_EDGES}
+			style={styles.screen}
+			testID={testID}
+		>
 			<ScrollView contentContainerStyle={styles.content}>
 				<Text accessibilityRole="header" style={styles.title}>
 					{title}

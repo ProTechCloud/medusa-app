@@ -60,7 +60,7 @@ src/
 ├── shared/
 │   ├── theme/      the tokens as constants: colors, spacing, fontSizes, radii, iconSizes;
 │   │               lib/palette.json holds every colour value
-│   ├── components/ ScreenContainer, PrimaryButton, InfoCard, InfoRow
+│   ├── components/ ScreenContainer, PrimaryButton, Card, ListRow
 │   ├── vector-icons/ the Icon wrapper
 │   └── zustand/    createAppStore and the store resets
 └── testing/        Jest setup and the shared mocks
