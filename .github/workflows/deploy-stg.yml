@@ -143,7 +143,7 @@ jobs:
             --project="${{ vars.GCP_PROJECT_ID }}" \
             --tunnel-through-iap \
             --quiet \
-            --command="sudo /etc/medusa/deploy.sh '$IMAGE' >&2 && curl -fsS http://127.0.0.1:8080/")
+            --command="sudo /etc/medusa/deploy.sh '$IMAGE' >&2 && curl -fsS http://127.0.0.1:8080/version")
           echo "$body"
 
           commit=$(echo "$body" | tail -n 1 | jq -r '.commit')
