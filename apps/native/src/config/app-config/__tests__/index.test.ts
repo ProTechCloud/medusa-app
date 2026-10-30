@@ -16,12 +16,13 @@ describe("parseAppConfig", () => {
 		expect(() => parseAppConfig(extra)).toThrow("APP_ENV: is not set");
 	});
 
-	it("an unknown environment is refused by its variable, without its value", () => {
+	it("an unknown environment is refused as invalid, by its variable, without its value", () => {
 		const appEnv = faker.string.alpha(12);
 
 		const parse = () => parseAppConfig({ appEnv });
 
 		expect(parse).toThrow(/APP_ENV: /);
+		expect(parse).not.toThrow("is not set");
 		expect(parse).not.toThrow(appEnv);
 	});
 });

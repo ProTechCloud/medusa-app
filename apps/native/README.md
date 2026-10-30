@@ -21,6 +21,15 @@ then builds with Xcode. `ios/`, `android/` and `.expo/` are generated and gitign
 `app.config.ts`, never them. The first build takes several minutes; after it, `dev` is
 enough until a native dependency or `app.config.ts` changes.
 
+`expo run:ios` reuses an `ios/` that already exists, so switching builds needs a clean
+prebuild first, or the new build keeps the old bundle ID and name:
+
+```bash
+cd apps/native
+APP_ENV=stg npx expo prebuild --clean   # regenerate ios/ and android/ for stg
+APP_ENV=stg npx expo run:ios --device
+```
+
 ## Builds and their env files
 
 `APP_ENV` picks the build, and `app.config.ts` reads `.env.<APP_ENV>`:

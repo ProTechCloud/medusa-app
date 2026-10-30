@@ -18,12 +18,14 @@ const ENV_NAMES: Record<keyof TAppConfig, string> = {
  * error listing every bad field by its env variable, never its value.
  */
 export function parseAppConfig(extra: unknown): TAppConfig {
-	const parsed = schema.safeParse(extra ?? {});
+	const fields = (extra ?? {}) as Record<string, unknown>;
+	const parsed = schema.safeParse(fields);
 	if (parsed.success) return parsed.data;
 
+	// Whether the field is there decides the wording; zod does not keep the input.
 	const problems = parsed.error.issues.map((issue) => {
 		const field = issue.path[0] as keyof TAppConfig;
-		const what = issue.input === undefined ? "is not set" : issue.message;
+		const what = fields[field] === undefined ? "is not set" : issue.message;
 		return `  ${ENV_NAMES[field] ?? String(field)}: ${what}`;
 	});
 	throw new Error(`Invalid app config:\n${problems.join("\n")}`);
