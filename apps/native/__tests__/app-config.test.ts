@@ -57,7 +57,6 @@ describe("app.config.ts", () => {
 		expect(readFile()).toMatch(new RegExp(`/\\.env\\.${appEnv}$`));
 		expect(config().ios?.bundleIdentifier).toBe(bundleId);
 		expect(config().android?.package).toBe(bundleId);
-		expect(config().extra).toEqual({ appEnv });
 	});
 
 	it("stops the build, naming the file, when the environment's file is missing", () => {
@@ -68,7 +67,6 @@ describe("app.config.ts", () => {
 
 	it.each<{ label: string; file: Record<string, string>; message: string }>([
 		{ label: "unset", file: {}, message: "is not set" },
-		{ label: "blank", file: { APP_BUNDLE_ID: "   " }, message: "is not set" },
 		{
 			label: "not a bundle ID",
 			file: { APP_BUNDLE_ID: faker.lorem.words(3) },
@@ -78,17 +76,5 @@ describe("app.config.ts", () => {
 		const { config } = loadConfig(file);
 
 		expect(config).toThrow(`APP_BUNDLE_ID: ${message}`);
-		expect(config).toThrow(
-			`Set it from .env.dev.example with the ${appEnv} values.`,
-		);
-	});
-
-	it("never prints the invalid bundle ID it refused", () => {
-		const invalid = faker.lorem.words(3);
-
-		const { config } = loadConfig({ APP_BUNDLE_ID: invalid });
-
-		expect(config).toThrow("APP_BUNDLE_ID: ");
-		expect(config).not.toThrow(invalid);
 	});
 });

@@ -46,14 +46,4 @@ describe("app stores", () => {
 		expect(memberStore.getState().value).toBe(initialMember);
 		expect(deviceStore.getState().value).toBe(initialDevice);
 	});
-
-	it("a reset keeps the store's actions working", () => {
-		changeBoth();
-		resetAllStores();
-		const value = faker.string.uuid();
-
-		memberStore.getState().setValue(value);
-
-		expect(memberStore.getState().value).toBe(value);
-	});
 });

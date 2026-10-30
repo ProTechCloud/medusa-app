@@ -47,7 +47,7 @@ if (!parsed.success) {
 		return `  ${name}: ${missing ? "is not set" : issue.message}`;
 	});
 	throw new Error(
-		`Invalid .env.${appEnv}:\n${problems.join("\n")}\nSet it from .env.dev.example with the ${appEnv} values.`,
+		`Invalid .env.${appEnv}:\n${problems.join("\n")}\nCreate it from .env.dev.example with the ${appEnv} values.`,
 	);
 }
 const env = parsed.data;

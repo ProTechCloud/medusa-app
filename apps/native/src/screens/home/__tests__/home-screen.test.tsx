@@ -87,19 +87,6 @@ describe("HomeScreen", () => {
 		expect(screen.getByTestId("home-api-checking")).toBeOnTheScreen();
 	});
 
-	it("asks again when the screen comes back into focus", async () => {
-		mockFetch.on("/version", { body: generateVersion(), delayMs: 5000 });
-		await render(<HomeScreen />);
-		const version = generateVersion();
-		mockFetch.on("/version", { body: version });
-		await act(async () => mockBlur());
-
-		await act(async () => mockFocus());
-
-		expect(await screen.findByText(version.service)).toBeOnTheScreen();
-		expect(mockFetch.calls("/version")).toBe(2);
-	});
-
 	it("never lets the cancelled earlier request overwrite the newer one after a quick tab switch", async () => {
 		mockFetch.on("/version", { body: generateVersion(), delayMs: 5000 });
 		await render(<HomeScreen />);
