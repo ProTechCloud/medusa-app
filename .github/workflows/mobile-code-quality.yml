@@ -14,6 +14,11 @@ permissions:
 env:
   GITLEAKS_VERSION: 8.30.1
   TURBO_TELEMETRY_DISABLED: 1
+  # The workspaces this workflow judges: the app, what it depends on, and
+  # packages/, which every app lints with. The other app's failures belong to
+  # its own workflow, never to this check.
+  TURBO_FILTERS: --filter=@medusa/native... --filter=./packages/*
+  FALLOW_WORKSPACES: "@medusa/native,@medusa/eslint-plugin"
 
 # The same shape as backend-code-quality.yml: no path filter on the trigger,
 # because branch protection requires `summary` and a workflow that never
@@ -120,7 +125,7 @@ jobs:
       - uses: ./.github/actions/setup-monorepo
 
       - name: Typecheck, lint and format
-        run: yarn turbo run typecheck lint format
+        run: yarn turbo run typecheck lint format $TURBO_FILTERS
 
   tests:
     name: Quality — Tests
@@ -134,14 +139,19 @@ jobs:
 
       - uses: ./.github/actions/setup-monorepo
 
-      # Every workspace's coverage, then merged into coverage/ at the root:
-      # the one report fallow reads, so it judges the app against the whole
-      # workspace, as the backend's run does.
+      # The filtered workspaces' coverage, merged into coverage/ at the root:
+      # the one report fallow reads. A fresh checkout holds no other
+      # workspace's report, so the merge takes this subset only.
       - name: Test with coverage
-        run: yarn test:coverage
+        run: |
+          yarn turbo run test:coverage $TURBO_FILTERS
+          node bin/merge-coverage.mjs
 
       - name: Fallow
-        run: yarn fallow --fail-on-issues --coverage coverage/coverage-final.json
+        run: >-
+          yarn fallow --fail-on-issues
+          --coverage coverage/coverage-final.json
+          --workspace "$FALLOW_WORKSPACES"
 
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: always()

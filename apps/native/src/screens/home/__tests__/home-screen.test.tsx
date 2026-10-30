@@ -1,7 +1,8 @@
 import { faker } from "@faker-js/faker";
-import { render, screen, userEvent } from "@testing-library/react-native";
+import { act, render, screen, userEvent } from "@testing-library/react-native";
 import { HomeScreen } from "@/screens/home";
 import { generateVersion } from "@/screens/home/__mocks__/generate-version";
+import { mockRefocus } from "@/testing/mock-expo-router-with-replace";
 import { mockFetch } from "@/testing/mock-fetch";
 
 describe("HomeScreen", () => {
@@ -61,5 +62,41 @@ describe("HomeScreen", () => {
 
 		expect(await screen.findByText(version.service)).toBeOnTheScreen();
 		expect(mockFetch.calls("/version")).toBe(2);
+	});
+
+	it("gives up and shows the failure when the API has not answered in 10 seconds", async () => {
+		mockFetch.on("/version", { body: generateVersion(), delayMs: 60_000 });
+		await render(<HomeScreen />);
+
+		await act(() => jest.advanceTimersByTimeAsync(9_999));
+		expect(screen.getByTestId("home-api-checking")).toBeOnTheScreen();
+		await act(() => jest.advanceTimersByTimeAsync(1));
+
+		expect(screen.getByTestId("home-api-failed")).toBeOnTheScreen();
+		expect(mockFetch.cancelled("/version")).toBe(1);
+	});
+
+	it("cancels the request in flight when the screen loses focus", async () => {
+		mockFetch.on("/version", { body: generateVersion(), delayMs: 5000 });
+		await render(<HomeScreen />);
+
+		await act(async () => mockRefocus());
+
+		expect(mockFetch.cancelled("/version")).toBe(1);
+		expect(mockFetch.calls("/version")).toBe(2);
+	});
+
+	it("never lets the earlier request's end overwrite the newer one", async () => {
+		mockFetch.on("/version", { body: generateVersion(), delayMs: 5000 });
+		await render(<HomeScreen />);
+		const version = generateVersion();
+		mockFetch.on("/version", { body: version, delayMs: 1000 });
+
+		await act(async () => mockRefocus());
+
+		expect(screen.getByTestId("home-api-checking")).toBeOnTheScreen();
+		expect(screen.queryByTestId("home-api-failed")).not.toBeOnTheScreen();
+		await act(() => jest.advanceTimersByTimeAsync(5000));
+		expect(screen.getByText(version.service)).toBeOnTheScreen();
 	});
 });

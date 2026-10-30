@@ -19,7 +19,6 @@ const registered: Array<{ scope: TStoreScope; reset: () => void }> = [];
  * never `create` directly, so sign-out and tests can return each one to the
  * state it started with.
  */
-// fallow-ignore-next-line unused-export -- the first store arrives with the first feature that keeps state
 export function createAppStore<TState extends object>(
 	scope: TStoreScope,
 	initializer: StateCreator<TState>,
@@ -31,7 +30,6 @@ export function createAppStore<TState extends object>(
 }
 
 /** Sign-out: forget the member's data, keep the device's settings. */
-// fallow-ignore-next-line unused-export -- sign-out arrives with auth
 export function resetMemberStores(): void {
 	for (const store of registered) if (store.scope === "member") store.reset();
 }
