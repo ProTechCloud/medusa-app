@@ -33,6 +33,7 @@ Every package exports its TypeScript source; there is no build step.
 ## Documentation map
 
 - [`docs/monorepo.md`](./docs/monorepo.md) — layout, apps vs packages, source-first exports, adding a workspace.
+- [`apps/backend/src/services/api/http/README.md`](./apps/backend/src/services/api/http/README.md) — how the API's routes are laid out.
 - [`docs/style-guide/index.md`](./docs/style-guide/index.md) — the index of the style guide.
 - [`docs/style-guide/placement-rule.md`](./docs/style-guide/placement-rule.md) — where a unit lives, and what a module holds.
 - [`docs/style-guide/imports.md`](./docs/style-guide/imports.md) — `@/`, `./`, never `../`, package subpaths.
@@ -42,6 +43,7 @@ Every package exports its TypeScript source; there is no build step.
 - [`docs/style-guide/test-quality.md`](./docs/style-guide/test-quality.md) — what a good test asserts, the anti-patterns.
 - [`docs/style-guide/testing-patterns.md`](./docs/style-guide/testing-patterns.md) — each testing rule in a snippet.
 - [`docs/typescript/conventions.md`](./docs/typescript/conventions.md) — type prefixes, names, dates with Luxon.
+- [`docs/environment.md`](./docs/environment.md) — the environments, where each reads its values, every variable.
 - [`docs/dependencies.md`](./docs/dependencies.md) — why each `resolutions` override exists.
 
 ## Skills
