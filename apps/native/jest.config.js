@@ -4,9 +4,10 @@ module.exports = {
 	fakeTimers: { enableGlobally: true },
 	setupFilesAfterEnv: ["./src/testing/mocks.ts"],
 	// Packages that ship untranspiled modules, which Jest must compile like
-	// the app's own code: React Native, Expo, and faker, which is ESM-only.
+	// the app's own code: React Native, Expo, and the ESM-only faker, i18next
+	// and react-i18next.
 	transformIgnorePatterns: [
-		"node_modules/(?!((jest-)?react-native|@react-native(-community)?|expo(nent)?|@expo(nent)?/.*|@faker-js/.*|react-navigation|@react-navigation/.*))",
+		"node_modules/(?!((jest-)?react-native|@react-native(-community)?|expo(nent)?|@expo(nent)?/.*|@faker-js/.*|i18next|react-i18next|react-navigation|@react-navigation/.*))",
 	],
 	moduleNameMapper: {
 		"^@/(.*)$": "<rootDir>/src/$1",

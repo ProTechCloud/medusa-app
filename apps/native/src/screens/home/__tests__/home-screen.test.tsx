@@ -1,14 +1,14 @@
 import { faker } from "@faker-js/faker";
-import { fireEvent, render, screen } from "@testing-library/react-native";
+import { render, screen, userEvent } from "@testing-library/react-native";
 import { HomeScreen } from "@/screens/home";
 import { generateVersion } from "@/screens/home/__mocks__/generate-version";
 import { mockFetch } from "@/testing/mock-fetch";
 
 describe("HomeScreen", () => {
 	it("shows that it is checking until the API answers", async () => {
-		mockFetch.on("/version", { body: generateVersion() });
+		mockFetch.on("/version", { body: generateVersion(), delayMs: 1000 });
 
-		render(<HomeScreen />);
+		await render(<HomeScreen />);
 
 		expect(screen.getByTestId("home-api-checking")).toBeOnTheScreen();
 		await screen.findByTestId("home-api-version");
@@ -19,7 +19,7 @@ describe("HomeScreen", () => {
 		const version = generateVersion();
 		mockFetch.on("/version", { body: version });
 
-		render(<HomeScreen />);
+		await render(<HomeScreen />);
 
 		expect(await screen.findByTestId("home-api-version")).toBeOnTheScreen();
 		expect(screen.getByText(version.service)).toBeOnTheScreen();
@@ -44,7 +44,7 @@ describe("HomeScreen", () => {
 	])("shows the failure after $label", async ({ answer }) => {
 		mockFetch.on("/version", answer);
 
-		render(<HomeScreen />);
+		await render(<HomeScreen />);
 
 		expect(await screen.findByTestId("home-api-failed")).toBeOnTheScreen();
 		expect(screen.queryByTestId("home-api-version")).not.toBeOnTheScreen();
@@ -52,12 +52,12 @@ describe("HomeScreen", () => {
 
 	it("asks the API again from the failure and shows the version it answers", async () => {
 		mockFetch.on("/version", { status: 500 });
-		render(<HomeScreen />);
+		await render(<HomeScreen />);
 		await screen.findByTestId("home-api-failed");
 		const version = generateVersion();
 		mockFetch.on("/version", { body: version });
 
-		fireEvent.press(screen.getByText("home.api.tryAgain"));
+		await userEvent.press(screen.getByTestId("home-api-try-again"));
 
 		expect(await screen.findByText(version.service)).toBeOnTheScreen();
 		expect(mockFetch.calls("/version")).toBe(2);

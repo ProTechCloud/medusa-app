@@ -12,7 +12,7 @@ jest.mock(
 );
 
 describe("SettingsScreen", () => {
-	it("shows the app's version, build and environment", () => {
+	it("shows the app's version, build and environment", async () => {
 		const version = faker.system.semver();
 		const buildNumber = String(faker.number.int({ min: 1, max: 999 }));
 		setBuild({
@@ -20,7 +20,7 @@ describe("SettingsScreen", () => {
 			nativeBuildVersion: buildNumber,
 		});
 
-		render(<SettingsScreen />);
+		await render(<SettingsScreen />);
 
 		expect(
 			within(screen.getByTestId("settings-version")).getByText(version),
@@ -35,10 +35,10 @@ describe("SettingsScreen", () => {
 		).toBeOnTheScreen();
 	});
 
-	it("shows a dash for a version or build the native build does not report", () => {
+	it("shows a dash for a version or build the native build does not report", async () => {
 		setBuild({ nativeApplicationVersion: null, nativeBuildVersion: null });
 
-		render(<SettingsScreen />);
+		await render(<SettingsScreen />);
 
 		for (const row of ["settings-version", "settings-build"]) {
 			expect(

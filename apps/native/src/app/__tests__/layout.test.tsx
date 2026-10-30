@@ -13,8 +13,8 @@ describe("the tab bar", () => {
 	it.each([
 		{ testID: "tab-index", title: "navigation.tabs.home" },
 		{ testID: "tab-settings", title: "navigation.tabs.settings" },
-	])("registers the $title tab", ({ testID, title }) => {
-		render(<TabsLayout />);
+	])("registers the $title tab", async ({ testID, title }) => {
+		await render(<TabsLayout />);
 
 		expect(screen.getByTestId(testID)).toHaveTextContent(title);
 	});
@@ -26,8 +26,8 @@ describe("the tab bar", () => {
 			Route: SettingsRoute,
 			testID: "settings-screen",
 		},
-	])("$label shows its screen", ({ Route, testID }) => {
-		render(<Route />);
+	])("$label shows its screen", async ({ Route, testID }) => {
+		await render(<Route />);
 
 		expect(screen.getByTestId(testID)).toBeOnTheScreen();
 	});

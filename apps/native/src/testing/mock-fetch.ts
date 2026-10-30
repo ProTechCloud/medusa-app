@@ -1,5 +1,9 @@
-/** What a mocked request answers: a status and a JSON body, or a thrown error. */
-type TAnswer = { status?: number; body?: unknown } | Error;
+/**
+ * What a mocked request answers: a status and a JSON body, or a thrown error.
+ * `delayMs` holds the answer back on the (fake) clock, so a test can see
+ * what the screen shows while it waits.
+ */
+type TAnswer = { status?: number; body?: unknown; delayMs?: number } | Error;
 
 const answers = new Map<string, TAnswer>();
 const requests = new Map<string, number>();
@@ -33,6 +37,9 @@ export const mockFetch = {
 		if (!answer)
 			throw new Error(`mockFetch: no answer set for ${url.pathname}`);
 		if (answer instanceof Error) throw answer;
+		if (answer.delayMs) {
+			await new Promise((resolve) => setTimeout(resolve, answer.delayMs));
+		}
 
 		const status = answer.status ?? 200;
 		return {

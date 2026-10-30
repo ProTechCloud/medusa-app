@@ -9,7 +9,7 @@ describe("PrimaryButton", () => {
 		async (variant) => {
 			const onPress = createPressHandler();
 			const label = faker.lorem.words(2);
-			render(
+			await render(
 				<PrimaryButton
 					label={label}
 					onPress={onPress}
@@ -28,7 +28,7 @@ describe("PrimaryButton", () => {
 	it("while loading it shows a spinner, keeps its label as its name and ignores presses", async () => {
 		const onPress = createPressHandler();
 		const label = faker.lorem.words(2);
-		render(
+		await render(
 			<PrimaryButton label={label} onPress={onPress} testID="button" loading />,
 		);
 
@@ -42,7 +42,7 @@ describe("PrimaryButton", () => {
 
 	it("a disabled button ignores presses", async () => {
 		const onPress = createPressHandler();
-		render(
+		await render(
 			<PrimaryButton
 				label={faker.lorem.word()}
 				onPress={onPress}
