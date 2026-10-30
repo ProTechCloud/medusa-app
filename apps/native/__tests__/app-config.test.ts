@@ -78,6 +78,9 @@ describe("app.config.ts", () => {
 		const { config } = loadConfig(file);
 
 		expect(config).toThrow(`APP_BUNDLE_ID: ${message}`);
+		expect(config).toThrow(
+			`Set it from .env.dev.example with the ${appEnv} values.`,
+		);
 	});
 
 	it("never prints the invalid bundle ID it refused", () => {

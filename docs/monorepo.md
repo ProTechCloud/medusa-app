@@ -14,7 +14,7 @@ from one `yarn.lock`; Turborepo runs their scripts and caches the results.
 ├── docs/
 ├── package.json          the workspace: lists apps/* and packages/*, pins Yarn
 ├── turbo.json            the tasks turbo runs in every workspace
-├── tsconfig.json         the base every workspace's tsconfig extends
+├── tsconfig.json         the base the backend and the packages extend; the app extends Expo's
 ├── biome.json            lint and format rules for the whole repository
 └── .yarnrc.yml           Yarn settings
 ```

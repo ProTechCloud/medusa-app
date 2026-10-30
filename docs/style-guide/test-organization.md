@@ -49,8 +49,7 @@ Where tests, mocks and factories live, and the rules every test follows.
    A test never defines a mock implementation itself.
 
 7. **Every factory uses faker.** No hardcoded test data: `@faker-js/faker` generates every
-   value, and a test overrides only the fields that matter to it. faker is not installed yet:
-   the first workspace that writes a factory adds `@faker-js/faker` to its `devDependencies`.
+   value, and a test overrides only the fields that matter to it.
 
 ## Test rules
 
