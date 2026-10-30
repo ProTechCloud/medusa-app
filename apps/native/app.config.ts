@@ -15,11 +15,17 @@ const appEnv = z
 // build must never give this one its bundle ID. dotenv writes into `fromFile`
 // instead of `process.env`, where it would not replace a value already set.
 const fromFile: Record<string, string> = {};
-dotenv.config({
+const loaded = dotenv.config({
 	path: path.resolve(__dirname, `.env.${appEnv}`),
 	processEnv: fromFile,
 	quiet: true,
 });
+// Without its file a build would fall back to whatever the shell holds.
+if (loaded.error) {
+	throw new Error(
+		`.env.${appEnv} not found in apps/native. Create it from .env.dev.example with the ${appEnv} values.`,
+	);
+}
 const source: Record<string, string | undefined> = {
 	...process.env,
 	...fromFile,
