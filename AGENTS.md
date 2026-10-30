@@ -80,8 +80,8 @@ From the repository root.
 | Test                      | `yarn test`                                                                                        |
 | Lint                      | `yarn lint`                                                                                        |
 | Format (check)            | `yarn format`; `yarn format:write` to apply                                                        |
-| Run the API in watch mode | `yarn dev`                                                                                         |
-| Run the app on the iPhone | `yarn workspace @medusa/native ios --device`, then `yarn workspace @medusa/native dev`             |
+| Run the API in watch mode | `yarn dev`; `yarn dev --native` also starts the app's Metro                                        |
+| Run the app on the iPhone | `yarn workspace @medusa/native ios --device` once, then `yarn dev --native`                        |
 | Tests with coverage       | `yarn test:coverage`                                                                               |
 | Fallow, as CI runs it     | `yarn fallow --fail-on-issues --coverage coverage/coverage-final.json`, after `yarn test:coverage` |
 

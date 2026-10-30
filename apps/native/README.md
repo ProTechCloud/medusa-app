@@ -13,7 +13,7 @@ Developer Mode, connected and trusted.
 ```bash
 cp apps/native/.env.dev.example apps/native/.env.dev
 yarn workspace @medusa/native ios --device   # build, sign, install and open Medusa Dev
-yarn workspace @medusa/native dev            # later: Metro only; the phone reloads on save
+yarn dev --native                            # later: the API and Metro; the phone reloads on save
 ```
 
 `ios` runs `expo run:ios`, which first generates `ios/` from `app.config.ts` (prebuild),

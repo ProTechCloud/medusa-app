@@ -46,7 +46,7 @@ From the repository root. Each runs the matching script in every workspace throu
 which caches results: a task whose inputs did not change replays its last output.
 
 ```bash
-yarn dev            # the API on http://localhost:8080 and the app's Metro server
+yarn dev            # the API on http://localhost:8080; --native adds the app's Metro
 yarn typecheck
 yarn lint           # ESLint, with the @medusa/eslint-plugin rules
 yarn format         # Biome; yarn format:write to apply
@@ -54,6 +54,11 @@ yarn test           # vitest, and Jest for apps/native
 yarn test:coverage  # coverage per workspace, merged into coverage/
 yarn fallow         # unused code, duplication and complexity
 ```
+
+`yarn dev` runs `bin/dev.sh`: every dev server through turbo except the native app's Metro,
+which starts only with `yarn dev --native`. Then Metro runs in the foreground, where it keeps
+its keyboard shortcuts and QR code, and the API runs through turbo behind it; `Ctrl+C`
+stops both.
 
 A husky `pre-commit` hook runs `format`, `lint`, `typecheck` and `test` before every commit,
 and `commit-msg` runs commitlint on the message.
