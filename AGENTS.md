@@ -10,6 +10,7 @@ Start here:
 - [`README.md`](./README.md) — getting started, the commands, CI/CD and the deploy.
 - [`docs/index.md`](./docs/index.md) — every doc, one line each.
 - [`docs/monorepo.md`](./docs/monorepo.md) — the workspace layout and how to add an app or a package.
+- [`docs/api/style-guide/index.md`](./docs/api/style-guide/index.md) — read it before changing `apps/backend`.
 
 ## Workspace overview
 
@@ -33,6 +34,7 @@ Every package exports its TypeScript source; there is no build step.
 ## Documentation map
 
 - [`docs/monorepo.md`](./docs/monorepo.md) — layout, apps vs packages, source-first exports, adding a workspace.
+- [`docs/api/style-guide/index.md`](./docs/api/style-guide/index.md) — the API's routes, use cases, tests and production rules.
 - [`apps/backend/src/services/api/http/README.md`](./apps/backend/src/services/api/http/README.md) — how the API's routes are laid out.
 - [`docs/style-guide/index.md`](./docs/style-guide/index.md) — the index of the style guide.
 - [`docs/style-guide/placement-rule.md`](./docs/style-guide/placement-rule.md) — where a unit lives, and what a module holds.
@@ -51,6 +53,7 @@ Every package exports its TypeScript source; there is no build step.
 Skills live in [`.agents/skills`](./.agents/skills); `.claude/skills` links to the same folder.
 Each one lists the docs to read and the rules that matter most.
 
+- [`api`](./.agents/skills/api/SKILL.md) — read before changing a route, a use case, the config or the logger in `apps/backend`.
 - [`testing`](./.agents/skills/testing/SKILL.md) — read before writing or changing a test, a mock or a factory.
 - [`pr-description`](./.agents/skills/pr-description/SKILL.md) — read when asked for a PR description; it writes the text only.
 - [`create-pr`](./.agents/skills/create-pr/SKILL.md) — read when asked to open a PR; it uses `pr-description` for the body.
@@ -59,7 +62,7 @@ Each one lists the docs to read and the rules that matter most.
 
 - Follow the monorepo and style-guide rules before changing the structure.
 - Place new code by the [placement rule](./docs/style-guide/placement-rule.md), not wherever is closest.
-- Keep framework-owned entrypoints, such as `apps/backend/src/index.ts`, in the shape the framework expects.
+- Keep entry points, such as `apps/backend/src/services/api/index.ts`, in the shape their runtime expects.
 - Branch from `dev` and open pull requests against `dev`; `stg` only receives promotions from `dev`.
 - Do not add a `resolutions` entry without its row in [`docs/dependencies.md`](./docs/dependencies.md).
 - Never commit secrets: no keys, tokens or `.env` files.
