@@ -116,9 +116,9 @@ its app — `apps/backend/**` or `apps/native/**`, plus `packages/**`, the root 
 configs and tooling, `.github/actions/`, or the workflow itself. Lint, tests and the image
 build skip when it does not; secret scan and commit messages run on every pull request. The
 summary always runs and fails unless every job passed or was skipped on purpose. A change to
-a root file runs both, since both apps are built from it. Each runs typecheck, lint and tests
-on its own app and what that app depends on only, so one app's failure never fails the
-other's check.
+a root file runs both, since both apps are built from it. Each runs typecheck, lint, tests
+and fallow on its own app and what that app depends on only, so one app's failure never
+fails the other's check.
 
 Deploys run one at a time and are never cancelled. To redeploy `stg` after a change the path
 filter skips, run `deploy-stg` by hand from the Actions tab on the `stg` branch; any other
