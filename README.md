@@ -77,8 +77,8 @@ docker build -f apps/backend/Dockerfile -t medusa-backend .
 docker run --rm -e APP_ENV=local -p 8080:8080 medusa-backend
 ```
 
-The image sets no `APP_ENV`, so the same image runs anywhere and refuses to start until it
-is told where: the VM passes `APP_ENV=stg`.
+A build without `--build-arg APP_ENV` sets no `APP_ENV`, and the API refuses to start until
+it is told where it runs. `deploy-stg` builds with `APP_ENV=stg`, and the VM passes it too.
 
 A Node stage runs `yarn workspaces focus @medusa/backend --production`, which installs only
 what the API needs at runtime. The Bun stage copies that `node_modules` and `apps/backend`
