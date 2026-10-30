@@ -56,9 +56,10 @@ what a use case logged, pass a logger from `createCapturingLogger` in
 
 ## Mocks default to failure
 
-A mock rejects until the test sets a result. `mock-load-version-use-case.ts` starts as
-`vi.fn().mockRejectedValue(...)`, so a test that forgot `mockResolvedValue` fails, instead of
-passing on `undefined`.
+A mock rejects until the test sets a result. `mock-load-version-use-case.ts` is a `vi.fn`
+created with an implementation that throws, so a test that forgot `mockResolvedValue` fails,
+instead of passing on `undefined`. `mockReset: true` in `apps/backend/vitest.config.ts` brings
+that implementation back before every test, so one test's result never leaks into the next.
 
 ## Faker for data
 
@@ -71,9 +72,11 @@ test, as in `shared/__tests__/env.test.ts`.
 
 - The happy path answers the shape the route promises, with its status.
 - An expected failure answers its status and its stable `error` code.
-- A dependency that fails propagates: the use case rejects with the same error, and the
-  route answers the JSON 500. `use-cases/__tests__/define-use-case.test.ts` and
-  `services/api/http/lib/__tests__/request-errors.test.ts` show both.
+- A dependency that fails propagates: the use case rejects with the same error, as
+  `use-cases/__tests__/define-use-case.test.ts` shows. The JSON 500 comes from
+  `requestErrors`, which `buildApp()` installs and `buildHttp()` does not, so a route test
+  that asserts it adds `.onError(requestErrors)` to the app it builds, as
+  `services/api/http/lib/__tests__/request-errors.test.ts` does.
 
 ## Keep HTTP-level tests few
 

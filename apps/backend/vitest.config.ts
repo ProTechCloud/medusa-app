@@ -13,6 +13,9 @@ export default defineConfig({
 		globals: true,
 		// The logger parses these at import; tests that read logs use their own.
 		env: { LOG_LEVEL: "silent", LOG_FORMAT: "json" },
+		// Before every test, each mock drops what the last test set and goes
+		// back to the implementation it was created with: its failing default.
+		mockReset: true,
 		coverage,
 	},
 });

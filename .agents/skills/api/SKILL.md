@@ -23,7 +23,7 @@ Before writing a test, also read the [`testing`](../testing/SKILL.md) skill.
 
 1. One use case per route: a route reads the request, calls one use case and picks the response.
 2. Only use cases hold dependencies, through `TUseCaseContext`; a route never reads the config, the logger or a client.
-3. A new route is a folder under `routes/` plus one line in `ROUTES`; nothing else mounts a route.
+3. A new top-level route is a folder under `routes/` plus one line in `ROUTES`; a deeper path is a folder inside its parent, mounted by the parent with `.route(...)`. The entry point mounts only `/health`.
 4. Parse, don't cast: every variable goes through `parseEnv`, every external payload through a zod schema; never `process.env.X as string`.
 5. Expected failures are typed errors with a stable code; unexpected ones propagate to `request-errors.ts`, which answers the JSON 500.
 6. Route tests mock the use-case module, not its dependencies; mocks reject until the test sets a result.
