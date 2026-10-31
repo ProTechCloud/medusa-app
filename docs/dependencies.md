@@ -31,5 +31,4 @@ or at one exact version (a pin).
 
 | Package | Range | Fixes | Pulled in by | Can go when |
 | ------- | ----- | ----- | ------------ | ----------- |
-
-The list is empty today.
+| `@opentelemetry/api` | `1.9.1` | One copy of the API for the whole process. The 2.x SDK in `@medusa/backend` requires `<1.10.0`; `@hono/otel` (`^1.9.0`) and `@opentelemetry/api-logs` (`^1.3.0`) would otherwise get their own 1.10.0, which does not see the SDK the 1.9.1 copy registered, so their spans and log records go to a no-op provider: the request span never existed. | `@hono/otel`, `@opentelemetry/api-logs` | `@medusa/backend` moves to the 3.x SDK, which accepts api 1.10 |

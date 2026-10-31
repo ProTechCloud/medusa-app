@@ -10,7 +10,9 @@ Paths below are under `apps/backend/src/`.
 ## Runner
 
 Vitest, in a Node environment: `apps/backend/vitest.config.ts` sets `environment: "node"`,
-the `@/` alias, and `LOG_LEVEL=silent` so the process logger writes nothing. The API runs on
+the `@/` alias, `LOG_LEVEL=silent` so the process logger writes nothing, and `APP_ENV` and
+`OTEL_SERVICE_NAME` so the logger can name its lines. No PostHog token is set, so nothing is
+sent and the SDK never starts. The API runs on
 Bun, but its tests run on Node, like every other workspace. `yarn test` from the root runs
 them.
 

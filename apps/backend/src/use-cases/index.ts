@@ -1,3 +1,5 @@
+import { SpanStatusCode, trace } from "@opentelemetry/api";
+import { ATTR_ERROR_TYPE } from "@opentelemetry/semantic-conventions";
 import type { Logger } from "pino";
 import type { TConfig } from "@/config";
 
@@ -15,6 +17,10 @@ export type TUseCase<TArgs, TResult> = (
 	ctx: TUseCaseContext,
 	args: TArgs,
 ) => Promise<TResult>;
+
+// From the global provider, which the preload registers before this module
+// loads; without PostHog it is a no-op tracer.
+const tracer = trace.getTracer("use-cases");
 
 // Process-wide, built once at startup by `initUseCaseContext`, or set per test
 // by `setCtxForTests`.
@@ -92,8 +98,10 @@ export function resetCtx(): void {
  *   loadVersionUseCase called
  *   loadVersionUseCase ok      durationMs=1
  *
- * A failure is logged with its duration and rethrown unchanged, so the
- * caller decides what it means.
+ * Each call is also a span, `use-case <name>`, under the request's. A
+ * failure is logged with its duration, marked on the span with its
+ * `error.type` and the error status, and rethrown unchanged, so the caller
+ * decides what it means.
  */
 export function defineUseCase<TArgs = void, TResult = unknown>(
 	impl: TUseCase<TArgs, TResult>,
@@ -107,23 +115,32 @@ export function defineUseCase<TArgs = void, TResult = unknown>(
 
 	return async (args: TArgs) => {
 		const context = await getCtx();
-		const started = performance.now();
-		const elapsed = () => Math.round(performance.now() - started);
+		return tracer.startActiveSpan(`use-case ${name}`, async (span) => {
+			const started = performance.now();
+			const elapsed = () => Math.round(performance.now() - started);
 
-		context.logger.info({ useCase: name }, `${name} called`);
-		try {
-			const result = await impl(context, args);
-			context.logger.info(
-				{ useCase: name, durationMs: elapsed() },
-				`${name} ok`,
-			);
-			return result;
-		} catch (error) {
-			context.logger.error(
-				{ useCase: name, durationMs: elapsed(), err: error },
-				`${name} failed`,
-			);
-			throw error;
-		}
+			context.logger.info({ useCase: name }, `${name} called`);
+			try {
+				const result = await impl(context, args);
+				context.logger.info(
+					{ useCase: name, durationMs: elapsed() },
+					`${name} ok`,
+				);
+				return result;
+			} catch (error) {
+				context.logger.error(
+					{ useCase: name, durationMs: elapsed(), err: error },
+					`${name} failed`,
+				);
+				span.setAttribute(
+					ATTR_ERROR_TYPE,
+					error instanceof Error ? error.name : typeof error,
+				);
+				span.setStatus({ code: SpanStatusCode.ERROR });
+				throw error;
+			} finally {
+				span.end();
+			}
+		});
 	};
 }
