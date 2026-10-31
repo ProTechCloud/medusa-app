@@ -58,7 +58,7 @@ Skills live in [`.agents/skills`](./.agents/skills); `.claude/skills` links to t
 Each one lists the docs to read and the rules that matter most.
 
 - [`api`](./.agents/skills/api/SKILL.md) — read before changing a route, a use case, the config or the logger in `apps/backend`.
-- [`native`](./.agents/skills/native/SKILL.md) — read before changing a route, a screen, a component, a hook, a store or a test in `apps/native`.
+- [`native`](./.agents/skills/native/SKILL.md) — read before changing a route, a screen, a component, a hook, a store, a string or a test in `apps/native`.
 - [`testing`](./.agents/skills/testing/SKILL.md) — read before writing or changing a test, a mock or a factory.
 - [`pr-description`](./.agents/skills/pr-description/SKILL.md) — read when asked for a PR description; it writes the text only.
 - [`create-pr`](./.agents/skills/create-pr/SKILL.md) — read when asked to open a PR; it uses `pr-description` for the body.

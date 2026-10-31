@@ -17,8 +17,9 @@ Expo and Expo Router load these files by name and expect their shape:
 
 They are the one exception to the placement rule's module shape, as
 [`docs/monorepo.md`](../../monorepo.md#route-files-in-the-native-app) records: a folder in
-`src/app/` holds route files side by side, named by the framework. They are entry points,
-never a place for logic or UI of their own.
+`src/app/` holds route files side by side, named by the framework. They are entry points:
+a layout wires what its screens need, as below, and a route file renders its screen; screen
+logic and UI live in the screen.
 
 ## A route file renders its screen and nothing else
 

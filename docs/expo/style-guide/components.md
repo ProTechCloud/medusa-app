@@ -37,13 +37,13 @@ src/screens/home/api-card.tsx
 Components are made of React Native's `View`, `Text`, `Pressable`, `ScrollView` and the
 rest, styled with `StyleSheet.create` at module level. Before writing a new one, reuse:
 
-| Component         | File                                               | What it is                                               |
-| ----------------- | -------------------------------------------------- | -------------------------------------------------------- |
-| `ScreenContainer` | `src/shared/components/screen-container/index.tsx` | every screen's frame: safe area, scroll, title           |
-| `Card`            | `src/shared/components/card/index.tsx`             | a titled group of related content                        |
-| `ListRow`         | `src/shared/components/list-row/index.tsx`         | a label and its value, one per row                       |
-| `PrimaryButton`   | `src/shared/components/primary-button/index.tsx`   | the main action: `solid`, `outline`, `danger`, `loading` |
-| `Icon`            | `src/shared/vector-icons/index.tsx`                | the one icon set, Ionicons                               |
+| Component         | File                                               | What it is                                                             |
+| ----------------- | -------------------------------------------------- | ---------------------------------------------------------------------- |
+| `ScreenContainer` | `src/shared/components/screen-container/index.tsx` | every screen's frame: safe area, scroll, title                         |
+| `Card`            | `src/shared/components/card/index.tsx`             | a titled group of related content                                      |
+| `ListRow`         | `src/shared/components/list-row/index.tsx`         | a label and its value, one per row                                     |
+| `PrimaryButton`   | `src/shared/components/primary-button/index.tsx`   | the main action: variant `solid`, `outline` or `danger`, and `loading` |
+| `Icon`            | `src/shared/vector-icons/index.tsx`                | the one icon set, Ionicons                                             |
 
 `src/screens/home/index.tsx` builds Home from `ScreenContainer`, `Card`, `ListRow` and
 `PrimaryButton` alone.
