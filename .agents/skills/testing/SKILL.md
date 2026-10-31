@@ -12,6 +12,8 @@ description: Rules and required reading for writing or changing tests in any app
 - [Testing Patterns](../../../docs/style-guide/testing-patterns.md) — each rule shown in a snippet.
 - [TypeScript Conventions](../../../docs/typescript/conventions.md) — type prefixes, no single-letter names, Luxon dates.
 
+In `apps/native`, also read the [`native`](../native/SKILL.md) skill and the [Expo Testing](../../../docs/expo/style-guide/testing.md) guide.
+
 ## Key rules
 
 1. No inline mocks: every mock is a `mock-*.ts` file in `__mocks__/`, imported by the test.
