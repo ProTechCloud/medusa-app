@@ -36,6 +36,7 @@ Every package exports its TypeScript source; there is no build step.
 
 - [`docs/monorepo.md`](./docs/monorepo.md) — layout, apps vs packages, source-first exports, adding a workspace.
 - [`docs/api/style-guide/index.md`](./docs/api/style-guide/index.md) — the API's routes, use cases, tests and production rules.
+- [`docs/expo/style-guide/index.md`](./docs/expo/style-guide/index.md) — the native app's structure, components, hooks, context, state and tests.
 - [`apps/native/README.md`](./apps/native/README.md) — running the native app on a phone, its env file and its layout.
 - [`apps/backend/src/services/api/http/README.md`](./apps/backend/src/services/api/http/README.md) — how the API's routes are laid out.
 - [`docs/style-guide/index.md`](./docs/style-guide/index.md) — the index of the style guide.
@@ -43,6 +44,7 @@ Every package exports its TypeScript source; there is no build step.
 - [`docs/style-guide/imports.md`](./docs/style-guide/imports.md) — `@/`, `./`, never `../`, package subpaths.
 - [`docs/style-guide/packages.md`](./docs/style-guide/packages.md) — when code becomes a package, and how it exports.
 - [`docs/style-guide/third-party-integrations.md`](./docs/style-guide/third-party-integrations.md) — one folder per outside library.
+- [`docs/style-guide/i18n.md`](./docs/style-guide/i18n.md) — where strings live, one file per domain, tests assert on keys.
 - [`docs/style-guide/test-organization.md`](./docs/style-guide/test-organization.md) — where tests, mocks and factories live.
 - [`docs/style-guide/test-quality.md`](./docs/style-guide/test-quality.md) — what a good test asserts, the anti-patterns.
 - [`docs/style-guide/testing-patterns.md`](./docs/style-guide/testing-patterns.md) — each testing rule in a snippet.
@@ -56,6 +58,7 @@ Skills live in [`.agents/skills`](./.agents/skills); `.claude/skills` links to t
 Each one lists the docs to read and the rules that matter most.
 
 - [`api`](./.agents/skills/api/SKILL.md) — read before changing a route, a use case, the config or the logger in `apps/backend`.
+- [`native`](./.agents/skills/native/SKILL.md) — read before changing a route, a screen, a component, a hook, a store or a test in `apps/native`.
 - [`testing`](./.agents/skills/testing/SKILL.md) — read before writing or changing a test, a mock or a factory.
 - [`pr-description`](./.agents/skills/pr-description/SKILL.md) — read when asked for a PR description; it writes the text only.
 - [`create-pr`](./.agents/skills/create-pr/SKILL.md) — read when asked to open a PR; it uses `pr-description` for the body.

@@ -10,6 +10,7 @@ Rules for every app and package, whatever its framework.
 | [Imports](./imports.md)                                   | `@/` for anything outside the folder, `./` for siblings, never `../`     |
 | [Packages](./packages.md)                                 | when code moves to `packages/`, flat exports, the `testing` subpath      |
 | [Third-Party Integrations](./third-party-integrations.md) | one folder per library, mirroring the app's domains                      |
+| [i18n](./i18n.md)                                         | one JSON file per domain, a namespace per screen, tests assert on keys   |
 
 ## Testing
 
@@ -24,3 +25,5 @@ Rules for every app and package, whatever its framework.
 - [TypeScript Conventions](../typescript/conventions.md) — naming, no single-letter names,
   dates with Luxon.
 - [Monorepo](../monorepo.md) — the workspace layout and how to add an app or a package.
+- [Expo Style Guide](../expo/style-guide/index.md) — the rules for the native app in
+  `apps/native`.
