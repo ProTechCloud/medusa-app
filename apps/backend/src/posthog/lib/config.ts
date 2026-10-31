@@ -3,7 +3,11 @@ import { envVar, parseEnv, positiveIntSchema } from "@/shared/env";
 
 const schema = z.object({
 	POSTHOG_PROJECT_TOKEN: envVar.optional(),
-	POSTHOG_HOST: z.url().default("https://us.i.posthog.com"),
+	// Without a trailing slash, so the paths appended to it never start `//`.
+	POSTHOG_HOST: z
+		.url()
+		.transform((host) => host.replace(/\/+$/, ""))
+		.default("https://us.i.posthog.com"),
 	// One switch per signal, each on unless turned off.
 	POSTHOG_TRACES: z.stringbool().default(true),
 	POSTHOG_LOGS: z.stringbool().default(true),

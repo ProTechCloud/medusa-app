@@ -78,6 +78,31 @@ describe("captureError", () => {
 	});
 });
 
+describe("initPostHog", () => {
+	it("builds the client before any error, so exception autocapture is on from the start", async () => {
+		const env = generatePostHogEnv({ POSTHOG_ERRORS: "true" });
+		const { posthog, client } = await loadPostHog(env);
+
+		posthog.initPostHog();
+
+		expect(client.created).toHaveBeenCalledTimes(1);
+		expect(client.created).toHaveBeenCalledWith(
+			env.POSTHOG_PROJECT_TOKEN,
+			expect.objectContaining({ enableExceptionAutocapture: true }),
+		);
+	});
+
+	it("builds nothing without a token", async () => {
+		const { posthog, client } = await loadPostHog(
+			generatePostHogEnv({ POSTHOG_PROJECT_TOKEN: undefined }),
+		);
+
+		posthog.initPostHog();
+
+		expect(client.created).not.toHaveBeenCalled();
+	});
+});
+
 describe("shutdownPostHog", () => {
 	it("sends what is queued once a client exists", async () => {
 		const { posthog, client } = await loadPostHog(

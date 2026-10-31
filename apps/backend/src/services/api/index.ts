@@ -1,6 +1,7 @@
 import { Hono } from "hono";
 import { getConfig } from "@/config";
 import { logger } from "@/logger";
+import { initPostHog } from "@/posthog";
 import { stopOnSignal } from "@/shared/shutdown";
 import { initUseCaseContext } from "@/use-cases";
 import { buildHttp } from "./http";
@@ -49,6 +50,9 @@ async function start(): Promise<void> {
 		config: getConfig(),
 		logger,
 	}));
+	// Before the port opens, so an exception nothing catches is reported from
+	// the first request on.
+	initPostHog();
 
 	const server = Bun.serve({
 		hostname: "0.0.0.0",

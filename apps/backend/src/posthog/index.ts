@@ -36,6 +36,15 @@ function getClient(): PostHog | null {
 	return client;
 }
 
+/**
+ * Build the error client now, before the server serves: its exception
+ * autocapture watches for what nothing catches only from the moment it
+ * exists. Does nothing without a token or with errors switched off.
+ */
+export function initPostHog(): void {
+	getClient();
+}
+
 const identity = new AsyncLocalStorage<TRequestIdentity>();
 
 /**

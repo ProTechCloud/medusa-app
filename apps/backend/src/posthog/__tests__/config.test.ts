@@ -74,4 +74,18 @@ describe("parsePostHogConfig", () => {
 		expect(parse).toThrow("POSTHOG_HOST: ");
 		expect(parse).not.toThrow(env.POSTHOG_PROJECT_TOKEN);
 	});
+
+	it.each(["/", "//"])(
+		"drops the trailing %s from POSTHOG_HOST, so the paths after it start with one slash",
+		(slash) => {
+			const env = generatePostHogEnv();
+
+			const config = parsePostHogConfig({
+				...env,
+				POSTHOG_HOST: `${env.POSTHOG_HOST}${slash}`,
+			});
+
+			expect(config?.host).toBe(env.POSTHOG_HOST);
+		},
+	);
 });
