@@ -11,6 +11,13 @@ export const captureException = vi.fn(
 		_properties?: Record<string, unknown>,
 	): void => undefined,
 );
+export const captureExceptionImmediate = vi.fn(
+	async (
+		_error: unknown,
+		_distinctId?: string,
+		_properties?: Record<string, unknown>,
+	): Promise<void> => undefined,
+);
 export const shutdown = vi.fn(async (): Promise<void> => undefined);
 
 /**
@@ -29,6 +36,14 @@ export class PostHog {
 		properties?: Record<string, unknown>,
 	): void {
 		captureException(error, distinctId, properties);
+	}
+
+	captureExceptionImmediate(
+		error: unknown,
+		distinctId?: string,
+		properties?: Record<string, unknown>,
+	): Promise<void> {
+		return captureExceptionImmediate(error, distinctId, properties);
 	}
 
 	shutdown(): Promise<void> {

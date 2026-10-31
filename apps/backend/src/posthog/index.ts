@@ -36,13 +36,46 @@ function getClient(): PostHog | null {
 	return client;
 }
 
+let watchingRejections = false;
+
+// How long a fatal rejection waits for PostHog before the process exits
+// anyway: an unreachable PostHog must not keep a broken process serving.
+const REPORT_BEFORE_EXIT_MS = 3000;
+
 /**
  * Build the error client now, before the server serves: its exception
  * autocapture watches for what nothing catches only from the moment it
  * exists. Does nothing without a token or with errors switched off.
+ *
+ * It also reports an unhandled rejection. posthog-node expects Node's
+ * default, which turns one into an `uncaughtException`; Bun does not, and
+ * exits without a word to either listener. Once a listener is added the
+ * process would no longer exit, so this one reports the rejection, waits for
+ * PostHog to take it, for `REPORT_BEFORE_EXIT_MS` at most, and then exits
+ * with 1, as Bun would have.
  */
 export function initPostHog(): void {
-	getClient();
+	const posthog = getClient();
+	if (!posthog || watchingRejections) return;
+	watchingRejections = true;
+	process.on("unhandledRejection", (reason) => {
+		void reportAndExit(posthog, reason);
+	});
+}
+
+async function reportAndExit(posthog: PostHog, reason: unknown): Promise<void> {
+	try {
+		await Promise.race([
+			posthog.captureExceptionImmediate(
+				reason,
+				identity.getStore()?.distinctId,
+				errorProperties(),
+			),
+			new Promise((resolve) => setTimeout(resolve, REPORT_BEFORE_EXIT_MS)),
+		]);
+	} finally {
+		process.exit(1);
+	}
 }
 
 const identity = new AsyncLocalStorage<TRequestIdentity>();
@@ -79,11 +112,20 @@ export function requestIdentityLogFields(): {
 export function captureError(error: unknown): void {
 	const posthog = getClient();
 	if (!posthog) return;
-	const current = identity.getStore();
-	posthog.captureException(error, current?.distinctId, {
+	posthog.captureException(
+		error,
+		identity.getStore()?.distinctId,
+		errorProperties(),
+	);
+}
+
+/** What ties a report to its request: the correlation and trace IDs, and the session. */
+function errorProperties(): Record<string, string> {
+	const sessionId = identity.getStore()?.sessionId;
+	return {
 		...correlationFields(),
-		...(current?.sessionId ? { $session_id: current.sessionId } : {}),
-	});
+		...(sessionId ? { $session_id: sessionId } : {}),
+	};
 }
 
 /** Send what is queued and stop the client. Resolves at once when there is none. */

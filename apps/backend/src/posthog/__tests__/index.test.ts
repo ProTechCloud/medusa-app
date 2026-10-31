@@ -103,6 +103,60 @@ describe("initPostHog", () => {
 	});
 });
 
+describe("an unhandled rejection", () => {
+	// vitest listens for rejections too; only the listener initPostHog adds is
+	// fired and then removed.
+	let added: NodeJS.UnhandledRejectionListener[] = [];
+
+	function fireAddedListeners(reason: unknown): void {
+		for (const listener of added) listener(reason, Promise.resolve());
+	}
+
+	afterEach(() => {
+		for (const listener of added) process.off("unhandledRejection", listener);
+		added = [];
+		vi.restoreAllMocks();
+	});
+
+	it("is reported to PostHog, and then the process exits with 1, as Bun would have", async () => {
+		const exit = vi
+			.spyOn(process, "exit")
+			.mockImplementation(() => undefined as never);
+		const { posthog, client } = await loadPostHog(
+			generatePostHogEnv({ POSTHOG_ERRORS: "true" }),
+		);
+		const before = process.listeners("unhandledRejection");
+		posthog.initPostHog();
+		added = process
+			.listeners("unhandledRejection")
+			.filter((listener) => !before.includes(listener));
+		const reason = new Error(faker.lorem.sentence());
+
+		fireAddedListeners(reason);
+		await vi.waitFor(() => expect(exit).toHaveBeenCalledWith(1));
+
+		expect(client.captureExceptionImmediate).toHaveBeenCalledWith(
+			reason,
+			undefined,
+			{},
+		);
+		expect(
+			client.captureExceptionImmediate.mock.invocationCallOrder[0],
+		).toBeLessThan(exit.mock.invocationCallOrder[0] ?? 0);
+	});
+
+	it("is left to Bun without a token: no listener is added", async () => {
+		const { posthog } = await loadPostHog(
+			generatePostHogEnv({ POSTHOG_PROJECT_TOKEN: undefined }),
+		);
+		const before = process.listeners("unhandledRejection").length;
+
+		posthog.initPostHog();
+
+		expect(process.listeners("unhandledRejection")).toHaveLength(before);
+	});
+});
+
 describe("shutdownPostHog", () => {
 	it("sends what is queued once a client exists", async () => {
 		const { posthog, client } = await loadPostHog(
