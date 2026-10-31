@@ -22,16 +22,19 @@ A route test calls `buildHttp()` with the real URL, so it also proves where `ROU
 the route. It replaces the use-case module, never the use case's dependencies: the route
 does not know them, so its test does not either.
 
-The mock is a file, `__mocks__/mock-<name>-use-case.ts`, beside the route. From
+The mock is a file, `__mocks__/mock-<name>-use-case.ts`, beside the route. It exports a
+factory, as every `mock-*.ts` does ([Testing Patterns](../../style-guide/testing-patterns.md)):
+`mockLoadVersionUseCase(overrides)` returns the module's exports, each a fresh `vi.fn` with
+its default implementation or the override. `vi.mock` wires the factory. From
 `services/api/http/routes/version/__tests__/index.test.ts`:
 
 ```ts
-vi.mock(
-	"@/use-cases/cases/load-version.use-case",
-	() =>
-		import(
+vi.mock("@/use-cases/cases/load-version.use-case", async () =>
+	(
+		await import(
 			"@/services/api/http/routes/version/__mocks__/mock-load-version-use-case"
-		),
+		)
+	).mockLoadVersionUseCase(),
 );
 
 it("answers with the build that is running", async () => {
@@ -58,10 +61,15 @@ what a use case logged, pass a logger from `createCapturingLogger` in
 
 ## Mocks default to failure
 
-A mock rejects until the test sets a result. `mock-load-version-use-case.ts` is a `vi.fn`
-created with an implementation that throws, so a test that forgot `mockResolvedValue` fails,
+A mock rejects until the test sets a result. `mockLoadVersionUseCase()` builds a `vi.fn`
+whose default implementation throws, so a test that forgot `mockResolvedValue` fails,
 instead of passing on `undefined`. `mockReset: true` in `apps/backend/vitest.config.ts` brings
 that implementation back before every test, so one test's result never leaks into the next.
+
+A mock whose default is to accept, such as a client that sends, does nothing by default
+instead: `mockPostHogNode()` in `posthog/__mocks__/` and `mockCaptureError()` beside the
+request errors. A test reads what it was given from the spies; an override changes one for
+a whole file.
 
 ## Faker for data
 

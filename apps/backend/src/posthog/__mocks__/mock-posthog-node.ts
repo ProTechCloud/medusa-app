@@ -1,52 +1,82 @@
 import { vi } from "vitest";
 
-/** What the `PostHog` stand-in was built with and asked to capture, for a test to read. */
-export const created = vi.fn(
-	(_token: string, _options: unknown): void => undefined,
-);
-export const captureException = vi.fn(
-	(
-		_error: unknown,
-		_distinctId?: string,
-		_properties?: Record<string, unknown>,
-	): void => undefined,
-);
-export const captureExceptionImmediate = vi.fn(
-	async (
-		_error: unknown,
-		_distinctId?: string,
-		_properties?: Record<string, unknown>,
-	): Promise<void> => undefined,
-);
-export const shutdown = vi.fn(async (): Promise<void> => undefined);
+type TProperties = Record<string, unknown>;
 
 /**
- * Stands in for `posthog-node`'s client, so a test sees what would be sent
+ * Stands in for the `posthog-node` module, so a test sees what would be sent
  * without a network. A test wires it with
- * `vi.mock("posthog-node", () => import(<this file>))`.
+ * `vi.mock("posthog-node", async () => (await import(<this file>)).mockPostHogNode())`
+ * and reads the spies from `await import("posthog-node")`, the copy the code
+ * under test got. Each spy defaults to doing nothing, as a client that
+ * accepted the event would; an override replaces one.
  */
-export class PostHog {
-	constructor(token: string, options: unknown) {
-		created(token, options);
+export function mockPostHogNode(
+	overrides: Partial<{
+		created: (token: string, options: unknown) => void;
+		captureException: (
+			error: unknown,
+			distinctId?: string,
+			properties?: TProperties,
+		) => void;
+		captureExceptionImmediate: (
+			error: unknown,
+			distinctId?: string,
+			properties?: TProperties,
+		) => Promise<void>;
+		shutdown: () => Promise<void>;
+	}> = {},
+) {
+	const spies = {
+		created: vi.fn(
+			overrides.created ??
+				((_token: string, _options: unknown): void => undefined),
+		),
+		captureException: vi.fn(
+			overrides.captureException ??
+				((
+					_error: unknown,
+					_distinctId?: string,
+					_properties?: TProperties,
+				): void => undefined),
+		),
+		captureExceptionImmediate: vi.fn(
+			overrides.captureExceptionImmediate ??
+				(async (
+					_error: unknown,
+					_distinctId?: string,
+					_properties?: TProperties,
+				): Promise<void> => undefined),
+		),
+		shutdown: vi.fn(
+			overrides.shutdown ?? (async (): Promise<void> => undefined),
+		),
+	};
+
+	class PostHog {
+		constructor(token: string, options: unknown) {
+			spies.created(token, options);
+		}
+
+		captureException(
+			error: unknown,
+			distinctId?: string,
+			properties?: TProperties,
+		): void {
+			spies.captureException(error, distinctId, properties);
+		}
+
+		captureExceptionImmediate(
+			error: unknown,
+			distinctId?: string,
+			properties?: TProperties,
+		): Promise<void> {
+			return spies.captureExceptionImmediate(error, distinctId, properties);
+		}
+
+		shutdown(): Promise<void> {
+			return spies.shutdown();
+		}
 	}
 
-	captureException(
-		error: unknown,
-		distinctId?: string,
-		properties?: Record<string, unknown>,
-	): void {
-		captureException(error, distinctId, properties);
-	}
-
-	captureExceptionImmediate(
-		error: unknown,
-		distinctId?: string,
-		properties?: Record<string, unknown>,
-	): Promise<void> {
-		return captureExceptionImmediate(error, distinctId, properties);
-	}
-
-	shutdown(): Promise<void> {
-		return shutdown();
-	}
+	return { ...spies, PostHog };
 }

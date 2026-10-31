@@ -2,7 +2,9 @@ import { faker } from "@faker-js/faker";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { generatePostHogEnv } from "@/posthog/__mocks__/generate-posthog-env";
 
-vi.mock("posthog-node", () => import("@/posthog/__mocks__/mock-posthog-node"));
+vi.mock("posthog-node", async () =>
+	(await import("@/posthog/__mocks__/mock-posthog-node")).mockPostHogNode(),
+);
 
 /**
  * `@/posthog` loaded fresh, so it parses an environment the test set, with
@@ -14,9 +16,9 @@ async function loadPostHog(env: Record<string, string | undefined>) {
 	return {
 		posthog: await import("@/posthog"),
 		// Through the mocked module itself, which is the copy `@/posthog` got.
-		client: (await import(
-			"posthog-node"
-		)) as unknown as typeof import("@/posthog/__mocks__/mock-posthog-node"),
+		client: (await import("posthog-node")) as unknown as ReturnType<
+			typeof import("@/posthog/__mocks__/mock-posthog-node").mockPostHogNode
+		>,
 	};
 }
 

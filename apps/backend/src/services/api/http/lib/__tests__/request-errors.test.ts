@@ -6,7 +6,9 @@ import { requestErrors } from "@/services/api/http/lib/request-errors";
 
 vi.mock("@/posthog", async (importOriginal) => ({
 	...(await importOriginal<typeof import("@/posthog")>()),
-	...(await import("@/services/api/http/lib/__mocks__/mock-capture-error")),
+	...(
+		await import("@/services/api/http/lib/__mocks__/mock-capture-error")
+	).mockCaptureError(),
 }));
 
 function appThatThrows(error: Error): Hono {
