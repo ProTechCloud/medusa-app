@@ -1,5 +1,5 @@
 import { faker } from "@faker-js/faker";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { generatePostHogEnv } from "@/posthog/__mocks__/generate-posthog-env";
 
 vi.mock("posthog-node", () => import("@/posthog/__mocks__/mock-posthog-node"));
@@ -20,8 +20,27 @@ async function loadPostHog(env: Record<string, string | undefined>) {
 	};
 }
 
+// vitest listens for rejections itself. Every test notes the listeners there
+// before it, so the ones `initPostHog` adds are found, fired when a test
+// needs to, and removed before the next test, whichever test added them.
+let before: NodeJS.UnhandledRejectionListener[] = [];
+
+function addedListeners(): NodeJS.UnhandledRejectionListener[] {
+	return process
+		.listeners("unhandledRejection")
+		.filter((listener) => !before.includes(listener));
+}
+
+beforeEach(() => {
+	before = process.listeners("unhandledRejection");
+});
+
 afterEach(() => {
+	for (const listener of addedListeners()) {
+		process.off("unhandledRejection", listener);
+	}
 	vi.unstubAllEnvs();
+	vi.restoreAllMocks();
 });
 
 describe("captureError", () => {
@@ -104,20 +123,6 @@ describe("initPostHog", () => {
 });
 
 describe("an unhandled rejection", () => {
-	// vitest listens for rejections too; only the listener initPostHog adds is
-	// fired and then removed.
-	let added: NodeJS.UnhandledRejectionListener[] = [];
-
-	function fireAddedListeners(reason: unknown): void {
-		for (const listener of added) listener(reason, Promise.resolve());
-	}
-
-	afterEach(() => {
-		for (const listener of added) process.off("unhandledRejection", listener);
-		added = [];
-		vi.restoreAllMocks();
-	});
-
 	it("is reported to PostHog, and then the process exits with 1, as Bun would have", async () => {
 		const exit = vi
 			.spyOn(process, "exit")
@@ -125,14 +130,12 @@ describe("an unhandled rejection", () => {
 		const { posthog, client } = await loadPostHog(
 			generatePostHogEnv({ POSTHOG_ERRORS: "true" }),
 		);
-		const before = process.listeners("unhandledRejection");
 		posthog.initPostHog();
-		added = process
-			.listeners("unhandledRejection")
-			.filter((listener) => !before.includes(listener));
 		const reason = new Error(faker.lorem.sentence());
 
-		fireAddedListeners(reason);
+		for (const listener of addedListeners()) {
+			listener(reason, Promise.resolve());
+		}
 		await vi.waitFor(() => expect(exit).toHaveBeenCalledWith(1));
 
 		expect(client.captureExceptionImmediate).toHaveBeenCalledWith(
@@ -149,11 +152,9 @@ describe("an unhandled rejection", () => {
 		const { posthog } = await loadPostHog(
 			generatePostHogEnv({ POSTHOG_PROJECT_TOKEN: undefined }),
 		);
-		const before = process.listeners("unhandledRejection").length;
-
 		posthog.initPostHog();
 
-		expect(process.listeners("unhandledRejection")).toHaveLength(before);
+		expect(addedListeners()).toEqual([]);
 	});
 });
 
