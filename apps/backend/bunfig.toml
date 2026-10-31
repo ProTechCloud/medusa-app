@@ -1,0 +1,3 @@
+# Starts OpenTelemetry before the API's own modules load, so its providers
+# are registered when the first tracer or logger is asked for.
+preload = ["./src/opentelemetry/index.ts"]

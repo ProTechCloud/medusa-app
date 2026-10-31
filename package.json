@@ -31,5 +31,8 @@
 		"istanbul-lib-coverage": "^3.2.2",
 		"turbo": "^2.11.10",
 		"typescript": "~6.0.3"
+	},
+	"resolutions": {
+		"@opentelemetry/api": "1.9.1"
 	}
 }

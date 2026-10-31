@@ -3,12 +3,12 @@ import { buildHttp } from "@/services/api/http";
 import { generateVersion } from "@/services/api/http/routes/version/__mocks__/generate-version";
 import { loadVersionUseCase } from "@/use-cases/cases/load-version.use-case";
 
-vi.mock(
-	"@/use-cases/cases/load-version.use-case",
-	() =>
-		import(
+vi.mock("@/use-cases/cases/load-version.use-case", async () =>
+	(
+		await import(
 			"@/services/api/http/routes/version/__mocks__/mock-load-version-use-case"
-		),
+		)
+	).mockLoadVersionUseCase(),
 );
 
 describe("GET /version", () => {

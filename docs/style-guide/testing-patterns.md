@@ -40,6 +40,24 @@ export function mockCreateUserUseCase(overrides = {}) {
 }
 ```
 
+When the mock replaces a whole module, `vi.mock` (`jest.mock` in the native app) calls the
+factory, and the test reads the spies through the mocked module itself. Every spy is a fresh
+`vi.fn` whose implementation is the default or the override, so it is a spy either way. From
+`apps/backend/src/services/api/http/routes/version/__tests__/index.test.ts`:
+
+```ts
+vi.mock("@/use-cases/cases/load-version.use-case", async () =>
+	(
+		await import(
+			"@/services/api/http/routes/version/__mocks__/mock-load-version-use-case"
+		)
+	).mockLoadVersionUseCase(),
+);
+
+// the test sets the result through the mocked module
+vi.mocked(loadVersionUseCase).mockResolvedValue(generateVersion());
+```
+
 ## Anti-pattern: an inline mock
 
 ```ts

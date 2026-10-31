@@ -16,7 +16,11 @@ ENV COREPACK_ENABLE_DOWNLOAD_PROMPT=0
 RUN corepack enable
 COPY package.json yarn.lock .yarnrc.yml ./
 COPY apps/backend/package.json apps/backend/
-RUN yarn workspaces focus @medusa/backend --production
+RUN yarn workspaces focus @medusa/backend --production \
+  # Bun runs the TypeScript source, so error reports name src/*.ts files and
+  # lines without a source map; the packages' own maps would only make the
+  # image bigger and give a frame a second, wrong place to point.
+  && find node_modules -name '*.map' -type f -delete
 
 # ---- runtime ----
 FROM oven/bun:1.4.4-alpine@sha256:4cf82f5686b196504fe119db3fcd9185b191f82ece82c40680e597228ec6070a AS runtime
@@ -35,7 +39,9 @@ ENV APP_VERSION=$APP_VERSION \
 # node_modules by walking up from apps/backend, as it does locally.
 COPY --from=deps /app/node_modules ./node_modules
 COPY tsconfig.json ./
-COPY apps/backend/package.json apps/backend/tsconfig.json apps/backend/
+# bunfig.toml preloads OpenTelemetry; the app runs from apps/backend, where
+# Bun reads it.
+COPY apps/backend/package.json apps/backend/tsconfig.json apps/backend/bunfig.toml apps/backend/
 COPY apps/backend/src apps/backend/src
 
 WORKDIR /app/apps/backend
