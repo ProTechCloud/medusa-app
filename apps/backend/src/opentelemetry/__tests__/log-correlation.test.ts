@@ -46,10 +46,10 @@ describe("correlationFields", () => {
 			return correlationFields();
 		});
 
-		expect(fields).toEqual({ correlationId });
+		expect(fields).toEqual({ correlation_id: correlationId });
 	});
 
-	it("adds the trace and span of the span that is recording", () => {
+	it("uses the trace ID as the correlation ID inside a trace, under OpenTelemetry's names", () => {
 		const correlationId = faker.string.uuid();
 		const span = generateSpanContext();
 
@@ -58,9 +58,10 @@ describe("correlationFields", () => {
 		);
 
 		expect(fields).toEqual({
-			correlationId,
-			traceId: span.traceId,
-			spanId: span.spanId,
+			correlation_id: span.traceId,
+			trace_id: span.traceId,
+			span_id: span.spanId,
+			trace_flags: "01",
 		});
 	});
 

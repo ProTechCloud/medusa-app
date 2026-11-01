@@ -1,7 +1,14 @@
 import { faker } from "@faker-js/faker";
+import { context } from "@opentelemetry/api";
+import { AsyncLocalStorageContextManager } from "@opentelemetry/context-async-hooks";
+import {
+	BasicTracerProvider,
+	InMemorySpanExporter,
+	SimpleSpanProcessor,
+} from "@opentelemetry/sdk-trace-base";
 import { Hono } from "hono";
-import { describe, expect, it } from "vitest";
-import { requestIdentityLogFields } from "@/posthog";
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { requestIdentityLogFields, withRequestIdentity } from "@/posthog";
 import {
 	readRequestIdentity,
 	requestIdentity,
@@ -83,7 +90,41 @@ describe("requestIdentity", () => {
 
 		expect(await response.json()).toEqual({
 			posthogDistinctId: distinctId,
-			posthogSessionId: sessionId,
+			sessionId,
+		});
+	});
+});
+
+describe("withRequestIdentity", () => {
+	const exporter = new InMemorySpanExporter();
+	const tracer = new BasicTracerProvider({
+		spanProcessors: [new SimpleSpanProcessor(exporter)],
+	}).getTracer("test");
+
+	beforeAll(() => {
+		context.setGlobalContextManager(
+			new AsyncLocalStorageContextManager().enable(),
+		);
+	});
+
+	afterAll(() => {
+		context.disable();
+	});
+
+	it("marks the request's span with the names PostHog links to the person and the replay", () => {
+		const identity = {
+			distinctId: faker.string.uuid(),
+			sessionId: generateSessionId(),
+		};
+
+		tracer.startActiveSpan("request", (span) => {
+			withRequestIdentity(identity, () => undefined);
+			span.end();
+		});
+
+		expect(exporter.getFinishedSpans()[0]?.attributes).toEqual({
+			posthogDistinctId: identity.distinctId,
+			sessionId: identity.sessionId,
 		});
 	});
 });

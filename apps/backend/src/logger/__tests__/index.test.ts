@@ -54,9 +54,9 @@ describe("createLogger", () => {
 		);
 
 		expect(lines()[0]).toMatchObject({
-			correlationId,
+			correlation_id: correlationId,
 			posthogDistinctId: identity.distinctId,
-			posthogSessionId: identity.sessionId,
+			sessionId: identity.sessionId,
 		});
 	});
 

@@ -1,4 +1,5 @@
 import { AsyncLocalStorage } from "node:async_hooks";
+import { trace } from "@opentelemetry/api";
 import { PostHog } from "posthog-node";
 import { correlationFields } from "@/opentelemetry/lib/log-correlation";
 import { parsePostHogConfig, type TPostHogConfig } from "./lib/config";
@@ -17,8 +18,7 @@ let client: PostHog | null | undefined;
 
 /**
  * The PostHog client that reports errors, built on the first call. Null
- * without a token or with errors switched off. `enableExceptionAutocapture`
- * also reports an exception nothing caught.
+ * without a token or with errors switched off.
  */
 function getClient(): PostHog | null {
 	if (client !== undefined) return client;
@@ -27,7 +27,10 @@ function getClient(): PostHog | null {
 		posthog?.errors === true
 			? new PostHog(posthog.token, {
 					host: posthog.host,
-					enableExceptionAutocapture: true,
+					// Off: the process's crash handler, in shared/shutdown.ts,
+					// reports with `captureErrorNow` and flushes before it exits,
+					// which posthog-node's own handler does not.
+					enableExceptionAutocapture: false,
 					maxQueueSize: posthog.maxQueueSize,
 					flushAt: posthog.flushAt,
 					flushInterval: posthog.flushIntervalMs,
@@ -36,72 +39,53 @@ function getClient(): PostHog | null {
 	return client;
 }
 
-let watchingRejections = false;
-
-// How long a fatal rejection waits for PostHog before the process exits
-// anyway: an unreachable PostHog must not keep a broken process serving.
-const REPORT_BEFORE_EXIT_MS = 3000;
-
 /**
- * Build the error client now, before the server serves: its exception
- * autocapture watches for what nothing catches only from the moment it
- * exists. Does nothing without a token or with errors switched off.
- *
- * It also reports an unhandled rejection. posthog-node expects Node's
- * default, which turns one into an `uncaughtException`; Bun does not, and
- * exits without a word to either listener. Once a listener is added the
- * process would no longer exit, so this one reports the rejection, waits for
- * PostHog to take it, for `REPORT_BEFORE_EXIT_MS` at most, and then exits
- * with 1, as Bun would have.
+ * Build the error client now, before the server serves, so the first error
+ * report does not wait on it. Does nothing without a token or with errors
+ * switched off.
  */
 export function initPostHog(): void {
-	const posthog = getClient();
-	if (!posthog || watchingRejections) return;
-	watchingRejections = true;
-	process.on("unhandledRejection", (reason) => {
-		void reportAndExit(posthog, reason);
-	});
-}
-
-async function reportAndExit(posthog: PostHog, reason: unknown): Promise<void> {
-	try {
-		await Promise.race([
-			posthog.captureExceptionImmediate(
-				reason,
-				identity.getStore()?.distinctId,
-				errorProperties(),
-			),
-			new Promise((resolve) => setTimeout(resolve, REPORT_BEFORE_EXIT_MS)),
-		]);
-	} finally {
-		process.exit(1);
-	}
+	getClient();
 }
 
 const identity = new AsyncLocalStorage<TRequestIdentity>();
 
 /**
- * Run `fn` as the app's PostHog user and session that sent the request, so
- * its logs and errors link to the session replay. No user is identified yet:
- * the IDs are the app's anonymous ones.
+ * The request's PostHog IDs under the names PostHog links on a span or a log
+ * record: `posthogDistinctId` to the person, `sessionId` to the session
+ * replay. Empty outside a request or when the app sent none.
+ */
+function identityAttributes(requestIdentity: TRequestIdentity | undefined): {
+	posthogDistinctId?: string;
+	sessionId?: string;
+} {
+	const fields: { posthogDistinctId?: string; sessionId?: string } = {};
+	if (requestIdentity?.distinctId)
+		fields.posthogDistinctId = requestIdentity.distinctId;
+	if (requestIdentity?.sessionId) fields.sessionId = requestIdentity.sessionId;
+	return fields;
+}
+
+/**
+ * Run `fn` as the app's PostHog user and session that sent the request, and
+ * mark the request's span with them, so its trace, its log lines and its
+ * errors link to the person and the session replay. No user is identified
+ * yet: the IDs are the app's anonymous ones.
  */
 export function withRequestIdentity<TResult>(
 	requestIdentity: TRequestIdentity,
 	fn: () => TResult,
 ): TResult {
+	trace.getActiveSpan()?.setAttributes(identityAttributes(requestIdentity));
 	return identity.run(requestIdentity, fn);
 }
 
-/** The request's PostHog IDs as log fields. Empty outside a request or when the app sent none. */
+/** The request's PostHog IDs as log fields, named as on the span. */
 export function requestIdentityLogFields(): {
 	posthogDistinctId?: string;
-	posthogSessionId?: string;
+	sessionId?: string;
 } {
-	const current = identity.getStore();
-	const fields: { posthogDistinctId?: string; posthogSessionId?: string } = {};
-	if (current?.distinctId) fields.posthogDistinctId = current.distinctId;
-	if (current?.sessionId) fields.posthogSessionId = current.sessionId;
-	return fields;
+	return identityAttributes(identity.getStore());
 }
 
 /**
@@ -113,6 +97,21 @@ export function captureError(error: unknown): void {
 	const posthog = getClient();
 	if (!posthog) return;
 	posthog.captureException(
+		error,
+		identity.getStore()?.distinctId,
+		errorProperties(),
+	);
+}
+
+/**
+ * Report an error that is about to end the process, and resolve once PostHog
+ * has it, so the crash handler can exit after. Resolves at once without a
+ * client.
+ */
+export async function captureErrorNow(error: unknown): Promise<void> {
+	const posthog = getClient();
+	if (!posthog) return;
+	await posthog.captureExceptionImmediate(
 		error,
 		identity.getStore()?.distinctId,
 		errorProperties(),

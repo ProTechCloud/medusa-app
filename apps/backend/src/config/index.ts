@@ -1,4 +1,8 @@
 import { z } from "zod";
+import {
+	currentEntryPoint,
+	serviceNameFromEntryPoint,
+} from "@/opentelemetry/lib/resource";
 import { envVar, parseEnv, portSchema } from "@/shared/env";
 
 const ENVIRONMENTS = ["local", "stg", "prd"] as const;
@@ -13,23 +17,13 @@ const schema = z.object({
 	OTEL_SERVICE_NAME: envVar.optional(),
 });
 
-// An entry point lives at src/services/<name>/index.ts, and <name> is the
-// service: src/services/api/index.ts runs `api`.
-const ENTRY_POINT = /\/src\/services\/([a-z0-9-]+)\/index\.ts$/;
-
-/** The file the process was started with: under Bun its entry point, else the script node ran. */
-function currentEntryPoint(): string {
-	return typeof Bun === "undefined" ? (process.argv[1] ?? "") : Bun.main;
-}
-
 /**
  * The service's name, which `/version`, every log line and every trace carry:
  * `OTEL_SERVICE_NAME` when set, else the folder of the entry point under
- * `src/services/`.
+ * `src/services/`, as `readServiceIdentity` reads it.
  */
 function serviceName(override: string | undefined, entryPoint: string): string {
-	if (override) return override;
-	const name = ENTRY_POINT.exec(entryPoint)?.[1];
+	const name = override ?? serviceNameFromEntryPoint(entryPoint);
 	if (!name) {
 		throw new Error(
 			`Cannot name the service from ${entryPoint}: run src/services/<name>/index.ts or set OTEL_SERVICE_NAME.`,

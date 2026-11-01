@@ -1,8 +1,8 @@
 import pino, { type DestinationStream, type Level, type Logger } from "pino";
 import { z } from "zod";
-import { getConfig } from "@/config";
 import { correlationFields } from "@/opentelemetry/lib/log-correlation";
 import { createLogRecordStream } from "@/opentelemetry/lib/log-record-stream";
+import { readServiceIdentity } from "@/opentelemetry/lib/resource";
 import { getPostHogConfig, requestIdentityLogFields } from "@/posthog";
 import { parseEnv } from "@/shared/env";
 
@@ -10,16 +10,16 @@ const LEVELS = ["fatal", "error", "warn", "info", "debug", "trace"] as const;
 
 const schema = z.object({
 	LOG_LEVEL: z.enum([...LEVELS, "silent"]).default("info"),
-	// `pretty` is for a terminal; pino-pretty is a dev dependency, so the image
-	// sets NODE_ENV=production and only ever logs JSON, which Cloud Logging
-	// parses into fields.
-	LOG_FORMAT: z.enum(["json", "pretty"]).optional(),
-	NODE_ENV: z.string().optional(),
+	// `pretty` is for a terminal, asked for in .env.local; pino-pretty is a dev
+	// dependency, so anything else, the image included, logs JSON, which Cloud
+	// Logging parses into fields.
+	LOG_FORMAT: z.enum(["json", "pretty"]).default("json"),
 	// Lines to stdout, for Cloud Logging and a terminal. Off only where
 	// PostHog alone should have them.
 	LOG_STDOUT: z.stringbool().default(true),
-	// The lowest level sent to PostHog, when it receives logs at all.
-	LOG_POSTHOG_LEVEL: z.enum(LEVELS).default("warn"),
+	// The lowest level sent to PostHog, when it receives logs at all; unset, the
+	// same as stdout's.
+	LOG_POSTHOG_LEVEL: z.enum([...LEVELS, "silent"]).optional(),
 });
 
 // Every field whose value could be a credential or a person: the names
@@ -66,12 +66,13 @@ export function createLogger(options: {
 	);
 }
 
-// Parsed at import, before anything can log.
+// Parsed at import, before anything can log. The config is not: a bad
+// environment must reach `start()`, which names it in one line, so the
+// service's identity is read from the environment as it is.
 const env = parseEnv(schema, process.env);
-const config = getConfig();
-const format =
-	env.LOG_FORMAT ?? (env.NODE_ENV === "production" ? "json" : "pretty");
+const identity = readServiceIdentity(process.env);
 const posthog = getPostHogConfig();
+const posthogLevel = env.LOG_POSTHOG_LEVEL ?? env.LOG_LEVEL;
 
 const streams: Array<{ level: Level; stream: DestinationStream }> = [];
 if (env.LOG_STDOUT && env.LOG_LEVEL !== "silent") {
@@ -83,15 +84,15 @@ if (env.LOG_STDOUT && env.LOG_LEVEL !== "silent") {
 	streams.push({
 		level: env.LOG_LEVEL,
 		stream:
-			format === "pretty"
+			env.LOG_FORMAT === "pretty"
 				? (await import("pino-pretty")).default({ sync: true })
 				: pino.destination({ dest: 1, sync: true }),
 	});
 }
-if (posthog?.logs) {
+if (posthog?.logs && posthogLevel !== "silent") {
 	streams.push({
-		level: env.LOG_POSTHOG_LEVEL,
-		stream: createLogRecordStream(config.service),
+		level: posthogLevel,
+		stream: createLogRecordStream(identity.service),
 	});
 }
 
@@ -109,21 +110,19 @@ const lowest = streams.reduce<Level | "silent">(
 /** The process logger. */
 export const logger: Logger = createLogger({
 	base: {
-		service: config.service,
-		environment: config.environment,
-		version: config.version,
+		service: identity.service,
+		environment: identity.environment,
+		version: identity.version,
 	},
 	streams,
 	level: lowest,
 });
 
 /**
- * Write the exception that is about to end the process, before Node or Bun
- * prints it and exits, so the last line in the logs, and in PostHog, says
- * why.
+ * Write the exception or rejection that is about to end the process, so the
+ * last line in the logs, and in PostHog, says why. The crash handler in
+ * shared/shutdown.ts calls it, before it flushes and exits.
  */
-function logCrash(error: Error, origin: string): void {
+export function logCrash(error: unknown, origin: string): void {
 	logger.fatal({ err: error, origin }, "crashed");
 }
-
-process.on("uncaughtExceptionMonitor", logCrash);

@@ -2,7 +2,7 @@ import { Hono } from "hono";
 import { getConfig } from "@/config";
 import { logger } from "@/logger";
 import { initPostHog } from "@/posthog";
-import { stopOnSignal } from "@/shared/shutdown";
+import { exitOnCrash, stopOnSignal } from "@/shared/shutdown";
 import { initUseCaseContext } from "@/use-cases";
 import { buildHttp } from "./http";
 import { HEALTH_PATH } from "./http/lib/health-path";
@@ -50,9 +50,11 @@ async function start(): Promise<void> {
 		config: getConfig(),
 		logger,
 	}));
-	// Before the port opens, so an exception nothing catches is reported from
-	// the first request on.
+	// Before the port opens: the error client is built, and an exception or a
+	// rejection nothing catches is reported, flushed and fatal from the first
+	// request on.
 	initPostHog();
+	exitOnCrash();
 
 	const server = Bun.serve({
 		hostname: "0.0.0.0",

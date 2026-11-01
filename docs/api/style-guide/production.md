@@ -33,9 +33,14 @@ Paths below are under `apps/backend/src/` unless they start at the repository ro
 - **Structured, one JSON object per line.** `logger/index.ts` writes every line with `time`
   in ISO 8601 UTC, `level` by name, and `service`, `environment` and `version`, so Cloud
   Logging reads them into fields.
-- **Every line of a request carries its correlation ID**, `cf-ray` when the request came
-  through Cloudflare, and the app's PostHog distinct and session IDs when it sent them, and
-  the trace and span when one is recording.
+- **One ID finds a request everywhere.** Every line of a request carries OpenTelemetry's
+  log-correlation fields, `trace_id`, `span_id` and `trace_flags`, and `correlation_id`,
+  which is the trace ID inside a trace, so the same ID finds the request in stdout, in
+  PostHog's logs and traces, and in an error report. Only with tracing off is
+  `correlation_id` the request's own ID: Cloudflare's `cf-ray` when it has Cloudflare's
+  shape (`^[0-9a-f]{16}-[A-Z]{3}$`), else a new UUID.
+- **Lines link to the app's person and session** when it sent them: `posthogDistinctId` and
+  `sessionId`, the names PostHog matches to a person and a session replay.
 - **Every request is logged with method, path, status and duration**, by `requestLogger` in
   `services/api/http/lib/request-logger.ts`, after the response: a 5xx as `error`, a 4xx as
   `warn`. The health probe is not logged.
@@ -54,16 +59,29 @@ the variables.
 - **Traces over OpenTelemetry.** Bun preloads `opentelemetry/index.ts` (`bunfig.toml`), which
   starts the NodeSDK before the API loads, with OTLP exporters to PostHog and no automatic
   instrumentation. Each request is one server span (`requestTracing`, from `@hono/otel`),
-  with every query value in `url.full` replaced by `REDACTED`; each use case is a span
-  under it, `use-case <name>`, marked with `error.type` when it fails. The health probe gets
-  no span.
-- **Log lines** go to stdout and, from `LOG_POSTHOG_LEVEL` up, to PostHog's logs, tied to
-  the span they were written in.
+  with every query value in `url.full` replaced by `REDACTED`, and with `posthogDistinctId`
+  and `sessionId` when the app sent them, so the trace links to the person and the replay;
+  each use case is a span under it, `use-case <name>`, marked with `error.type` when it
+  fails. The health probe gets no span. Neither the preload nor the logger parses the
+  config: they read the service's identity from the environment as it is
+  (`readServiceIdentity` in `opentelemetry/lib/resource.ts`), so a bad environment still
+  reaches `start()` and stops the boot in one line.
+- **Log lines** go to stdout and, from `LOG_POSTHOG_LEVEL` up (`LOG_LEVEL` unless set), to
+  PostHog's logs, tied to the span they were written in.
 - **Errors** reach PostHog's error tracking through `captureError` in `posthog/index.ts`,
   with the trace, correlation and session IDs. Bun runs the TypeScript source, so every frame
   names a `src/*.ts` file and line; the image carries no source map.
-- **Nothing is lost at shutdown.** `stopOnSignal` stops the server, then
-  `shared/flush-telemetry.ts` sends what is still queued before the process exits.
+- **A crash is reported, flushed and fatal.** `exitOnCrash` in `shared/shutdown.ts` owns
+  `uncaughtException` and `unhandledRejection`: it writes the `crashed` line, reports the
+  error with `captureErrorNow`, sends the open spans and queued log records, then exits with
+  1. posthog-node's own handler is off (`enableExceptionAutocapture: false`): it exits
+  without flushing the SDK. Bun needs the rejection listener too, since it does not turn an
+  unhandled rejection into an `uncaughtException` as Node does.
+- **Every flush is bounded.** `stopOnSignal` stops the server, then sends what is still
+  queued; it and the crash handler wait `FLUSH_TIMEOUT_MS` (3 s) at most, in
+  `shared/flush-telemetry.ts`, and say so on stderr when they give up. `docker stop` kills
+  the container 10 s after SIGTERM, and an unreachable PostHog would hold the exporters
+  longer than that.
 
 ## Liveness
 

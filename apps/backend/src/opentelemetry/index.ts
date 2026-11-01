@@ -1,5 +1,4 @@
 import type { NodeSDK } from "@opentelemetry/sdk-node";
-import { getConfig } from "@/config";
 import { getPostHogConfig } from "@/posthog";
 import { enableDiagnostics } from "./lib/diagnostics";
 
@@ -21,7 +20,7 @@ async function startTelemetry(): Promise<void> {
 	const [
 		{ NodeSDK },
 		{ buildSdkConfiguration },
-		{ buildResource },
+		{ buildResource, readServiceIdentity },
 		{ createSampler, parseSamplerRatio },
 		{ parseBatchConfig },
 	] = await Promise.all([
@@ -35,7 +34,7 @@ async function startTelemetry(): Promise<void> {
 	sdk = new NodeSDK(
 		buildSdkConfiguration({
 			posthog,
-			resource: buildResource(getConfig()),
+			resource: buildResource(readServiceIdentity(process.env)),
 			sampler: createSampler(parseSamplerRatio(process.env)),
 			batch: parseBatchConfig(process.env),
 		}),
