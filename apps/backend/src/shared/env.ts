@@ -12,6 +12,12 @@ export const portSchema = z.coerce
 	.min(1, "must be between 1 and 65535")
 	.max(65535, "must be between 1 and 65535");
 
+/** A count or a duration: a whole number above zero, from the string the environment holds. */
+export const positiveIntSchema = z.coerce
+	.number()
+	.int("must be a whole number")
+	.positive("must be above zero");
+
 function isBlank(value: string | undefined): boolean {
 	return value === undefined || value.trim() === "";
 }

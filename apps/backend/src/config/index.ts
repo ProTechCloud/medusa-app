@@ -1,4 +1,8 @@
 import { z } from "zod";
+import {
+	currentEntryPoint,
+	serviceNameFromEntryPoint,
+} from "@/opentelemetry/lib/resource";
 import { envVar, parseEnv, portSchema } from "@/shared/env";
 
 const ENVIRONMENTS = ["local", "stg", "prd"] as const;
@@ -9,7 +13,24 @@ const schema = z.object({
 	// Baked into the image by the deploy; a local run has no build to name.
 	APP_VERSION: envVar.default("dev"),
 	APP_COMMIT: envVar.default("local"),
+	// Names the service when its entry point does not, or overrides it.
+	OTEL_SERVICE_NAME: envVar.optional(),
 });
+
+/**
+ * The service's name, which `/version`, every log line and every trace carry:
+ * `OTEL_SERVICE_NAME` when set, else the folder of the entry point under
+ * `src/services/`, as `readServiceIdentity` reads it.
+ */
+function serviceName(override: string | undefined, entryPoint: string): string {
+	const name = override ?? serviceNameFromEntryPoint(entryPoint);
+	if (!name) {
+		throw new Error(
+			`Cannot name the service from ${entryPoint}: run src/services/<name>/index.ts or set OTEL_SERVICE_NAME.`,
+		);
+	}
+	return name;
+}
 
 export type TConfig = {
 	service: string;
@@ -19,11 +40,17 @@ export type TConfig = {
 	commit: string;
 };
 
-/** Parse a config from an environment. `getConfig()` calls it once with the process's. */
-export function buildConfig(env: Record<string, string | undefined>): TConfig {
+/**
+ * Parse a config from an environment and the entry point the process ran.
+ * `getConfig()` calls it once with the process's.
+ */
+export function buildConfig(
+	env: Record<string, string | undefined>,
+	entryPoint: string = currentEntryPoint(),
+): TConfig {
 	const parsed = parseEnv(schema, env);
 	return {
-		service: "medusa-backend",
+		service: serviceName(parsed.OTEL_SERVICE_NAME, entryPoint),
 		environment: parsed.APP_ENV,
 		port: parsed.PORT,
 		version: parsed.APP_VERSION,
