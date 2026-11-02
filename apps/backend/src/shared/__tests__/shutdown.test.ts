@@ -2,7 +2,7 @@ import { faker } from "@faker-js/faker";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { logCrash } from "@/logger";
 import { captureErrorNow } from "@/posthog";
-import { flushTelemetry } from "@/shared/flush-telemetry";
+import { FLUSH_TIMEOUT_MS, flushTelemetry } from "@/shared/flush-telemetry";
 import { exitOnCrash } from "@/shared/shutdown";
 
 vi.mock("@/logger", async (importOriginal) => ({
@@ -66,7 +66,7 @@ describe("exitOnCrash", () => {
 		{ event: "uncaughtException" as const, origin: "uncaughtException" },
 		{ event: "unhandledRejection" as const, origin: "unhandledRejection" },
 	])(
-		"an $event writes the fatal line, reports it, flushes, then exits with 1",
+		"an $event writes the fatal line, flushes, reports it, then exits with 1",
 		async ({ event, origin }) => {
 			const exit = vi
 				.spyOn(process, "exit")
@@ -80,7 +80,7 @@ describe("exitOnCrash", () => {
 			expect(logCrash).toHaveBeenCalledWith(error, origin);
 			expect(captureErrorNow).toHaveBeenCalledWith(error);
 			expect(flushTelemetry).toHaveBeenCalledTimes(1);
-			const order = [logCrash, captureErrorNow, flushTelemetry].map(
+			const order = [logCrash, flushTelemetry, captureErrorNow].map(
 				(spy) => vi.mocked(spy).mock.invocationCallOrder[0] ?? 0,
 			);
 			expect(order).toEqual([...order].sort((first, second) => first - second));
@@ -124,9 +124,11 @@ describe("exitOnCrash", () => {
 		expect(exit).toHaveBeenCalledWith(1);
 	});
 
-	it("starts the flush without waiting for a report that never ends", async () => {
+	it("starts the flush without waiting for a report that never ends, and still exits", async () => {
 		vi.useFakeTimers();
-		vi.spyOn(process, "exit").mockImplementation(() => undefined as never);
+		const exit = vi
+			.spyOn(process, "exit")
+			.mockImplementation(() => undefined as never);
 		vi.spyOn(process.stderr, "write").mockImplementation(() => true);
 		vi.mocked(captureErrorNow).mockReturnValue(new Promise(() => undefined));
 		exitOnCrash();
@@ -136,5 +138,7 @@ describe("exitOnCrash", () => {
 		}
 
 		expect(flushTelemetry).toHaveBeenCalledTimes(1);
+		await vi.advanceTimersByTimeAsync(FLUSH_TIMEOUT_MS);
+		expect(exit).toHaveBeenCalledWith(1);
 	});
 });

@@ -43,8 +43,11 @@ export function exitOnCrash(): void {
 async function crash(error: unknown, origin: string): Promise<void> {
 	try {
 		logCrash(error, origin);
+		// Together, so a report that stalls holds back nothing else in the time
+		// there is. The flush goes first: once the report is in flight, the
+		// PostHog client sends nothing else until it ends.
 		await withinFlushTimeout(
-			flushTelemetry(captureErrorNow(error).catch(() => undefined)),
+			Promise.allSettled([flushTelemetry(), captureErrorNow(error)]),
 		);
 	} finally {
 		process.exit(1);

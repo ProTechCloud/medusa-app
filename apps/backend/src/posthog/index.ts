@@ -127,7 +127,16 @@ function errorProperties(): Record<string, string> {
 	};
 }
 
-/** Send what is queued and stop the client. Resolves at once when there is none. */
+/**
+ * Send what is queued and stop the client. Resolves at once when there is
+ * none. `shutdown` waits for a report in flight before it drains the queue,
+ * so the queue is flushed first, beside it: a report that stalls must not
+ * hold back the errors captured before it.
+ */
 export async function shutdownPostHog(): Promise<void> {
-	if (client) await client.shutdown();
+	if (!client) return;
+	const results = await Promise.allSettled([client.flush(), client.shutdown()]);
+	for (const result of results) {
+		if (result.status === "rejected") throw result.reason;
+	}
 }

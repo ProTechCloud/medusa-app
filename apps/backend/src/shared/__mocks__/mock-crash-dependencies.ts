@@ -13,7 +13,7 @@ export function mockCrashDependencies(
 	overrides: Partial<{
 		logCrash: (error: unknown, origin: string) => void;
 		captureErrorNow: (error: unknown) => Promise<void>;
-		flushTelemetry: (lastReport?: Promise<unknown>) => Promise<void>;
+		flushTelemetry: () => Promise<void>;
 		shutdownTelemetry: () => Promise<void>;
 		shutdownPostHog: () => Promise<void>;
 	}> = {},
@@ -28,8 +28,7 @@ export function mockCrashDependencies(
 				(async (_error: unknown): Promise<void> => undefined),
 		),
 		flushTelemetry: vi.fn(
-			overrides.flushTelemetry ??
-				(async (_lastReport?: Promise<unknown>): Promise<void> => undefined),
+			overrides.flushTelemetry ?? (async (): Promise<void> => undefined),
 		),
 		shutdownTelemetry: vi.fn(
 			overrides.shutdownTelemetry ?? (async (): Promise<void> => undefined),

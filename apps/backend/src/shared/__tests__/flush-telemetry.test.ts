@@ -57,21 +57,12 @@ describe("withinFlushTimeout", () => {
 });
 
 describe("flushTelemetry", () => {
-	it("flushes the SDK at once, and stops the PostHog client only after the last report", async () => {
-		let finishReport: () => void = () => undefined;
-		const lastReport = new Promise<void>((resolve) => {
-			finishReport = resolve;
-		});
+	it("starts both at once, so one that stalls holds back nothing", async () => {
+		vi.mocked(shutdownTelemetry).mockReturnValue(new Promise(() => undefined));
 
-		const flushed = flushTelemetry(lastReport);
-		await Promise.resolve();
+		void flushTelemetry();
 
 		expect(shutdownTelemetry).toHaveBeenCalledTimes(1);
-		expect(shutdownPostHog).not.toHaveBeenCalled();
-
-		finishReport();
-		await flushed;
-
 		expect(shutdownPostHog).toHaveBeenCalledTimes(1);
 	});
 

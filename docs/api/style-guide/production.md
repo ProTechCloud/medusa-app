@@ -72,9 +72,9 @@ the variables.
   with the trace, correlation and session IDs. Bun runs the TypeScript source, so every frame
   names a `src/*.ts` file and line; the image carries no source map.
 - **A crash is reported, flushed and fatal.** `exitOnCrash` in `shared/shutdown.ts` owns
-  `uncaughtException` and `unhandledRejection`: it writes the `crashed` line, reports the
-  error with `captureErrorNow`, sends the open spans and queued log records, then exits with
-  1. posthog-node's own handler is off (`enableExceptionAutocapture: false`): it exits
+  `uncaughtException` and `unhandledRejection`: it writes the `crashed` line, sends the open
+  spans, queued log records and queued errors, reports the error with `captureErrorNow`
+  beside them, so a report that stalls holds back nothing else, then exits with 1. posthog-node's own handler is off (`enableExceptionAutocapture: false`): it exits
   without flushing the SDK. Bun needs the rejection listener too, since it does not turn an
   unhandled rejection into an `uncaughtException` as Node does.
 - **Every flush is bounded.** `stopOnSignal` stops the server, then sends what is still

@@ -23,6 +23,7 @@ export function mockPostHogNode(
 			distinctId?: string,
 			properties?: TProperties,
 		) => Promise<void>;
+		flush: () => Promise<void>;
 		shutdown: () => Promise<void>;
 	}> = {},
 ) {
@@ -47,6 +48,7 @@ export function mockPostHogNode(
 					_properties?: TProperties,
 				): Promise<void> => undefined),
 		),
+		flush: vi.fn(overrides.flush ?? (async (): Promise<void> => undefined)),
 		shutdown: vi.fn(
 			overrides.shutdown ?? (async (): Promise<void> => undefined),
 		),
@@ -71,6 +73,10 @@ export function mockPostHogNode(
 			properties?: TProperties,
 		): Promise<void> {
 			return spies.captureExceptionImmediate(error, distinctId, properties);
+		}
+
+		flush(): Promise<void> {
+			return spies.flush();
 		}
 
 		shutdown(): Promise<void> {

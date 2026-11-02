@@ -133,7 +133,7 @@ describe("captureErrorNow", () => {
 });
 
 describe("shutdownPostHog", () => {
-	it("sends what is queued once a client exists", async () => {
+	it("flushes the queue and stops the client once one exists", async () => {
 		const { posthog, client } = await loadPostHog(
 			generatePostHogEnv({ POSTHOG_ERRORS: "true" }),
 		);
@@ -141,7 +141,20 @@ describe("shutdownPostHog", () => {
 
 		await posthog.shutdownPostHog();
 
+		expect(client.flush).toHaveBeenCalledTimes(1);
 		expect(client.shutdown).toHaveBeenCalledTimes(1);
+	});
+
+	it("flushes the queue even while the client's shutdown waits on a report", async () => {
+		const { posthog, client } = await loadPostHog(
+			generatePostHogEnv({ POSTHOG_ERRORS: "true" }),
+		);
+		posthog.initPostHog();
+		client.shutdown.mockReturnValue(new Promise(() => undefined));
+
+		void posthog.shutdownPostHog();
+
+		expect(client.flush).toHaveBeenCalledTimes(1);
 	});
 
 	it("resolves at once when no client was built", async () => {
