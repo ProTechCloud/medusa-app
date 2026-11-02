@@ -105,13 +105,13 @@ describe("exitOnCrash", () => {
 		expect(flushTelemetry).toHaveBeenCalledTimes(1);
 	});
 
-	it("exits with 1 after the flush timeout when PostHog never answers", async () => {
+	it("exits with 1 after the flush timeout when the flush never ends", async () => {
 		vi.useFakeTimers();
 		const exit = vi
 			.spyOn(process, "exit")
 			.mockImplementation(() => undefined as never);
 		vi.spyOn(process.stderr, "write").mockImplementation(() => true);
-		vi.mocked(captureErrorNow).mockReturnValue(new Promise(() => undefined));
+		vi.mocked(flushTelemetry).mockReturnValue(new Promise(() => undefined));
 		exitOnCrash();
 
 		for (const listener of added("unhandledRejection")) {
@@ -122,5 +122,19 @@ describe("exitOnCrash", () => {
 		await vi.advanceTimersByTimeAsync(1);
 
 		expect(exit).toHaveBeenCalledWith(1);
+	});
+
+	it("starts the flush without waiting for a report that never ends", async () => {
+		vi.useFakeTimers();
+		vi.spyOn(process, "exit").mockImplementation(() => undefined as never);
+		vi.spyOn(process.stderr, "write").mockImplementation(() => true);
+		vi.mocked(captureErrorNow).mockReturnValue(new Promise(() => undefined));
+		exitOnCrash();
+
+		for (const listener of added("uncaughtException")) {
+			listener(new Error(faker.lorem.sentence()), "uncaughtException");
+		}
+
+		expect(flushTelemetry).toHaveBeenCalledTimes(1);
 	});
 });

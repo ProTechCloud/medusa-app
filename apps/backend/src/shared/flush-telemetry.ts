@@ -42,11 +42,17 @@ export async function withinFlushTimeout(
  * Send the traces, log lines and errors still queued, before the process
  * exits. Both run to the end even when one fails, and a failure goes to
  * stderr as one JSON line: the logger itself may be what failed to flush.
+ *
+ * The SDK starts flushing at once. The PostHog client stops only after
+ * `lastReport`, an error report still on its way, so a report that stalls
+ * holds back neither the spans nor the log records.
  */
-export async function flushTelemetry(): Promise<void> {
+export async function flushTelemetry(
+	lastReport: Promise<unknown> = Promise.resolve(),
+): Promise<void> {
 	const results = await Promise.allSettled([
 		shutdownTelemetry(),
-		shutdownPostHog(),
+		lastReport.then(shutdownPostHog),
 	]);
 	for (const result of results) {
 		if (result.status === "rejected") {

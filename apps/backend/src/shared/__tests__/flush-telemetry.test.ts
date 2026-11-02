@@ -1,5 +1,22 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { FLUSH_TIMEOUT_MS, withinFlushTimeout } from "@/shared/flush-telemetry";
+import { shutdownTelemetry } from "@/opentelemetry";
+import { shutdownPostHog } from "@/posthog";
+import {
+	FLUSH_TIMEOUT_MS,
+	flushTelemetry,
+	withinFlushTimeout,
+} from "@/shared/flush-telemetry";
+
+vi.mock("@/opentelemetry", async () => ({
+	shutdownTelemetry: (
+		await import("@/shared/__mocks__/mock-crash-dependencies")
+	).mockCrashDependencies().shutdownTelemetry,
+}));
+vi.mock("@/posthog", async () => ({
+	shutdownPostHog: (
+		await import("@/shared/__mocks__/mock-crash-dependencies")
+	).mockCrashDependencies().shutdownPostHog,
+}));
 
 afterEach(() => {
 	vi.restoreAllMocks();
@@ -35,6 +52,41 @@ describe("withinFlushTimeout", () => {
 		expect(JSON.parse(String(stderr.mock.calls[0]?.[0]))).toMatchObject({
 			level: "error",
 			msg: "telemetry flush timed out",
+		});
+	});
+});
+
+describe("flushTelemetry", () => {
+	it("flushes the SDK at once, and stops the PostHog client only after the last report", async () => {
+		let finishReport: () => void = () => undefined;
+		const lastReport = new Promise<void>((resolve) => {
+			finishReport = resolve;
+		});
+
+		const flushed = flushTelemetry(lastReport);
+		await Promise.resolve();
+
+		expect(shutdownTelemetry).toHaveBeenCalledTimes(1);
+		expect(shutdownPostHog).not.toHaveBeenCalled();
+
+		finishReport();
+		await flushed;
+
+		expect(shutdownPostHog).toHaveBeenCalledTimes(1);
+	});
+
+	it("runs both to the end when one fails, and says so on stderr", async () => {
+		const stderr = vi
+			.spyOn(process.stderr, "write")
+			.mockImplementation(() => true);
+		vi.mocked(shutdownTelemetry).mockRejectedValue(new Error("sdk failed"));
+
+		await flushTelemetry();
+
+		expect(shutdownPostHog).toHaveBeenCalledTimes(1);
+		expect(JSON.parse(String(stderr.mock.calls[0]?.[0]))).toMatchObject({
+			msg: "telemetry flush failed",
+			error: "Error: sdk failed",
 		});
 	});
 });

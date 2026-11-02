@@ -44,9 +44,7 @@ async function crash(error: unknown, origin: string): Promise<void> {
 	try {
 		logCrash(error, origin);
 		await withinFlushTimeout(
-			captureErrorNow(error)
-				.catch(() => undefined)
-				.then(flushTelemetry),
+			flushTelemetry(captureErrorNow(error).catch(() => undefined)),
 		);
 	} finally {
 		process.exit(1);
