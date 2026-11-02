@@ -20,6 +20,7 @@ export const posthog = new PostHog(appConfig.posthogProjectToken ?? "", {
 			uncaughtExceptions: true,
 			unhandledRejections: true,
 			nativeCrashes: true,
+			androidNdkCrashes: true,
 		},
 	},
 });
