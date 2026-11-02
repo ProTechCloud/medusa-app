@@ -13,8 +13,9 @@ Paths below are under `apps/backend/src/` unless they start at the repository ro
   never for a secret or a credential.
 - **Parse, don't cast.** Every variable goes through `parseEnv` in `shared/env.ts`, with a zod
   schema, and comes out typed. Never `process.env.X as string` or `process.env.X!`: a cast
-  says the value is there without checking. `config/index.ts` and `logger/index.ts` are the
-  only two files that read `process.env`. No lint rule checks this; review does.
+  says the value is there without checking. `config/index.ts`, `logger/index.ts`,
+  `posthog/index.ts` and `opentelemetry/index.ts` are the only files that read
+  `process.env`. No lint rule checks this; review does.
 - **The same for anything external the code parses.** A request body, a webhook, a third-party
   response or a message from a queue is parsed with a zod schema at the edge, and the code
   past that point works with the parsed type.
@@ -23,18 +24,64 @@ Paths below are under `apps/backend/src/` unless they start at the repository ro
 
 - **No stack trace or internal path reaches a client.** `requestErrors` in
   `services/api/http/lib/request-errors.ts` answers every unhandled error with
-  `{ error: "internal_error" }` and logs the error itself, with the request it broke.
+  `{ error: "internal_error" }`, reports the error to PostHog's error tracking once with
+  `captureError`, and logs it, with the request it broke.
 - Expected failures answer a stable `error` code: see [Routes](./routes.md#expected-failures-are-typed-errors-with-a-stable-code).
 
 ## Logs
 
 - **Structured, one JSON object per line.** `logger/index.ts` writes every line with `time`
-  in ISO 8601 UTC and `level` by name, so Cloud Logging reads them into fields.
-- **Every request is logged with method, path, status and latency**, by `requestLogger` in
-  `services/api/http/lib/request-logger.ts`, after the response. The health probe is not
-  logged.
+  in ISO 8601 UTC, `level` by name, and `service`, `environment` and `version`, so Cloud
+  Logging reads them into fields.
+- **One ID finds a request everywhere.** Every line of a request carries OpenTelemetry's
+  log-correlation fields, `trace_id`, `span_id` and `trace_flags`, and `correlation_id`,
+  which is the trace ID inside a trace, so the same ID finds the request in stdout, in
+  PostHog's logs and traces, and in an error report. Only with tracing off is
+  `correlation_id` the request's own ID: Cloudflare's `cf-ray` when it has Cloudflare's
+  shape (`^[0-9a-f]{16}-[A-Z]{3}$`), else a new UUID.
+- **Lines link to the app's person and session** when it sent them: `posthogDistinctId` and
+  `sessionId`, the names PostHog matches to a person and a session replay.
+- **Every request is logged with method, path, status and duration**, by `requestLogger` in
+  `services/api/http/lib/request-logger.ts`, after the response: a 5xx as `error`, a 4xx as
+  `warn`. The health probe is not logged.
 - **Never a secret.** No token, key, password, cookie or full request body in a log line. Log
-  an id that finds the record instead.
+  an id that finds the record instead. As a backstop, the logger replaces `password`,
+  `newPassword`, `currentPassword`, `token`, `accessToken`, `refreshToken`, `idToken`,
+  `pushToken`, `authorization`, `cookie` and `email` with `[redacted]`, at the top of a line
+  and one level down.
+
+## Telemetry
+
+The API sends its traces, log lines and errors to PostHog, each behind its own switch, and
+nothing without `POSTHOG_PROJECT_TOKEN`. [Environment](../../environment.md#variables) lists
+the variables.
+
+- **Traces over OpenTelemetry.** Bun preloads `opentelemetry/index.ts` (`bunfig.toml`), which
+  starts the NodeSDK before the API loads, with OTLP exporters to PostHog and no automatic
+  instrumentation. Each request is one server span (`requestTracing`, from `@hono/otel`),
+  with every query value in `url.full` replaced by `REDACTED`, and with `posthogDistinctId`
+  and `sessionId` when the app sent them, so the trace links to the person and the replay;
+  each use case is a span under it, `use-case <name>`, marked with `error.type` when it
+  fails. The health probe gets no span. Neither the preload nor the logger parses the
+  config: they read the service's identity from the environment as it is
+  (`readServiceIdentity` in `opentelemetry/lib/resource.ts`), so a bad environment still
+  reaches `start()` and stops the boot in one line.
+- **Log lines** go to stdout and, from `LOG_POSTHOG_LEVEL` up (`LOG_LEVEL` unless set), to
+  PostHog's logs, tied to the span they were written in.
+- **Errors** reach PostHog's error tracking through `captureError` in `posthog/index.ts`,
+  with the trace, correlation and session IDs. Bun runs the TypeScript source, so every frame
+  names a `src/*.ts` file and line; the image carries no source map.
+- **A crash is reported, flushed and fatal.** `exitOnCrash` in `shared/shutdown.ts` owns
+  `uncaughtException` and `unhandledRejection`: it writes the `crashed` line, sends the open
+  spans, queued log records and queued errors, reports the error with `captureErrorNow`
+  beside them, so a report that stalls holds back nothing else, then exits with 1. posthog-node's own handler is off (`enableExceptionAutocapture: false`): it exits
+  without flushing the SDK. Bun needs the rejection listener too, since it does not turn an
+  unhandled rejection into an `uncaughtException` as Node does.
+- **Every flush is bounded.** `stopOnSignal` stops the server, then sends what is still
+  queued; it and the crash handler wait `FLUSH_TIMEOUT_MS` (3 s) at most, in
+  `shared/flush-telemetry.ts`, and say so on stderr when they give up. `docker stop` kills
+  the container 10 s after SIGTERM, and an unreachable PostHog would hold the exporters
+  longer than that.
 
 ## Liveness
 
@@ -53,8 +100,8 @@ container's own loopback. On the VM, Docker publishes it on the host's `127.0.0.
 ## Secrets
 
 - **None in code, and none in the image.** `.dockerignore` at the repository root leaves out
-  every `.env` and `.env.*`, and the Dockerfile copies only the manifests, `tsconfig.json`
-  and `apps/backend/src`.
+  every `.env` and `.env.*`, and the Dockerfile copies only the manifests, `tsconfig.json`,
+  `bunfig.toml` and `apps/backend/src`.
 - `gitleaks` runs on every pull request, in the `Security — Secret Scan` job of
   `.github/workflows/backend-code-quality.yml`.
 - A secret the API needs is read from Secret Manager at runtime, never passed as a build
