@@ -1,7 +1,7 @@
 # Environment
 
 This page covers the API. The native app picks its build with `APP_ENV` (`dev`, `stg` or
-`prd`) and reads `.env.<APP_ENV>` when it is built: see
+`prd`) and reads `.env.<APP_ENV>`, with `.env.<APP_ENV>.local` winning, when it is built: see
 [`apps/native/README.md`](../apps/native/README.md#builds-and-their-env-files).
 
 The API reads its settings from environment variables, and only at startup:

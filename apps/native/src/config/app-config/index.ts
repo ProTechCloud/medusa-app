@@ -3,6 +3,8 @@ import { z } from "zod";
 
 const schema = z.object({
 	appEnv: z.enum(["dev", "stg", "prd"]),
+	posthogProjectToken: z.string().optional(),
+	posthogHost: z.string().optional(),
 });
 
 export type TAppConfig = z.infer<typeof schema>;
@@ -11,6 +13,8 @@ export type TAppConfig = z.infer<typeof schema>;
 // what to fix in `.env.<APP_ENV>` rather than a field the reader never set.
 const ENV_NAMES: Record<keyof TAppConfig, string> = {
 	appEnv: "APP_ENV",
+	posthogProjectToken: "POSTHOG_PROJECT_TOKEN",
+	posthogHost: "POSTHOG_HOST",
 };
 
 /**

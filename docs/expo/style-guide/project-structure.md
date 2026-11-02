@@ -62,8 +62,8 @@ is the hook only Home uses; its helper, the zod schema, is in
 
 Once a second screen needs a piece, it moves to `src/shared/`: the components in
 `src/shared/components/`, the theme in `src/shared/theme/`, the store factory in
-`src/shared/zustand/`, the splash hold in `src/shared/splash-screen/` and the icons in
-`src/shared/vector-icons/`.
+`src/shared/zustand/`, the splash hold in `src/shared/splash-screen/`, the icons in
+`src/shared/vector-icons/` and the PostHog client in `src/shared/posthog/`.
 
 ## The tree
 
@@ -72,7 +72,7 @@ Once a second screen needs a piece, it moves to `src/shared/`: the components in
 ```text
 src/
 ├── app/                          routes only: Expo Router turns each file into a screen
-│   ├── _layout.tsx               the root layout: i18n, the status bar, the splash hold
+│   ├── _layout.tsx               the root layout: i18n, PostHog, the status bar, the splash hold
 │   └── (tabs)/
 │       ├── _layout.tsx           the tab bar, from its TABS table
 │       ├── index.tsx             renders HomeScreen
@@ -93,13 +93,15 @@ src/
 │       └── index.tsx             SettingsScreen
 ├── shared/
 │   ├── components/               card, list-row, primary-button, screen-container
+│   ├── posthog/                  the client, use-posthog-screens
 │   ├── splash-screen/index.ts    keepSplashScreenUntilReady, hideSplashScreen
 │   ├── theme/
 │   │   ├── index.ts              colours, spacing, font sizes, radii, icon sizes
 │   │   └── lib/                  palette.json, palette.ts
 │   ├── vector-icons/index.tsx    Icon
 │   └── zustand/index.ts          createAppStore, resetMemberStores, resetAllStores
-└── testing/                      mocks.ts, mock-fetch.ts, mock-expo-router-with-replace.ts
+└── testing/                      mocks.ts, mock-fetch.ts, mock-expo-router-with-replace.ts,
+                                  mock-posthog-react-native.ts
 ```
 
 ## Routes and the screen each renders
@@ -117,6 +119,7 @@ src/
 
 `src/app/_layout.tsx` imports `@/i18n`, so every screen can translate; renders the status bar;
 and holds the splash with `keepSplashScreenUntilReady()` from `src/shared/splash-screen`
-until the first screen renders, then calls `hideSplashScreen()`. The app has no provider
-yet. One that arrives later is defined under `src/shared/`, by the placement rule, and wired
-in `src/app/_layout.tsx` around the `Stack`.
+until the first screen renders, then calls `hideSplashScreen()`. It wraps the app in
+`PostHogProvider` with the client from `src/shared/posthog` and calls `usePostHogScreens()`.
+A provider that arrives later is defined under `src/shared/`, by the placement rule, and
+wired in `src/app/_layout.tsx` around the `Stack`.

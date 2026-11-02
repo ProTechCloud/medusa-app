@@ -1,3 +1,4 @@
+import { existsSync } from "node:fs";
 import path from "node:path";
 import dotenv from "dotenv";
 import type { ExpoConfig } from "expo/config";
@@ -15,8 +16,14 @@ const appEnv = z
 // The build's values come from its file alone, never the shell: a variable
 // left set from another build must never give this one its bundle ID. dotenv
 // writes into `fromFile` instead of `process.env`, which it would not read
-// past, and the shell is never consulted.
+// past, and the shell is never consulted. It also keeps a value it already
+// has, so `.env.<APP_ENV>.local`, read first when it exists, wins.
 const fromFile: Record<string, string> = {};
+dotenv.config({
+	path: path.resolve(__dirname, `.env.${appEnv}.local`),
+	processEnv: fromFile,
+	quiet: true,
+});
 const loaded = dotenv.config({
 	path: path.resolve(__dirname, `.env.${appEnv}`),
 	processEnv: fromFile,
@@ -30,12 +37,41 @@ if (loaded.error) {
 }
 const source: Record<string, string | undefined> = fromFile;
 
-const schema = z.object({
-	APP_BUNDLE_ID: z
-		.string()
-		.trim()
-		.regex(/^[a-z][a-z0-9]*(\.[a-z][a-z0-9]*)+$/, "is not a bundle ID"),
-});
+// A line left blank in the file counts as unset.
+const optionalValue = z
+	.string()
+	.trim()
+	.transform((value) => value || undefined)
+	.optional();
+
+const schema = z
+	.object({
+		APP_BUNDLE_ID: z
+			.string()
+			.trim()
+			.regex(/^[a-z][a-z0-9]*(\.[a-z][a-z0-9]*)+$/, "is not a bundle ID"),
+		POSTHOG_PROJECT_TOKEN: optionalValue,
+		POSTHOG_HOST: optionalValue,
+		POSTHOG_CLI_PROJECT_ID: optionalValue,
+		POSTHOG_CLI_API_KEY: optionalValue,
+	})
+	.superRefine((values, context) => {
+		// The upload needs both CLI keys: one alone is a mistake, not an opt-out.
+		if (values.POSTHOG_CLI_PROJECT_ID && !values.POSTHOG_CLI_API_KEY) {
+			context.addIssue({
+				code: "custom",
+				path: ["POSTHOG_CLI_API_KEY"],
+				message: "is not set",
+			});
+		}
+		if (values.POSTHOG_CLI_API_KEY && !values.POSTHOG_CLI_PROJECT_ID) {
+			context.addIssue({
+				code: "custom",
+				path: ["POSTHOG_CLI_PROJECT_ID"],
+				message: "is not set",
+			});
+		}
+	});
 
 // Fails the build with the variable's name, never its value. Whether the
 // variable is there decides the wording; zod does not keep the input.
@@ -57,6 +93,21 @@ const NAMES = { dev: "Medusa Dev", stg: "Medusa Stg", prd: "Medusa" } as const;
 // The brand colour behind the Android icon and the splash. Expo loads this
 // file on its own, so it reads the palette's JSON rather than `palette.ts`.
 const BRAND = palette.brand;
+
+// The personal CLI keys live in this file, on the Mac only. Without them the
+// build skips the upload of the source map and the dSYMs.
+const POSTHOG_CLI_DOTENV_FILE = ".env.dev.local";
+const posthogPlugins: NonNullable<ExpoConfig["plugins"]> =
+	env.POSTHOG_CLI_PROJECT_ID &&
+	env.POSTHOG_CLI_API_KEY &&
+	existsSync(path.resolve(__dirname, POSTHOG_CLI_DOTENV_FILE))
+		? [
+				[
+					"posthog-react-native/expo",
+					{ uploadNativeSymbols: true, dotenvFile: POSTHOG_CLI_DOTENV_FILE },
+				],
+			]
+		: [];
 
 const config: ExpoConfig = {
 	name: NAMES[appEnv],
@@ -99,9 +150,12 @@ const config: ExpoConfig = {
 			},
 		],
 		"expo-localization",
+		...posthogPlugins,
 	],
 	extra: {
 		appEnv,
+		posthogProjectToken: env.POSTHOG_PROJECT_TOKEN,
+		posthogHost: env.POSTHOG_HOST,
 	},
 };
 
