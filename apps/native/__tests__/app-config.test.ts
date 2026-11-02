@@ -8,8 +8,8 @@ const shell = { ...process.env };
 type TDisk = {
 	/** What `.env.<APP_ENV>.local` holds; missing when not given. */
 	local?: Record<string, string>;
-	/** Whether `.env.dev.local`, the CLI's file, is on the Mac. */
-	cliFileExists?: boolean;
+	/** Whether `.env.<APP_ENV>.local` is on the Mac. */
+	localFileExists?: boolean;
 };
 
 /**
@@ -18,7 +18,7 @@ type TDisk = {
  */
 function loadConfig(
 	file: Record<string, string> | null,
-	{ local, cliFileExists = false }: TDisk = {},
+	{ local, localFileExists = false }: TDisk = {},
 ): {
 	config: () => ExpoConfig;
 	readFile: () => string | undefined;
@@ -33,7 +33,9 @@ function loadConfig(
 		dotenv.mockLocalEnvFile(local ?? null);
 		readFile = dotenv.mockEnvFileRead;
 		jest.doMock("node:fs", () => require("../__mocks__/mock-fs"));
-		require("../__mocks__/mock-fs").mockCliFileExists(cliFileExists);
+		require("../__mocks__/mock-fs").mockExistingFile(
+			localFileExists ? `.env.${process.env.APP_ENV}.local` : null,
+		);
 		try {
 			config = require("../app.config").default;
 		} catch (error) {
@@ -116,7 +118,7 @@ describe("app.config.ts", () => {
 
 		const { config } = loadConfig(
 			{ APP_BUNDLE_ID: generateBundleId() },
-			{ local: cliKeys, cliFileExists: true },
+			{ local: cliKeys, localFileExists: true },
 		);
 
 		expect(JSON.stringify(config())).not.toContain(cliKeys.POSTHOG_CLI_API_KEY);
@@ -137,29 +139,34 @@ describe("app.config.ts", () => {
 		},
 	);
 
-	it("uploads the symbols when both CLI keys are set and their file exists", () => {
-		const { config } = loadConfig(
-			{ APP_BUNDLE_ID: generateBundleId() },
-			{ local: generateCliKeys(), cliFileExists: true },
-		);
+	it.each(["dev", "stg", "prd"])(
+		"a %s build uploads the symbols when both CLI keys are set and its local file exists",
+		(env) => {
+			process.env.APP_ENV = env;
 
-		expect(config().plugins).toContainEqual([
-			"posthog-react-native/expo",
-			{ uploadNativeSymbols: true, dotenvFile: ".env.dev.local" },
-		]);
-	});
+			const { config } = loadConfig(
+				{ APP_BUNDLE_ID: generateBundleId() },
+				{ local: generateCliKeys(), localFileExists: true },
+			);
+
+			expect(config().plugins).toContainEqual([
+				"posthog-react-native/expo",
+				{ uploadNativeSymbols: true, dotenvFile: `.env.${env}.local` },
+			]);
+		},
+	);
 
 	it.each([
-		{ label: "the CLI keys are unset", keys: {}, cliFileExists: true },
+		{ label: "the CLI keys are unset", keys: {}, localFileExists: true },
 		{
-			label: "their file is missing",
+			label: "its local file is missing",
 			keys: generateCliKeys(),
-			cliFileExists: false,
+			localFileExists: false,
 		},
-	])("skips the upload when $label", ({ keys, cliFileExists }) => {
+	])("skips the upload when $label", ({ keys, localFileExists }) => {
 		const { config } = loadConfig(
 			{ APP_BUNDLE_ID: generateBundleId(), ...keys },
-			{ cliFileExists },
+			{ localFileExists },
 		);
 
 		expect(JSON.stringify(config().plugins)).not.toContain(

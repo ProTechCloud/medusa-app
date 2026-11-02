@@ -61,8 +61,10 @@ replay with every text and image masked, uncaught errors and native crashes, and
 identity headers to the API calls, so a trace links to its replay. No user is identified yet.
 
 The build uploads the Hermes source map and the dSYMs when both CLI keys are set and
-`.env.dev.local` exists. The keys live in that file on your Mac only, never in `.env.dev`,
-and no GitHub secret holds them. To upload from your own builds:
+`.env.<APP_ENV>.local` exists. Each build reads its own local file, so a dev build reads
+`.env.dev.local` and a stg build `.env.stg.local`. The keys live in that file on your Mac
+only, never in `.env.<APP_ENV>`, and no GitHub secret holds them. To upload from your own
+dev builds:
 
 ```bash
 npm install -g @posthog/cli@0.19.0
@@ -79,7 +81,7 @@ src/
 ├── app/            routes only: Expo Router turns each file into a screen
 │   └── (tabs)/     the tab bar (expo-router/js-tabs), from the TABS table in its _layout.tsx
 ├── screens/        the screens the routes render, with their hooks
-├── config/         the build's config, parsed once
+├── config/         the build's config, parsed once, and the API's URL
 ├── i18n/           every string, one namespace per area, in resources/en/
 ├── shared/
 │   ├── theme/      the tokens as constants: colors, spacing, fontSizes, radii, iconSizes;
@@ -87,7 +89,7 @@ src/
 │   ├── components/ ScreenContainer, PrimaryButton, Card, ListRow
 │   ├── vector-icons/ the Icon wrapper
 │   ├── splash-screen/ keepSplashScreenUntilReady and hideSplashScreen
-│   ├── posthog/    the client and usePostHogScreens
+│   ├── posthog/    the client, PostHogProvider and usePostHogScreens
 │   └── zustand/    createAppStore and the store resets
 └── testing/        Jest setup and the shared mocks
 ```

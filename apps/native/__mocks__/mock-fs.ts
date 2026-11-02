@@ -1,13 +1,13 @@
 /**
- * Stands in for `node:fs` in the `app.config.ts` tests: `mockCliFileExists`
- * says whether `.env.dev.local` is on the Mac, and the disk is never read.
+ * Stands in for `node:fs` in the `app.config.ts` tests: the one file
+ * `mockExistingFile` names is on the Mac, and the disk is never read.
  */
-let cliFileExists = false;
+let existing: string | null = null;
 
-export function mockCliFileExists(exists: boolean): void {
-	cliFileExists = exists;
+export function mockExistingFile(name: string | null): void {
+	existing = name;
 }
 
 export function existsSync(path: string): boolean {
-	return cliFileExists && path.endsWith(".env.dev.local");
+	return existing !== null && path.endsWith(`/${existing}`);
 }

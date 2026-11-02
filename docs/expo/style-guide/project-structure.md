@@ -78,6 +78,7 @@ src/
 │       ├── index.tsx             renders HomeScreen
 │       └── settings.tsx          renders SettingsScreen
 ├── config/
+│   ├── api/index.ts              the API's URL
 │   └── app-config/index.ts       the build's extra, parsed once at launch
 ├── i18n/
 │   ├── index.ts                  i18next with expo-localization
@@ -93,7 +94,7 @@ src/
 │       └── index.tsx             SettingsScreen
 ├── shared/
 │   ├── components/               card, list-row, primary-button, screen-container
-│   ├── posthog/                  the client, use-posthog-screens
+│   ├── posthog/                  the client, PostHogProvider, use-posthog-screens
 │   ├── splash-screen/index.ts    keepSplashScreenUntilReady, hideSplashScreen
 │   ├── theme/
 │   │   ├── index.ts              colours, spacing, font sizes, radii, icon sizes
@@ -120,6 +121,6 @@ src/
 `src/app/_layout.tsx` imports `@/i18n`, so every screen can translate; renders the status bar;
 and holds the splash with `keepSplashScreenUntilReady()` from `src/shared/splash-screen`
 until the first screen renders, then calls `hideSplashScreen()`. It wraps the app in
-`PostHogProvider` with the client from `src/shared/posthog` and calls `usePostHogScreens()`.
+`PostHogProvider` from `src/shared/posthog` and calls `usePostHogScreens()`.
 A provider that arrives later is defined under `src/shared/`, by the placement rule, and
 wired in `src/app/_layout.tsx` around the `Stack`.

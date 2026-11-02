@@ -19,8 +19,9 @@ const appEnv = z
 // past, and the shell is never consulted. It also keeps a value it already
 // has, so `.env.<APP_ENV>.local`, read first when it exists, wins.
 const fromFile: Record<string, string> = {};
+const localEnvFile = `.env.${appEnv}.local`;
 dotenv.config({
-	path: path.resolve(__dirname, `.env.${appEnv}.local`),
+	path: path.resolve(__dirname, localEnvFile),
 	processEnv: fromFile,
 	quiet: true,
 });
@@ -94,17 +95,16 @@ const NAMES = { dev: "Medusa Dev", stg: "Medusa Stg", prd: "Medusa" } as const;
 // file on its own, so it reads the palette's JSON rather than `palette.ts`.
 const BRAND = palette.brand;
 
-// The personal CLI keys live in this file, on the Mac only. Without them the
-// build skips the upload of the source map and the dSYMs.
-const POSTHOG_CLI_DOTENV_FILE = ".env.dev.local";
+// The personal CLI keys live in the build's local file, on the Mac only.
+// Without them the build skips the upload of the source map and the dSYMs.
 const posthogPlugins: NonNullable<ExpoConfig["plugins"]> =
 	env.POSTHOG_CLI_PROJECT_ID &&
 	env.POSTHOG_CLI_API_KEY &&
-	existsSync(path.resolve(__dirname, POSTHOG_CLI_DOTENV_FILE))
+	existsSync(path.resolve(__dirname, localEnvFile))
 		? [
 				[
 					"posthog-react-native/expo",
-					{ uploadNativeSymbols: true, dotenvFile: POSTHOG_CLI_DOTENV_FILE },
+					{ uploadNativeSymbols: true, dotenvFile: localEnvFile },
 				],
 			]
 		: [];

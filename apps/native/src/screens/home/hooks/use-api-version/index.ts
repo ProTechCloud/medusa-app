@@ -1,8 +1,9 @@
 import { useFocusEffect } from "expo-router";
 import { useCallback, useRef, useState } from "react";
+import { API_URL } from "@/config/api";
 import { type TApiVersion, versionSchema } from "./lib/version-schema";
 
-const API_VERSION_URL = "https://api-stg-medusa.fabianalula.site/version";
+const API_VERSION_URL = `${API_URL}/version`;
 
 // How long a request may wait for its answer. Android's HTTP client has no
 // timeout of its own, so a stalled connection would otherwise check forever.

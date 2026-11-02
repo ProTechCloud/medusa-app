@@ -1,14 +1,20 @@
 /**
  * Stands in for `posthog-react-native`, registered in `mocks.ts`, so a test
  * never starts the SDK. `mockPostHogOptions` answers what the client was built
- * with, and `mockScreen` records each `posthog.screen`.
+ * with, `mockPostHogProviderProps` what the provider was rendered with, and
+ * `mockScreen` records each `posthog.screen`.
  */
 export const mockScreen = jest.fn(async () => undefined);
 
 let options: unknown;
+let providerProps: unknown;
 
 export function mockPostHogOptions(): unknown {
 	return options;
+}
+
+export function mockPostHogProviderProps(): unknown {
+	return providerProps;
 }
 
 export default class PostHog {
@@ -19,5 +25,12 @@ export default class PostHog {
 	}
 }
 
-export const PostHogProvider = ({ children }: { children: React.ReactNode }) =>
-	children;
+export const PostHogProvider = ({
+	children,
+	...props
+}: {
+	children: React.ReactNode;
+}) => {
+	providerProps = props;
+	return children;
+};
