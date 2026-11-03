@@ -91,6 +91,7 @@ describe("app.config.ts", () => {
 	])("stops the build when APP_BUNDLE_ID is $label", ({ file, message }) => {
 		const { config } = loadConfig(file);
 
+		expect(config).toThrow(`Invalid .env.${appEnv}:`);
 		expect(config).toThrow(`APP_BUNDLE_ID: ${message}`);
 	});
 
@@ -121,21 +122,25 @@ describe("app.config.ts", () => {
 			{ local: cliKeys, localFileExists: true },
 		);
 
-		expect(JSON.stringify(config())).not.toContain(cliKeys.POSTHOG_CLI_API_KEY);
+		const build = JSON.stringify(config());
+		expect(build).not.toContain(cliKeys.POSTHOG_CLI_API_KEY);
+		expect(build).not.toContain(cliKeys.POSTHOG_CLI_PROJECT_ID);
 	});
 
 	it.each([
 		{ present: "POSTHOG_CLI_PROJECT_ID", absent: "POSTHOG_CLI_API_KEY" },
 		{ present: "POSTHOG_CLI_API_KEY", absent: "POSTHOG_CLI_PROJECT_ID" },
 	] as const)(
-		"stops the build when $present is set without $absent",
+		"stops the build, naming the local file, when $present is set without $absent",
 		({ present, absent }) => {
 			const { config } = loadConfig({
 				APP_BUNDLE_ID: generateBundleId(),
 				[present]: generateCliKeys()[present],
 			});
 
+			expect(config).toThrow(`Invalid .env.${appEnv}.local`);
 			expect(config).toThrow(`${absent}: is not set`);
+			expect(config).toThrow(".env.dev.local.example");
 		},
 	);
 

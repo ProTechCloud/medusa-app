@@ -83,8 +83,15 @@ if (!parsed.success) {
 		const missing = (source[name] ?? "").trim() === "";
 		return `  ${name}: ${missing ? "is not set" : issue.message}`;
 	});
+	// The CLI keys live in the local file, so a problem with one names that file.
+	const inLocalFile = parsed.error.issues.every((issue) =>
+		String(issue.path[0]).startsWith("POSTHOG_CLI_"),
+	);
+	const [file, example] = inLocalFile
+		? [localEnvFile, ".env.dev.local.example"]
+		: [`.env.${appEnv}`, ".env.dev.example"];
 	throw new Error(
-		`Invalid .env.${appEnv}:\n${problems.join("\n")}\nCreate it from .env.dev.example with the ${appEnv} values.`,
+		`Invalid ${file}:\n${problems.join("\n")}\nCreate it from ${example} with the ${appEnv} values.`,
 	);
 }
 const env = parsed.data;
