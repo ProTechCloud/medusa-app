@@ -9,6 +9,18 @@ describe("parseAppConfig", () => {
 		},
 	);
 
+	it("a build with PostHog's values parses to them", () => {
+		const posthog = {
+			posthogProjectToken: faker.string.alphanumeric(20),
+			posthogHost: faker.internet.url(),
+		};
+
+		expect(parseAppConfig({ appEnv: "dev", ...posthog })).toEqual({
+			appEnv: "dev",
+			...posthog,
+		});
+	});
+
 	it.each([
 		{ label: "no extra at all", extra: undefined },
 		{ label: "an extra without appEnv", extra: {} },

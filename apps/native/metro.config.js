@@ -1,11 +1,11 @@
-const { getDefaultConfig } = require("expo/metro-config");
 const path = require("node:path");
+const { getPostHogExpoConfig } = require("posthog-react-native/metro");
 
 const projectRoot = __dirname;
 const monorepoRoot = path.resolve(projectRoot, "../..");
 const rootNodeModules = path.resolve(monorepoRoot, "node_modules");
 
-const config = getDefaultConfig(projectRoot);
+const config = getPostHogExpoConfig(projectRoot);
 
 // Watch the whole workspace, so a change in packages/ reloads the app.
 config.watchFolders = [monorepoRoot];

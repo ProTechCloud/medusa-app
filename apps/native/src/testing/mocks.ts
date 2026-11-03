@@ -18,6 +18,10 @@ jest.mock("expo-router", () =>
 	require("@/testing/mock-expo-router-with-replace"),
 );
 
+jest.mock("posthog-react-native", () =>
+	require("@/testing/mock-posthog-react-native"),
+);
+
 // The build's `extra`, as `app.config.ts` would write it.
 jest.mock("expo-constants", () => {
 	const { faker } = require("@faker-js/faker");

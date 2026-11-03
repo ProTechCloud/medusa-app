@@ -14,6 +14,7 @@
 	},
 	"ignoreDependencies": [
 		"expo-dev-client",
-		"babel-preset-expo"
+		"babel-preset-expo",
+		"@posthog/react-native-plugin"
 	]
 }

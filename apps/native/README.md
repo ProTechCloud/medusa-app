@@ -3,7 +3,8 @@
 The iOS and Android app: [Expo](https://expo.dev) SDK 57 with
 [Expo Router](https://docs.expo.dev/router/introduction/). Two tabs: **Home** shows what
 the stg API answers at `/version`; **Settings** shows the app's version, build and
-environment. No sign-in, analytics, push or store release yet.
+environment. PostHog records screens, touches, session replays and errors. No sign-in, push
+or store release yet.
 
 ## Running it on an iPhone
 
@@ -32,7 +33,8 @@ APP_ENV=stg npx expo run:ios --device
 
 ## Builds and their env files
 
-`APP_ENV` picks the build, and `app.config.ts` reads `.env.<APP_ENV>`:
+`APP_ENV` picks the build, and `app.config.ts` reads `.env.<APP_ENV>`, with
+`.env.<APP_ENV>.local` winning when it exists:
 
 | `APP_ENV`       | App name     | Env file   |
 | --------------- | ------------ | ---------- |
@@ -40,13 +42,37 @@ APP_ENV=stg npx expo run:ios --device
 | `stg`           | `Medusa Stg` | `.env.stg` |
 | `prd`           | `Medusa`     | `.env.prd` |
 
-| Variable        | Required | What                                                               |
-| --------------- | -------- | ------------------------------------------------------------------ |
-| `APP_BUNDLE_ID` | yes      | the App ID in the Apple Developer account, and the Android package |
+| Variable                 | Required | What                                                               |
+| ------------------------ | -------- | ------------------------------------------------------------------ |
+| `APP_BUNDLE_ID`          | yes      | the App ID in the Apple Developer account, and the Android package |
+| `POSTHOG_PROJECT_TOKEN`  | no       | the PostHog project token; unset disables the SDK                  |
+| `POSTHOG_HOST`           | no       | the PostHog ingestion host                                         |
+| `POSTHOG_CLI_PROJECT_ID` | no       | the PostHog project the CLI uploads to; set with the API key       |
+| `POSTHOG_CLI_API_KEY`    | no       | the personal key the CLI uploads with; set with the project ID     |
 
 A missing or bad variable stops the build with its name. Only `.env.*.example` files are
 committed. Inside the app, `src/config/app-config` parses what the build wrote into
 `extra` once, at launch; nothing else reads `Constants` or `process.env`.
+
+## PostHog
+
+`src/shared/posthog` holds the client. It sends a `$screen` per route, touches, a session
+replay with every text and image masked, uncaught errors and native crashes, and adds the
+identity headers to the API calls, so a trace links to its replay. No user is identified yet.
+
+The build uploads the Hermes source map and the dSYMs when both CLI keys are set and
+`.env.<APP_ENV>.local` exists. Each build reads its own local file, so a dev build reads
+`.env.dev.local` and a stg build `.env.stg.local`. The keys live in that file on your Mac
+only, never in `.env.<APP_ENV>`, and no GitHub secret holds them. To upload from your own
+dev builds:
+
+```bash
+npm install -g @posthog/cli@0.19.0
+cp apps/native/.env.dev.local.example apps/native/.env.dev.local
+```
+
+Use a personal key with `error_tracking:write` and `organization:read` only, and revoke it
+when you stop building locally. Leave the keys unset to skip the upload.
 
 ## Layout
 
@@ -55,7 +81,7 @@ src/
 ├── app/            routes only: Expo Router turns each file into a screen
 │   └── (tabs)/     the tab bar (expo-router/js-tabs), from the TABS table in its _layout.tsx
 ├── screens/        the screens the routes render, with their hooks
-├── config/         the build's config, parsed once
+├── config/         the build's config, parsed once, and the API's URL
 ├── i18n/           every string, one namespace per area, in resources/en/
 ├── shared/
 │   ├── theme/      the tokens as constants: colors, spacing, fontSizes, radii, iconSizes;
@@ -63,6 +89,7 @@ src/
 │   ├── components/ ScreenContainer, PrimaryButton, Card, ListRow
 │   ├── vector-icons/ the Icon wrapper
 │   ├── splash-screen/ keepSplashScreenUntilReady and hideSplashScreen
+│   ├── posthog/    the client, PostHogProvider and usePostHogScreens
 │   └── zustand/    createAppStore and the store resets
 └── testing/        Jest setup and the shared mocks
 ```
