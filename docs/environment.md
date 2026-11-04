@@ -29,7 +29,7 @@ reads the environment.
 | `APP_ENV` | Where                    | Where its values come from                                                                                                                                                                                                             |
 | --------- | ------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `local`   | your machine, `yarn dev` | `apps/backend/.env.local`, copied from [`.env.local.example`](../apps/backend/.env.local.example). It is gitignored; the example is committed                                                                                          |
-| `stg`     | the stg VM, `deploy-stg` | the image, for `APP_VERSION` and `APP_COMMIT` (build arguments set by `deploy-stg`); the VM's `medusa-app.service`, for `APP_ENV` and `PORT`; and the VM's `/var/lib/medusa/app.env`, for the PostHog token and the telemetry settings |
+| `stg`     | the stg VM, `backend-cd` | the image, for `APP_VERSION` and `APP_COMMIT` (build arguments set by `backend-cd`); the VM's `medusa-app.service`, for `APP_ENV` and `PORT`; and the VM's `/var/lib/medusa/app.env`, for the PostHog token and the telemetry settings |
 | `prd`     | not deployed yet         | the same as `stg`, from the prd VM's unit                                                                                                                                                                                              |
 
 No file is read outside `local`: the image ships no `.env` file, and the VM's unit lives in
@@ -41,8 +41,8 @@ No file is read outside `local`: the image ships no `.env` file, and the VM's un
 | --------------------------- | --------------- | -------- | -------------------------- | --------------------------------------------------------------------------------------------------------------------- |
 | `APP_ENV`                   | `config`        | yes      | —                          | `local`, `stg` or `prd`                                                                                               |
 | `PORT`                      | `config`        | no       | `8080`                     | a port, 1 to 65535                                                                                                    |
-| `APP_VERSION`               | `config`        | no       | `dev`                      | the build's name; `deploy-stg` sets `stg-<run number>`                                                                |
-| `APP_COMMIT`                | `config`        | no       | `local`                    | the commit the image was built from; `deploy-stg` checks it                                                           |
+| `APP_VERSION`               | `config`        | no       | `dev`                      | the build's name; `backend-cd` sets `stg-<run number>`                                                                |
+| `APP_COMMIT`                | `config`        | no       | `local`                    | the commit the image was built from; `backend-cd` checks it                                                           |
 | `OTEL_SERVICE_NAME`         | `config`        | no       | the entry point's folder   | the service's name; `src/services/api/index.ts` names it `api`                                                        |
 | `LOG_LEVEL`                 | `logger`        | no       | `info`                     | `fatal`, `error`, `warn`, `info`, `debug`, `trace` or `silent`                                                        |
 | `LOG_FORMAT`                | `logger`        | no       | `json`                     | `json`, or `pretty` for a terminal                                                                                    |
@@ -75,5 +75,5 @@ only once the secret holds a real token.
    it from `ctx.config`; nothing reads the environment directly.
 2. Add it to `.env.local.example` and to the table above.
 3. If stg needs it, set it where stg's values come from: a build argument in
-   `deploy-stg.yml`, or the VM's unit in `medusa-platform`. A secret never goes in either;
+   `backend-cd.yml`, or the VM's unit in `medusa-platform`. A secret never goes in either;
    it is read from Secret Manager at runtime.
