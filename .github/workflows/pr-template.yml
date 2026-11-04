@@ -26,13 +26,16 @@ jobs:
 
       - uses: ./.github/actions/setup-monorepo
 
-      # The rules come from the base branch, so a pull request cannot loosen
-      # the template, the title rules or the script it is held to.
+      # Use the base branch's validation rules. This workflow and its runtime
+      # remain PR-controlled, so this check is not tamper-resistant.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ github.event.pull_request.base.sha }}
           path: base
           persist-credentials: false
+
+      - name: Test the body check
+        run: node --test .github/pr-template/check-body.test.mjs
 
       - name: Lint the title
         env:
