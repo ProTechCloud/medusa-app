@@ -93,7 +93,7 @@ docker run --rm -e APP_ENV=local -p 8080:8080 medusa-backend
 ```
 
 A build without `--build-arg APP_ENV` sets no `APP_ENV`, and the API refuses to start until
-it is told where it runs. `deploy-stg` builds with `APP_ENV=stg`, and the VM passes it too.
+it is told where it runs. `backend-cd` builds with `APP_ENV=stg`, and the VM passes it too.
 
 A Node stage runs `yarn workspaces focus @medusa/backend --production`, which installs only
 what the API needs at runtime. The Bun stage copies that `node_modules` and `apps/backend`
@@ -106,11 +106,12 @@ base images are pinned by digest.
 | ---------------------- | ------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `backend-code-quality` | every PR → `dev` / `stg`, when `BACKEND_CODE_QUALITY_ENABLED` is `true`                     | discover → secret scan → commit messages → typecheck + lint + format → tests with coverage, then fallow → docker build (no push) → summary                                   |
 | `mobile-code-quality`  | every PR → `dev` / `stg`, when `MOBILE_CODE_QUALITY_ENABLED` is `true`                      | discover → secret scan → commit messages → typecheck + lint + format → tests with coverage, then fallow → summary. Nothing is built or signed                                |
-| `deploy-stg`           | push → `stg` touching the backend, or by hand on `stg`, when `BACKEND_CD_ENABLED` is `true` | build the image tagged with the commit, trivy scan (fails on CRITICAL), push, roll out over IAP, then check on the VM that `127.0.0.1:8080/version` answers with this commit |
+| `pr-template`          | every PR → `dev` / `stg`, and when its title or body is edited                              | the title passes commitlint; every section of the base branch's template is filled and every checklist item is ticked or marked n/a; bots get the title check only           |
+| `backend-cd`           | push → `stg` touching the backend, or by hand on `stg`, when `BACKEND_CD_ENABLED` is `true` | build the image tagged with the commit, trivy scan (fails on CRITICAL), push, roll out over IAP, then check on the VM that `127.0.0.1:8080/version` answers with this commit |
 
-**Only `Backend - Code Quality Summary` and `Mobile - Code Quality Summary` are required by
-branch protection.** Neither quality workflow has a path filter on its trigger: a workflow
-that never starts reports nothing, and a required check that never reports blocks the merge
+**Only `Backend - Code Quality Summary`, `Mobile - Code Quality Summary` and
+`Quality — PR Template` are required by branch protection.** Neither quality workflow has a
+path filter on its trigger: a workflow that never starts reports nothing, and a required check that never reports blocks the merge
 forever. Instead, each one's `Discover — Changes` works out whether the pull request touches
 its app — `apps/backend/**` or `apps/native/**`, plus `packages/**`, the root manifests,
 configs and tooling, `.github/actions/`, or the workflow itself. Lint, tests and the image
@@ -121,7 +122,7 @@ and fallow on its own app and what that app depends on only, so one app's failur
 fails the other's check.
 
 Deploys run one at a time and are never cancelled. To redeploy `stg` after a change the path
-filter skips, run `deploy-stg` by hand from the Actions tab on the `stg` branch; any other
+filter skips, run `backend-cd` by hand from the Actions tab on the `stg` branch; any other
 branch is refused. Actions are pinned to commit SHAs;
 Dependabot proposes updates weekly.
 
@@ -131,12 +132,12 @@ same check.
 
 ### Deploy identity
 
-There are no keys. The `deploy` job, in the `stg` environment, exchanges GitHub's OIDC token
-for a sign-in as the **hub** service account, which holds no permissions of its own. Every
+There are no keys. The `deploy` job, in the `backend-stg` environment, exchanges GitHub's
+OIDC token for a sign-in as the **hub** service account, which holds no permissions of its own. Every
 gcloud and docker call then impersonates the **spoke** in the stg project, which can push to
 the registry and roll out this one VM. `medusa-platform` trusts only
-`medusa-app | .github/workflows/deploy-stg.yml | stg | refs/heads/stg`, so renaming the
-repository, the workflow, the environment or the branch breaks the sign-in. To rename one,
+`medusa-app | .github/workflows/backend-cd.yml | backend-stg | refs/heads/stg`, so renaming
+the repository, the workflow, the environment or the branch breaks the sign-in. To rename one,
 apply the new name in `medusa-platform` first, then rename.
 
 ### Repository variables
@@ -154,7 +155,7 @@ Variables, not secrets: none of these is a credential. Values come from `medusa-
 | `GCP_VM_NAME`                  | Instance to roll out to                                     |
 | `GCP_ZONE`                     | Instance zone                                               |
 | `BACKEND_CODE_QUALITY_ENABLED` | `true` turns on `backend-code-quality`                      |
-| `BACKEND_CD_ENABLED`           | `true` turns on `deploy-stg`                                |
+| `BACKEND_CD_ENABLED`           | `true` turns on `backend-cd`                                |
 | `MOBILE_CODE_QUALITY_ENABLED`  | `true` turns on `mobile-code-quality`                       |
 
 No repository secrets are needed.

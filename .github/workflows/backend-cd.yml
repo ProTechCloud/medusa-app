@@ -1,8 +1,8 @@
-name: deploy-stg
+name: Backend - CD
 
-# The file name, the `stg` environment and the branch are all part of the
-# identity medusa-platform trusts (repository|workflow|environment|ref). Renaming
-# any of them makes the Google sign-in fail.
+# The file name, the `backend-stg` environment and the branch are all part of
+# the identity medusa-platform trusts (repository|workflow|environment|ref).
+# Renaming any of them makes the Google sign-in fail.
 #
 # The path filter is safe here, unlike on the quality workflow: nothing waits
 # on this run as a required check. A push that touches none of these — a
@@ -26,12 +26,12 @@ on:
       - biome.json
       - commitlint.config.mjs
       - .dockerignore
-      - .github/workflows/deploy-stg.yml
+      - .github/workflows/backend-cd.yml
 
 # One rollout at a time, never interrupted: a cancelled run can leave the VM
 # between images.
 concurrency:
-  group: deploy-stg
+  group: backend-cd
   cancel-in-progress: false
 
 permissions:
@@ -98,7 +98,7 @@ jobs:
     name: deploy
     needs: build
     runs-on: ubuntu-latest
-    environment: stg
+    environment: backend-stg
     permissions:
       contents: read
       id-token: write # the OIDC token Workload Identity Federation exchanges
