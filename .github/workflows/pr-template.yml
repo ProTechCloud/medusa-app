@@ -1,0 +1,54 @@
+name: pr-template
+
+# Holds a pull request to its template. `edited` is here because fixing the
+# title or the body is a change this check has to see. No path filter: the
+# check is required, so it has to report on every pull request.
+on:
+  pull_request:
+    branches: [dev, stg]
+    types: [opened, edited, reopened, synchronize]
+
+concurrency:
+  group: pr-template-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  pr-template:
+    name: Quality — PR Template
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: ./.github/actions/setup-monorepo
+
+      # Use the base branch's validation rules. This workflow and its runtime
+      # remain PR-controlled, so this check is not tamper-resistant.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          path: base
+          persist-credentials: false
+
+      - name: Test the body check
+        run: node --test .github/pr-template/check-body.test.mjs
+
+      - name: Lint the title
+        env:
+          TITLE: ${{ github.event.pull_request.title }}
+        run: printf '%s\n' "$TITLE" | yarn commitlint --verbose --config base/commitlint.config.mjs
+
+      # Bots write neither the body nor the checklist.
+      - name: Check the body against the template
+        if: github.event.pull_request.user.type != 'Bot'
+        env:
+          BODY: ${{ github.event.pull_request.body }}
+        run: |
+          # First merge only: the base branch has no script yet.
+          script=base/.github/pr-template/check-body.mjs
+          [ -f "$script" ] || script=.github/pr-template/check-body.mjs
+          node "$script" "$BODY"
