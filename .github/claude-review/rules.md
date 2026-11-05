@@ -4,7 +4,8 @@
 branch so a pull request cannot change its own review. You **orchestrate** the review: you build nothing
 yourself and you review nothing yourself. The seven lenses and the checker are subagents; each already
 holds its role (`.github/claude-review/lenses/<name>.md`), the Review contract
-(`.github/claude-review/lenses/contract.md`) and the _Repo rules_ below.
+(`.github/claude-review/lenses/contract.md`) and reads the project's own rules from
+its docs, through the package's docs manifest.
 
 **Every finding is required.** Nothing this review raises is optional: each one blocks the merge until it
 is fixed, or until someone with write access resolves its thread. The check stays red while any finding is
@@ -123,82 +124,3 @@ Fill the structured output:
 
 You post nothing: you have no tool that can. Never put anything in `findings` that is not a defect at the
 head commit — no summary, no praise, no note about an earlier review.
-
-## Repo rules
-
-`medusa-app`: Yarn 4 workspaces under Turborepo. `apps/backend` is Hono 4 on Bun, `apps/native`
-is Expo SDK 57 with Expo Router, `packages/eslint-plugin` holds the lint rules. Taken from
-`AGENTS.md` and the docs it lists; each finding cites the doc by path.
-
-### Blockers (🚨, whatever the lens)
-
-- A route that does more than read the request, call one use case and pick the response
-  (`docs/api/style-guide/routes.md`).
-- A route or module holding a dependency instead of a use case receiving it through the context
-  (`docs/api/style-guide/routes.md`, _Only use cases hold dependencies_).
-- A top-level route mounted anywhere but `ROUTES`, or the entry point mounting more than `/health`
-  (`docs/api/style-guide/routes.md`).
-- `process.env.X as string`, `process.env.X!`, or `process.env` read outside the files
-  `docs/api/style-guide/production.md` allows.
-- A stack trace or internal path reaching a client, or a secret, token, cookie or full request
-  body in a log line (`docs/api/style-guide/production.md`).
-- `/health` calling a use case or a client (`docs/api/style-guide/production.md`, _Liveness_).
-- A store made with zustand's `create` instead of `createAppStore`, or `useState` / `useReducer`
-  in a screen, component or hook (`docs/expo/style-guide/state.md`).
-- `ios/` or `android/` committed (`docs/expo/style-guide/project-structure.md`).
-- A committed secret: a key, a token, a `.env` file (`AGENTS.md`).
-- A new `resolutions` entry with no row in `docs/dependencies.md`.
-
-### Conventions (⚠️)
-
-- Placement: `docs/style-guide/placement-rule.md`, `docs/monorepo.md` (the route-file exception),
-  `docs/style-guide/third-party-integrations.md`.
-- Imports: `@/` and `./`, never `../`, package subpaths: `docs/style-guide/imports.md`.
-- Packages export source, no build step: `docs/style-guide/packages.md`.
-- Names, type prefixes, Luxon for dates: `docs/typescript/conventions.md`.
-- Strings: one JSON file per domain, tests assert on keys: `docs/style-guide/i18n.md`.
-- API: folders under `routes/` spell the URL; expected failures are typed errors with a stable
-  code; unexpected ones propagate to `request-errors.ts`; config is parsed, never cast
-  (`docs/api/style-guide/routes.md`, `docs/api/style-guide/production.md`).
-- Native: a route file renders its screen and nothing else; screens in
-  `src/screens/<screen>/index.tsx`; one-screen pieces under that screen, shared ones in
-  `src/shared/`; every component, hook and context a folder with `index`; every colour, spacing,
-  radius and font size a theme role; every component has a `testID`; a provider is wired in the
-  root layout; no navigation or side effects hidden in helpers; derived values are selectors
-  (`docs/expo/style-guide/*.md`).
-- Entry points keep the shape their runtime expects (`AGENTS.md`).
-- A structural change with no doc change in the same PR (`AGENTS.md`, _Working style_).
-
-### Tests
-
-The repo has a test suite and expects one for new behaviour. API: route tests through
-`buildHttp()`, replacing the use-case module, never its dependencies; use-case tests override only
-the fields they are about; mocks default to failure; Faker for data; few HTTP-level tests
-(`docs/api/style-guide/testing.md`). Native: Jest on `jest-expo`, full render never shallow,
-fake timers, `userEvent` by `testID`, `mockFetch` for the network, platform APIs wrapped and the
-wrapper mocked, assert visible behaviour never styles (`docs/expo/style-guide/testing.md`). Both:
-`docs/style-guide/test-organization.md`, `docs/style-guide/test-quality.md`.
-
-### Docs per lens
-
-| Lens | Read |
-| --- | --- |
-| security | `docs/api/style-guide/production.md`, `docs/environment.md`, `.github/workflows/*.yml` in the diff |
-| conventions | `docs/style-guide/index.md` and the pages for the changed files, `docs/typescript/conventions.md`, `biome.json`, `eslint.config.mjs`, `packages/eslint-plugin` |
-| tests | `.agents/skills/testing/SKILL.md`, `docs/api/style-guide/testing.md`, `docs/expo/style-guide/testing.md`, `docs/expo/style-guide/testing-patterns.md`, `docs/style-guide/test-*.md`, `docs/style-guide/testing-patterns.md` |
-| boundaries | `AGENTS.md`, `docs/monorepo.md`, `docs/style-guide/placement-rule.md`, `docs/api/style-guide/routes.md`, `apps/backend/src/services/api/http/README.md`, `docs/expo/style-guide/project-structure.md`, `.agents/skills/api/SKILL.md`, `.agents/skills/native/SKILL.md` |
-| performance | `docs/api/style-guide/production.md`, `docs/expo/style-guide/state.md` |
-| correctness | `docs/environment.md`, `docs/dependencies.md` |
-| intent | the PR body, the issue it closes |
-
-### Leads
-
-`as any`, `as unknown as`, `@ts-ignore`, `@ts-expect-error`, `biome-ignore`, `eslint-disable`,
-`process.env`, `console.log`, `.only(`, `.skip(`, `catch {}` or a `catch` that only logs,
-`setTimeout` / `sleep` used to wait, `useState`, `useReducer`, `create(` from zustand,
-`dangerouslySetInnerHTML`, `rejectUnauthorized`, `--no-verify`, `TODO`, `FIXME`.
-
-### Already checked elsewhere
-
-The Backend and Mobile Code Quality workflows run lint, typecheck, format, tests, fallow,
-commitlint and gitleaks. Don't run them again and don't repeat what they report.
