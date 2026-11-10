@@ -94,8 +94,8 @@ service is a separate path, added with the first such dependency.
 
 Bind to the interface the environment needs. `Bun.serve` in `services/api/index.ts` listens on
 `0.0.0.0` because it runs in a container, where the port must be reachable from outside the
-container's own loopback. On the VM, Docker publishes it on the host's `127.0.0.1` only, and
-`cloudflared` is the one way in; the unit lives in `medusa-platform`.
+container's own loopback. On Cloud Run, only the load balancer reaches it: the service has no
+`run.app` URL and accepts internal load balancer traffic only, as defined in `medusa-platform`.
 
 ## Secrets
 
@@ -105,4 +105,4 @@ container's own loopback. On the VM, Docker publishes it on the host's `127.0.0.
 - `gitleaks` runs on every pull request, in the `Security — Secret Scan` job of
   `.github/workflows/backend-code-quality.yml`.
 - A secret the API needs is read from Secret Manager at runtime, never passed as a build
-  argument or set in the VM's unit.
+  argument or set in the service's plain env.
