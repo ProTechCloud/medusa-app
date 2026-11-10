@@ -28,7 +28,10 @@ inputs, `.github/workflows/backend-cd.yml`, `.github/actions/install-trivy/` or
    1. Pushes the image to Artifact Registry as `medusa-backend:<commit>`
       ([`push-image.sh`](../.github/scripts/deploy/push-image.sh)). A tag is pushed once and
       never pushed over: a re-run of the same commit reuses the image it already pushed, after
-      scanning that image again with the current Trivy rules.
+      scanning that image again with the current Trivy rules. Whether the tag is there is
+      [`image-exists.sh`](../.github/scripts/deploy/image-exists.sh)'s answer, which the workflow
+      also reads to install Trivy only then: only "not found" reads as absent, and any other
+      registry error fails the run.
    2. Rolls the API onto it with `gcloud run services update --image`
       ([`rollout.sh`](../.github/scripts/deploy/rollout.sh)). That creates a revision that
       differs from the current one by the image only. Everything else about the service (CPU,
@@ -50,8 +53,8 @@ the revision that held it before the deploy, and the run fails.
 ## Testing the scripts
 
 The failure paths cannot be tried against the live service, so
-[`push-image.test.mjs`](../.github/scripts/deploy/push-image.test.mjs) and
-[`rollout.test.mjs`](../.github/scripts/deploy/rollout.test.mjs) run the scripts with `gcloud`,
+[`push-image.test.mjs`](../.github/scripts/deploy/push-image.test.mjs), which also covers
+`image-exists.sh`, and [`rollout.test.mjs`](../.github/scripts/deploy/rollout.test.mjs) run the scripts with `gcloud`,
 `curl`, `docker`, `trivy` and `sleep` stubbed: a push, a re-run's scan, a registry error, the
 digest check, the restore, and the retries with no sleep after the last. `Quality — Deploy
 Scripts` in `backend-code-quality` runs them when a pull request touches
