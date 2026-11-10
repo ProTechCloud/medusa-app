@@ -11,7 +11,11 @@ if error=$(gcloud artifacts docker images describe "$IMAGE" 2>&1 >/dev/null); th
   exit 0
 fi
 
+# For a tag or an image the repository does not hold, gcloud prints
+# "ERROR: (gcloud.artifacts.docker.images.describe) Image not found." (checked
+# against the stg registry). NOT_FOUND is the API's status for the same case,
+# should gcloud pass it through instead.
 case "$error" in
-  *"Image not found"*) echo false ;;
+  *"Image not found"* | *NOT_FOUND*) echo false ;;
   *) echo "::error::cannot tell whether $IMAGE is in the registry: $error" >&2; exit 1 ;;
 esac

@@ -22,18 +22,29 @@ const REGISTRY_IMAGE = "us-docker.pkg.dev/project/repo/medusa-backend";
 // gcloud as the script calls it: the registry answers with DIGEST_OUT, the
 // service is held by `previous` until `services update` creates `latest`, and
 // every call is appended to calls.log so a test can see what was done.
+// NO_SERVING (`before` or `after` the update) splits the traffic so that no
+// revision holds 100%, and RESTORE_FAILS makes the restore's
+// `update-traffic --to-revisions` fail.
 const GCLOUD = `#!/usr/bin/env bash
 echo "$*" >> "$STUB_DIR/calls.log"
 case "$1 $2 $3" in
   "artifacts docker images") echo "$DIGEST_OUT" ;;
   "run services describe")
     revision=previous
-    [ -f "$STUB_DIR/updated" ] && revision=latest
-    echo "{\\"status\\":{\\"traffic\\":[{\\"revisionName\\":\\"$revision\\",\\"percent\\":100}]}}" ;;
+    stage=before
+    [ -f "$STUB_DIR/updated" ] && revision=latest && stage=after
+    if [ "\${NO_SERVING:-}" = "$stage" ]; then
+      echo "{\\"status\\":{\\"traffic\\":[{\\"revisionName\\":\\"$revision\\",\\"percent\\":50}]}}"
+    else
+      echo "{\\"status\\":{\\"traffic\\":[{\\"revisionName\\":\\"$revision\\",\\"percent\\":100}]}}"
+    fi ;;
   "run services update")
     [ "\${UPDATE_FAILS:-}" = "true" ] && exit 1
     touch "$STUB_DIR/updated" ;;
-  "run services update-traffic") ;;
+  "run services update-traffic")
+    case "$*" in
+      *--to-revisions*) [ "\${RESTORE_FAILS:-}" = "true" ] && exit 1 ;;
+    esac ;;
   "run revisions describe")
     echo "{\\"spec\\":{\\"containers\\":[{\\"image\\":\\"$SPEC_IMAGE\\"}]},\\"status\\":{\\"imageDigest\\":\\"$STATUS_IMAGE\\"}}" ;;
   *) echo "unexpected gcloud $*" >&2; exit 2 ;;
@@ -144,6 +155,28 @@ describe("rollout", () => {
 		assert.equal(result.status, 1);
 		assert.equal(result.updated, false);
 		assert.equal(result.restored, false);
+	});
+
+	it("fails before any change when no revision holds all the traffic", () => {
+		const result = rollout({ NO_SERVING: "before" });
+		assert.equal(result.status, 1);
+		assert.equal(result.updated, false);
+		assert.equal(result.restored, false);
+	});
+
+	it("restores the previous revision when no revision holds all the traffic after the update", () => {
+		const result = rollout({ NO_SERVING: "after" });
+		assert.equal(result.status, 1);
+		assert.equal(result.updated, true);
+		assert.equal(result.restored, true);
+		assert.deepEqual(result.curls, []);
+	});
+
+	it("still fails, and says so, when the restore itself fails", () => {
+		const result = rollout({ UPDATE_FAILS: "true", RESTORE_FAILS: "true" });
+		assert.equal(result.status, 1);
+		assert.equal(result.restored, true);
+		assert.match(result.output, /could not restore previous/);
 	});
 
 	it("restores the previous revision when the update fails", () => {

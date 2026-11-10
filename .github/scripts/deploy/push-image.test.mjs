@@ -19,8 +19,9 @@ const EXISTS = fileURLToPath(new URL("./image-exists.sh", import.meta.url));
 const IMAGE = "us-docker.pkg.dev/project/repo/medusa-backend:c0ffee";
 
 // The registry's answer to `describe` is DESCRIBE: `found`, `missing` (the
-// error gcloud prints for a tag that is not there) or `denied`. Every call to
-// a stub is appended to calls.log.
+// error gcloud prints for a tag that is not there, as checked against the stg
+// registry), `not-found-status` (the API's NOT_FOUND status for the same case)
+// or `denied`. Every call to a stub is appended to calls.log.
 const GCLOUD = `#!/usr/bin/env bash
 echo "gcloud $*" >> "$STUB_DIR/calls.log"
 case "$1 $2 $3" in
@@ -29,6 +30,7 @@ case "$1 $2 $3" in
     case "$DESCRIBE" in
       found) echo "image: $IMAGE" ;;
       missing) echo "ERROR: (gcloud.artifacts.docker.images.describe) Image not found." >&2; exit 1 ;;
+      not-found-status) echo "ERROR: (gcloud.artifacts.docker.images.describe) NOT_FOUND: Requested entity was not found." >&2; exit 1 ;;
       denied) echo "ERROR: (gcloud.artifacts.docker.images.describe) PERMISSION_DENIED: Permission denied." >&2; exit 1 ;;
     esac ;;
   *) echo "unexpected gcloud $*" >&2; exit 2 ;;
@@ -84,6 +86,13 @@ describe("push-image", () => {
 
 	it("reads a missing tag as false", () => {
 		assert.deepEqual(exists("missing"), { status: 0, output: "false" });
+	});
+
+	it("reads a NOT_FOUND status as false", () => {
+		assert.deepEqual(exists("not-found-status"), {
+			status: 0,
+			output: "false",
+		});
 	});
 
 	it("fails on any other registry error instead of reading it as absent", () => {
