@@ -51,12 +51,19 @@ gcloud run services update-traffic "$SERVICE" --project "$PROJECT" --region "$RE
 revision=$(serving_revision)
 [ -n "$revision" ] || { echo "::error::no revision holds 100% of the traffic"; exit 1; }
 
-image=$(gcloud run revisions describe "$revision" --project "$PROJECT" --region "$REGION" \
-  --format='value(spec.containers[0].image)')
-case "$image" in
-  *"@$digest") echo "$revision serves $IMAGE ($digest)" ;;
-  *) echo "::error::$revision runs $image, expected $IMAGE ($digest)"; exit 1 ;;
-esac
+# The revision keeps the image as it was given, here by tag, and the digest
+# Cloud Run resolved it to in status.imageDigest. Either naming the digest
+# above is the image just deployed.
+revision_json=$(gcloud run revisions describe "$revision" --project "$PROJECT" --region "$REGION" \
+  --format=json)
+image=$(jq -r '.spec.containers[0].image // empty' <<<"$revision_json")
+resolved=$(jq -r '.status.imageDigest // empty' <<<"$revision_json")
+if [[ "$image" == *"@$digest" || "$resolved" == *"@$digest" ]]; then
+  echo "$revision serves $IMAGE ($digest)"
+else
+  echo "::error::$revision runs ${resolved:-$image}, expected $IMAGE ($digest)"
+  exit 1
+fi
 
 # Through the load balancer, under the public name, with the certificate
 # checked.
