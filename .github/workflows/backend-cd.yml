@@ -136,14 +136,18 @@ jobs:
       # A re-run of a commit finds its tag already pushed. Only then does the
       # next step need trivy: it scans the image in the registry rather than
       # the one scanned above. A first push never reads it.
+      # Only "not found" means absent; any other failure stops the run here.
       - name: Is this commit's image already in the registry?
         id: pushed
         run: |
-          if gcloud artifacts docker images describe "$IMAGE" >/dev/null 2>&1; then
+          if error=$(gcloud artifacts docker images describe "$IMAGE" 2>&1 >/dev/null); then
             echo "exists=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "exists=false" >> "$GITHUB_OUTPUT"
+            exit 0
           fi
+          case "$error" in
+            *"Image not found"*) echo "exists=false" >> "$GITHUB_OUTPUT" ;;
+            *) echo "::error::cannot tell whether $IMAGE is in the registry: $error"; exit 1 ;;
+          esac
 
       - uses: ./.github/actions/install-trivy
         if: steps.pushed.outputs.exists == 'true'

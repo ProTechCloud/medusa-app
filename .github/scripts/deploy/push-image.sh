@@ -17,11 +17,19 @@ fi
 
 gcloud auth configure-docker "$registry" --quiet
 
-if gcloud artifacts docker images describe "$IMAGE" >/dev/null 2>&1; then
+if error=$(gcloud artifacts docker images describe "$IMAGE" 2>&1 >/dev/null); then
   echo "$IMAGE is already in the registry; scanning it instead of pushing"
   trivy image --severity CRITICAL --exit-code 1 "$IMAGE"
   exit 0
 fi
+
+# Only a tag that is not there is pushed. Any other failure (a missing
+# permission, a registry error) says nothing about the tag, and pushing then
+# could write over one.
+case "$error" in
+  *"Image not found"*) ;;
+  *) echo "::error::cannot tell whether $IMAGE is in the registry: $error"; exit 1 ;;
+esac
 
 docker load --input "$IMAGE_TAR"
 docker tag "$LOCAL_IMAGE" "$IMAGE"
