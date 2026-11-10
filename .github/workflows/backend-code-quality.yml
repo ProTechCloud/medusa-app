@@ -32,6 +32,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       backend: ${{ steps.scope.outputs.backend }}
+      deploy: ${{ steps.scope.outputs.deploy }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -55,6 +56,13 @@ jobs:
             echo "backend=true" >> "$GITHUB_OUTPUT"
           else
             echo "backend=false" >> "$GITHUB_OUTPUT"
+          fi
+          # The deploy's scripts and the workflows that run or test them.
+          deploy_pattern='^(\.github/scripts/deploy/|\.github/workflows/backend-cd\.yml$|\.github/workflows/backend-code-quality\.yml$)'
+          if echo "$changed" | grep -qE "$deploy_pattern"; then
+            echo "deploy=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "deploy=false" >> "$GITHUB_OUTPUT"
           fi
 
   # Secrets and commit messages apply to every change, so these two run on
@@ -181,6 +189,29 @@ jobs:
             APP_COMMIT=${{ github.event.pull_request.head.sha }}
             APP_ENV=ci
 
+  # The deploy scripts only run for real in a deploy, and their failure paths
+  # (a restore, a digest mismatch, a registry error) cannot be tried against
+  # the live service. Their tests run the scripts with gcloud, curl, docker,
+  # trivy and sleep stubbed.
+  deploy-scripts:
+    name: Quality — Deploy Scripts
+    needs: [discover, commit-messages]
+    if: needs.discover.outputs.deploy == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # Node only: the tests import nothing but its built-ins, so the
+      # workspace's install would be time spent for nothing.
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+
+      - name: Test the deploy scripts
+        run: node --test .github/scripts/deploy/*.test.mjs
+
   # The only check branch protection requires. It always runs and fails unless
   # every job above succeeded or was skipped on purpose — a skipped job counts
   # as passed to protection, so requiring the chain directly would let a pull
@@ -188,7 +219,7 @@ jobs:
   summary:
     name: Backend - Code Quality Summary
     if: always()
-    needs: [discover, secret-scan, commit-messages, lint, tests, docker-image]
+    needs: [discover, secret-scan, commit-messages, lint, tests, docker-image, deploy-scripts]
     runs-on: ubuntu-latest
     steps:
       - name: Require every check to have passed

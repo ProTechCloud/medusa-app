@@ -12,4 +12,5 @@ the commands, CI/CD and the deploy.
 | [i18n](style-guide/i18n.md)                         | Where the app's strings live, one file per domain, and tests that assert on keys       |
 | [TypeScript Conventions](typescript/conventions.md) | Type prefixes, no single-letter names, dates and times with Luxon                      |
 | [Environment](environment.md)                       | The three environments, where each reads its values, and every variable                |
+| [Deployment](deployment.md)                         | What a push to `stg` does, how to roll back, and the GitHub configuration it needs     |
 | [Dependencies](dependencies.md)                     | Why each `resolutions` override exists and when it can go                              |

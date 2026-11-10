@@ -7,7 +7,7 @@ This file is for coding agents working in this repository.
 Read the docs before making assumptions about the architecture or changing the structure.
 Start here:
 
-- [`README.md`](./README.md) — getting started, the commands, CI/CD and the deploy.
+- [`README.md`](./README.md) — getting started, the commands and CI/CD; [`docs/deployment.md`](./docs/deployment.md) — the deploy.
 - [`docs/index.md`](./docs/index.md) — every doc, one line each.
 - [`docs/monorepo.md`](./docs/monorepo.md) — the workspace layout and how to add an app or a package.
 - [`docs/api/style-guide/index.md`](./docs/api/style-guide/index.md) — read it before changing `apps/backend`.
@@ -50,6 +50,7 @@ Every package exports its TypeScript source; there is no build step.
 - [`docs/style-guide/testing-patterns.md`](./docs/style-guide/testing-patterns.md) — each testing rule in a snippet.
 - [`docs/typescript/conventions.md`](./docs/typescript/conventions.md) — type prefixes, names, dates with Luxon.
 - [`docs/environment.md`](./docs/environment.md) — the environments, where each reads its values, every variable.
+- [`docs/deployment.md`](./docs/deployment.md) — what a push to `stg` does, rollback, and the variables the deploy reads.
 - [`docs/dependencies.md`](./docs/dependencies.md) — why each `resolutions` override exists.
 
 ## Skills
