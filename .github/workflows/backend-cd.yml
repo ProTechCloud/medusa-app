@@ -133,9 +133,20 @@ jobs:
       - name: Impersonate the deploy spoke
         run: gcloud config set auth/impersonate_service_account "${{ vars.GCP_DEPLOY_SPOKE }}"
 
-      # For the re-run case below, where the image deployed is the one already
-      # in the registry rather than the one scanned above.
+      # A re-run of a commit finds its tag already pushed. Only then does the
+      # next step need trivy: it scans the image in the registry rather than
+      # the one scanned above. A first push never reads it.
+      - name: Is this commit's image already in the registry?
+        id: pushed
+        run: |
+          if gcloud artifacts docker images describe "$IMAGE" >/dev/null 2>&1; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - uses: ./.github/actions/install-trivy
+        if: steps.pushed.outputs.exists == 'true'
         with:
           version: ${{ env.TRIVY_VERSION }}
 
