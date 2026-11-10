@@ -39,10 +39,24 @@ inputs, `.github/workflows/backend-cd.yml`, `.github/actions/install-trivy/` or
       registry, then asks `https://<API_HOSTNAME>/version`, with the certificate verified,
       which commit it serves, and fails unless it is this one.
 
+A revision keeps the image as it was given, by tag, and the digest it resolved to in
+`status.imageDigest`; step 2.3 accepts the digest in either.
+
 Cloud Run moves traffic only to a revision whose startup probe on `/health` passed. A build
 that does not start leaves the previous revision serving, and the run fails at step 2.2. A
 revision that starts but fails step 2.3 is taken out again: the script puts the traffic back on
 the revision that held it before the deploy, and the run fails.
+
+## Testing the scripts
+
+The failure paths cannot be tried against the live service, so
+[`push-image.test.mjs`](../.github/scripts/deploy/push-image.test.mjs) and
+[`rollout.test.mjs`](../.github/scripts/deploy/rollout.test.mjs) run the scripts with `gcloud`,
+`curl`, `docker`, `trivy` and `sleep` stubbed: a push, a re-run's scan, a registry error, the
+digest check, the restore, and the retries with no sleep after the last. `Quality — Deploy
+Scripts` in `backend-code-quality` runs them when a pull request touches
+`.github/scripts/deploy/`, `backend-cd.yml` or that workflow; locally,
+`node --test .github/scripts/deploy/*.test.mjs`.
 
 ## Rollback
 
