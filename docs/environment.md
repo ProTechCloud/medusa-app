@@ -26,14 +26,14 @@ reads the environment.
 
 ## Environments
 
-| `APP_ENV` | Where                    | Where its values come from                                                                                                                                                                                                             |
-| --------- | ------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `local`   | your machine, `yarn dev` | `apps/backend/.env.local`, copied from [`.env.local.example`](../apps/backend/.env.local.example). It is gitignored; the example is committed                                                                                          |
-| `stg`     | the stg VM, `backend-cd` | the image, for `APP_VERSION` and `APP_COMMIT` (build arguments set by `backend-cd`); the VM's `medusa-app.service`, for `APP_ENV` and `PORT`; and the VM's `/var/lib/medusa/app.env`, for the PostHog token and the telemetry settings |
-| `prd`     | not deployed yet         | the same as `stg`, from the prd VM's unit                                                                                                                                                                                              |
+| `APP_ENV` | Where                                   | Where its values come from                                                                                                                                                                                                                             |
+| --------- | --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `local`   | your machine, `yarn dev`                | `apps/backend/.env.local`, copied from [`.env.local.example`](../apps/backend/.env.local.example). It is gitignored; the example is committed                                                                                                          |
+| `stg`     | the stg Cloud Run service, `backend-cd` | the image, for `APP_VERSION` and `APP_COMMIT` (build arguments set by `backend-cd`); the service's definition in `medusa-platform`, for `APP_ENV`, the telemetry settings and the PostHog token, a Secret Manager reference; and Cloud Run, for `PORT` |
+| `prd`     | not deployed yet                        | the same as `stg`, from prd's service definition                                                                                                                                                                                                       |
 
-No file is read outside `local`: the image ships no `.env` file, and the VM's unit lives in
-`medusa-platform` (`terraform/modules/gcp/api-vm/templates/cloud-init.yaml`).
+No file is read outside `local`: the image ships no `.env` file, and the service's definition
+lives in `medusa-platform` (`terraform/live/<env>/gcp/api.tf`).
 
 ## Variables
 
@@ -56,7 +56,7 @@ No file is read outside `local`: the image ships no `.env` file, and the VM's un
 | `POSTHOG_MAX_QUEUE_SIZE`    | `posthog`       | no       | posthog-node's             | errors held in memory before the oldest are dropped                                                                   |
 | `POSTHOG_FLUSH_AT`          | `posthog`       | no       | posthog-node's             | errors queued before a send                                                                                           |
 | `POSTHOG_FLUSH_INTERVAL_MS` | `posthog`       | no       | posthog-node's             | how often queued errors are sent, in milliseconds                                                                     |
-| `OTEL_TRACES_SAMPLER_ARG`   | `opentelemetry` | no       | `1`                        | the share of new traces kept, 0 to 1; the VM sets `1` in stg, `0.1` in prd                                            |
+| `OTEL_TRACES_SAMPLER_ARG`   | `opentelemetry` | no       | `1`                        | the share of new traces kept, 0 to 1; the service sets `1` in stg, `0.1` in prd                                            |
 | `OTEL_LOG_LEVEL`            | `opentelemetry` | no       | `warn`                     | the SDK's own problems on stderr: `none` to `all`                                                                     |
 | `OTEL_BSP_*`, `OTEL_BLRP_*` | `opentelemetry` | no       | the SDK's                  | the span and log record batch settings: `MAX_QUEUE_SIZE`, `MAX_EXPORT_BATCH_SIZE`, `SCHEDULE_DELAY`, `EXPORT_TIMEOUT` |
 
@@ -66,8 +66,8 @@ Logging reads into fields. The
 tests set `LOG_LEVEL=silent`, `APP_ENV=local` and `OTEL_SERVICE_NAME=api` in
 `apps/backend/vitest.config.ts`.
 
-Without `POSTHOG_PROJECT_TOKEN` the API sends nothing and runs the same; the stg VM adds it
-only once the secret holds a real token.
+Without `POSTHOG_PROJECT_TOKEN` the API sends nothing and runs the same; the stg service
+adds it only once the secret holds a real token.
 
 ## Adding a variable
 
@@ -75,5 +75,5 @@ only once the secret holds a real token.
    it from `ctx.config`; nothing reads the environment directly.
 2. Add it to `.env.local.example` and to the table above.
 3. If stg needs it, set it where stg's values come from: a build argument in
-   `backend-cd.yml`, or the VM's unit in `medusa-platform`. A secret never goes in either;
+   `backend-cd.yml`, or the service's env in `medusa-platform`. A secret never goes in either;
    it is read from Secret Manager at runtime.

@@ -2,13 +2,13 @@
 
 The Medusa workspace: a [Yarn 4](https://yarnpkg.com) monorepo run by
 [Turborepo](https://turborepo.com). It holds two apps: the API — [Bun](https://bun.sh) +
-[Hono](https://hono.dev) — deployed to a GCE instance that is reachable only through a
-Cloudflare Tunnel, and the iOS and Android app — [Expo](https://expo.dev) SDK 57 — which
-for now runs only as a development build on a phone.
+[Hono](https://hono.dev) — deployed to Cloud Run behind a Google load balancer, and the iOS
+and Android app — [Expo](https://expo.dev) SDK 57 — which for now runs only as a
+development build on a phone.
 
 |                |                                                                                  |
 | -------------- | -------------------------------------------------------------------------------- |
-| stg            | https://api-stg-medusa.fabianalula.site                                          |
+| stg            | https://api.stg.medusa.fabianalula.site                                          |
 | Node (tooling) | 22.18+, from `.nvmrc`                                                            |
 | Bun (runtime)  | 1.4.4                                                                            |
 | Infra          | [`medusa-platform`](https://github.com/ProTechCloud/medusa-platform) (Terraform) |
@@ -93,7 +93,8 @@ docker run --rm -e APP_ENV=local -p 8080:8080 medusa-backend
 ```
 
 A build without `--build-arg APP_ENV` sets no `APP_ENV`, and the API refuses to start until
-it is told where it runs. `backend-cd` builds with `APP_ENV=stg`, and the VM passes it too.
+it is told where it runs. `backend-cd` builds with `APP_ENV=stg`, and the Cloud Run service
+passes it too.
 
 A Node stage runs `yarn workspaces focus @medusa/backend --production`, which installs only
 what the API needs at runtime. The Bun stage copies that `node_modules` and `apps/backend`
@@ -102,12 +103,12 @@ base images are pinned by digest.
 
 ## CI/CD
 
-| Workflow               | Trigger                                                                                     | Does                                                                                                                                                                         |
-| ---------------------- | ------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `backend-code-quality` | every PR → `dev` / `stg`, when `BACKEND_CODE_QUALITY_ENABLED` is `true`                     | discover → secret scan → commit messages → typecheck + lint + format → tests with coverage, then fallow → docker build (no push) → summary                                   |
-| `mobile-code-quality`  | every PR → `dev` / `stg`, when `MOBILE_CODE_QUALITY_ENABLED` is `true`                      | discover → secret scan → commit messages → typecheck + lint + format → tests with coverage, then fallow → summary. Nothing is built or signed                                |
-| `pr-template`          | every PR → `dev` / `stg`, and when its title or body is edited                              | the title passes commitlint; every section of the base branch's template is filled and every checklist item is ticked or marked n/a; bots get the title check only           |
-| `backend-cd`           | push → `stg` touching the backend, or by hand on `stg`, when `BACKEND_CD_ENABLED` is `true` | build the image tagged with the commit, trivy scan (fails on CRITICAL), push, roll out over IAP, then check on the VM that `127.0.0.1:8080/version` answers with this commit |
+| Workflow               | Trigger                                                                                     | Does                                                                                                                                                                                                              |
+| ---------------------- | ------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `backend-code-quality` | every PR → `dev` / `stg`, when `BACKEND_CODE_QUALITY_ENABLED` is `true`                     | discover → secret scan → commit messages → typecheck + lint + format → tests with coverage, then fallow → docker build (no push) → summary                                                                        |
+| `mobile-code-quality`  | every PR → `dev` / `stg`, when `MOBILE_CODE_QUALITY_ENABLED` is `true`                      | discover → secret scan → commit messages → typecheck + lint + format → tests with coverage, then fallow → summary. Nothing is built or signed                                                                     |
+| `pr-template`          | every PR → `dev` / `stg`, and when its title or body is edited                              | the title passes commitlint; every section of the base branch's template is filled and every checklist item is ticked or marked n/a; bots get the title check only                                                |
+| `backend-cd`           | push → `stg` touching the backend, or by hand on `stg`, when `BACKEND_CD_ENABLED` is `true` | build the image tagged with the commit, trivy scan (fails on CRITICAL), push, roll out to Cloud Run, then check that `https://<API_HOSTNAME>/version` answers with this commit ([Deployment](docs/deployment.md)) |
 
 **Only `Backend - Code Quality Summary`, `Mobile - Code Quality Summary` and
 `Quality — PR Template` are required by branch protection.** Neither quality workflow has a
@@ -123,7 +124,8 @@ fails the other's check.
 
 Deploys run one at a time and are never cancelled. To redeploy `stg` after a change the path
 filter skips, run `backend-cd` by hand from the Actions tab on the `stg` branch; any other
-branch is refused. Actions are pinned to commit SHAs;
+branch is refused. What a deploy does, how to roll it back and the variables it reads are in
+[Deployment](docs/deployment.md). Actions are pinned to commit SHAs;
 Dependabot proposes updates weekly.
 
 Commit messages follow [Conventional Commits](https://www.conventionalcommits.org).
@@ -135,7 +137,7 @@ same check.
 There are no keys. The `deploy` job, in the `backend-stg` environment, exchanges GitHub's
 OIDC token for a sign-in as the **hub** service account, which holds no permissions of its own. Every
 gcloud and docker call then impersonates the **spoke** in the stg project, which can push to
-the registry and roll out this one VM. `medusa-platform` trusts only
+the registry and roll out the API's Cloud Run service. `medusa-platform` trusts only
 `medusa-app | .github/workflows/backend-cd.yml | backend-stg | refs/heads/stg`, so renaming
 the repository, the workflow, the environment or the branch breaks the sign-in. To rename one,
 apply the new name in `medusa-platform` first, then rename.
@@ -143,6 +145,8 @@ apply the new name in `medusa-platform` first, then rename.
 ### Repository variables
 
 Variables, not secrets: none of these is a credential. Values come from `medusa-platform`.
+The deploy's target (project, region, registry, service and hostname) lives on the
+`backend-stg` environment instead; [Deployment](docs/deployment.md) lists both.
 
 | Variable                       | Purpose                                                     |
 | ------------------------------ | ----------------------------------------------------------- |
@@ -150,10 +154,6 @@ Variables, not secrets: none of these is a credential. Values come from `medusa-
 | `GCP_WIF_AUDIENCE`             | Audience the provider accepts                               |
 | `GCP_DEPLOY_HUB`               | Service account the job signs in as                         |
 | `GCP_DEPLOY_SPOKE`             | Service account every gcloud and docker call impersonates   |
-| `GCP_PROJECT_ID`               | stg project                                                 |
-| `GCP_REGISTRY`                 | Artifact Registry repository the image is pushed to         |
-| `GCP_VM_NAME`                  | Instance to roll out to                                     |
-| `GCP_ZONE`                     | Instance zone                                               |
 | `BACKEND_CODE_QUALITY_ENABLED` | `true` turns on `backend-code-quality`                      |
 | `BACKEND_CD_ENABLED`           | `true` turns on `backend-cd`                                |
 | `MOBILE_CODE_QUALITY_ENABLED`  | `true` turns on `mobile-code-quality`                       |
@@ -163,12 +163,11 @@ No repository secrets are needed.
 ## How traffic reaches this service
 
 ```
-client → Cloudflare edge (api-stg-medusa.fabianalula.site)
-       → Cloudflare Tunnel (outbound-only connection from the VM)
-       → cloudflared container on the VM
-       → app container :8080
+client → DNS (api.stg.medusa.fabianalula.site, DNS-only, straight to the balancer)
+       → Google load balancer :443 (certificate from Certificate Manager)
+       → Cloud Run service medusa-stg-api :8080
 ```
 
-The instance has **no static IP and no inbound firewall rule**. `cloudflared` dials _out_
-to Cloudflare, so there is no listening port exposed to the internet. Deploys reach the
-box over IAP, not SSH-from-anywhere.
+The service has no `run.app` URL and accepts traffic from the load balancer only. The
+previous stack, a VM behind a Cloudflare Tunnel at `api-stg-medusa.fabianalula.site`, still
+answers with the last image it was given; `backend-cd` no longer deploys to it.
