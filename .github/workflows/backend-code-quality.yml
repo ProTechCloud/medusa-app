@@ -203,7 +203,11 @@ jobs:
         with:
           persist-credentials: false
 
-      - uses: ./.github/actions/setup-monorepo
+      # Node only: the tests import nothing but its built-ins, so the
+      # workspace's install would be time spent for nothing.
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
 
       - name: Test the deploy scripts
         run: node --test .github/scripts/deploy/*.test.mjs

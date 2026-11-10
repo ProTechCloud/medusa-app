@@ -40,8 +40,11 @@ case "$1 $2 $3" in
 esac
 `;
 
+// The hostname gives no answer for the first CURL_FAILS calls, as while the
+// new revision starts, then serves SERVED_COMMIT.
 const CURL = `#!/usr/bin/env bash
 echo "$*" >> "$STUB_DIR/curl.log"
+[ "$(wc -l < "$STUB_DIR/curl.log")" -le "\${CURL_FAILS:-0}" ] && exit 7
 echo "{\\"commit\\":\\"$SERVED_COMMIT\\"}"
 `;
 
@@ -93,6 +96,7 @@ describe("rollout", () => {
 		return {
 			status: run.status,
 			output: run.stdout,
+			calls,
 			updated: calls.some((call) => call.startsWith("run services update ")),
 			restored: calls.some((call) =>
 				call.includes("--to-revisions previous=100"),
@@ -109,6 +113,24 @@ describe("rollout", () => {
 		assert.deepEqual(result.curls, [
 			"-fsS --max-time 20 https://api.example.test/version",
 		]);
+		// The roll forward that undoes a rollback's pin, after the update.
+		const update = result.calls.findIndex((call) =>
+			call.startsWith("run services update "),
+		);
+		const toLatest = result.calls.findIndex(
+			(call) =>
+				call.startsWith("run services update-traffic ") &&
+				call.includes("--to-latest"),
+		);
+		assert.ok(update >= 0 && toLatest > update);
+	});
+
+	it("passes once the hostname answers after a few attempts, with one sleep per failed attempt", () => {
+		const result = rollout({ CURL_FAILS: "3" });
+		assert.equal(result.status, 0);
+		assert.equal(result.restored, false);
+		assert.equal(result.curls.length, 4);
+		assert.equal(result.sleeps.length, 3);
 	});
 
 	it("passes when the revision keeps the tag and only status.imageDigest names the digest", () => {
