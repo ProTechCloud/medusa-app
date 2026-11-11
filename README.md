@@ -172,6 +172,5 @@ The service has no `run.app` URL and accepts traffic from the load balancer only
 previous stack, a VM behind a Cloudflare Tunnel at `api-stg-medusa.fabianalula.site`, still
 answers with the last image it was given; `backend-cd` no longer deploys to it.
 
-The native app still calls that old hostname (`API_URL` in `apps/native/src/config/api/index.ts`),
-so it talks to the VM's last image, not to what `backend-cd` deploys, until CUBE-274 moves it to
-`api.stg.medusa.fabianalula.site` and retires the VM and the tunnel.
+The native app calls `api.stg.medusa.fabianalula.site` (`API_URL` in
+`apps/native/src/config/api/index.ts`), so it talks to what `backend-cd` deploys.
