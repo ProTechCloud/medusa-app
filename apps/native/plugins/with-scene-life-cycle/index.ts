@@ -16,6 +16,8 @@ import {
 const SCENE_DELEGATE = "EXExpoAppSceneDelegate";
 
 const APP_DELEGATE_CLASS = "class AppDelegate: ExpoAppDelegate {";
+const ADOPTED_APP_DELEGATE_CLASS =
+	"class AppDelegate: ExpoAppDelegate, ExpoReactNativeFactoryProvider {";
 
 // What the template's AppDelegate runs at launch to make the window and start
 // React Native into it. The scene delegate does both now, from the factory
@@ -40,6 +42,15 @@ const WINDOW_IN_SCENE = `    // The window is created and React Native is starte
  * building an app that closes at launch.
  */
 export function adoptSceneLifeCycle(appDelegate: string): string {
+	// `expo prebuild --no-clean` hands back the AppDelegate this function
+	// already rewrote.
+	if (
+		appDelegate.includes(ADOPTED_APP_DELEGATE_CLASS) &&
+		appDelegate.includes(WINDOW_IN_SCENE) &&
+		!appDelegate.includes(WINDOW_AT_LAUNCH)
+	) {
+		return appDelegate;
+	}
 	for (const [name, expected] of [
 		["the AppDelegate class", APP_DELEGATE_CLASS],
 		["the window it creates at launch", WINDOW_AT_LAUNCH],
@@ -51,10 +62,7 @@ export function adoptSceneLifeCycle(appDelegate: string): string {
 		}
 	}
 	return appDelegate
-		.replace(
-			APP_DELEGATE_CLASS,
-			"class AppDelegate: ExpoAppDelegate, ExpoReactNativeFactoryProvider {",
-		)
+		.replace(APP_DELEGATE_CLASS, ADOPTED_APP_DELEGATE_CLASS)
 		.replace(WINDOW_AT_LAUNCH, WINDOW_IN_SCENE);
 }
 

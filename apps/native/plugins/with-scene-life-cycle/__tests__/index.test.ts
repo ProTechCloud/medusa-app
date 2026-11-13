@@ -41,6 +41,12 @@ describe("withSceneLifeCycle", () => {
 		expect(appDelegate).toContain("continue userActivity: NSUserActivity");
 	});
 
+	it("leaves an AppDelegate it already rewrote as it is", () => {
+		const appDelegate = adoptSceneLifeCycle(generateTemplateAppDelegate());
+
+		expect(adoptSceneLifeCycle(appDelegate)).toBe(appDelegate);
+	});
+
 	it.each([
 		["the AppDelegate class", "class AppDelegate: ExpoAppDelegate {"],
 		["the window it creates at launch", "#if os(iOS) || os(tvOS)"],
