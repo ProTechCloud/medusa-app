@@ -3,6 +3,14 @@ import type { ExpoConfig } from "expo/config";
 import withSceneLifeCycle, { adoptSceneLifeCycle } from "..";
 import { generateTemplateAppDelegate } from "../__mocks__/generate-template-app-delegate";
 
+const TEMPLATE_CLASS = "class AppDelegate: ExpoAppDelegate {";
+const ADOPTED_CLASS =
+	"class AppDelegate: ExpoAppDelegate, ExpoReactNativeFactoryProvider {";
+const TEMPLATE_WINDOW = "#if os(iOS) || os(tvOS)";
+const SCENE_COMMENT = `    // The window is created and React Native is started by ExpoAppSceneDelegate,
+    // under the scene-based life cycle iOS 27 requires.
+`;
+
 type Mod = (config: Record<string, unknown>) => Promise<{
 	modResults: unknown;
 }>;
@@ -45,6 +53,36 @@ describe("withSceneLifeCycle", () => {
 		const appDelegate = adoptSceneLifeCycle(generateTemplateAppDelegate());
 
 		expect(adoptSceneLifeCycle(appDelegate)).toBe(appDelegate);
+	});
+
+	it.each([
+		[
+			"the class rewritten, the window not",
+			(template: string) => template.replace(TEMPLATE_CLASS, ADOPTED_CLASS),
+		],
+		[
+			"the window rewritten, the class not",
+			(template: string) =>
+				adoptSceneLifeCycle(template).replace(ADOPTED_CLASS, TEMPLATE_CLASS),
+		],
+		[
+			"the class rewritten and the window removed some other way",
+			(template: string) =>
+				adoptSceneLifeCycle(template).replace(SCENE_COMMENT, ""),
+		],
+		[
+			"the class and the comment rewritten, the window still created",
+			(template: string) =>
+				template
+					.replace(TEMPLATE_CLASS, ADOPTED_CLASS)
+					.replace(TEMPLATE_WINDOW, `${SCENE_COMMENT}${TEMPLATE_WINDOW}`),
+		],
+	])("stops the prebuild when an AppDelegate has %s", (_, rewriteHalf) => {
+		const halfRewritten = rewriteHalf(generateTemplateAppDelegate());
+
+		expect(() => adoptSceneLifeCycle(halfRewritten)).toThrow(
+			"with-scene-life-cycle",
+		);
 	});
 
 	it.each([
