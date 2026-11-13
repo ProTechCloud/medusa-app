@@ -31,6 +31,16 @@ APP_ENV=stg npx expo prebuild --clean   # regenerate ios/ and android/ for stg
 APP_ENV=stg npx expo run:ios --device
 ```
 
+## iOS 27 and the scene life cycle
+
+iOS 27 closes an app at launch, with no message, unless it adopts the scene-based life
+cycle. Expo 57 ships the scene delegate that does it, `ExpoAppSceneDelegate`, but its
+template does not use it, so `plugins/with-scene-life-cycle` does at every prebuild: it adds
+the scene manifest to `Info.plist` and lets the scene delegate, not the AppDelegate, create
+the window and start React Native. It stops the prebuild if the template's AppDelegate no
+longer reads as it expects. Expo 58's template does the same itself, so the plugin goes
+when the app moves to Expo 58.
+
 ## Builds and their env files
 
 `APP_ENV` picks the build, and `app.config.ts` reads `.env.<APP_ENV>`, with

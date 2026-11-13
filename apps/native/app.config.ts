@@ -157,6 +157,8 @@ const config: ExpoConfig = {
 			},
 		],
 		"expo-localization",
+		// iOS 27 closes an app at launch unless it adopts the scene life cycle.
+		"./plugins/with-scene-life-cycle",
 		...posthogPlugins,
 	],
 	extra: {
