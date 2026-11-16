@@ -1,0 +1,29 @@
+{
+	"name": "@medusa/db",
+	"version": "0.0.0",
+	"private": true,
+	"type": "module",
+	"exports": {
+		".": "./src/index.ts",
+		"./migrate": "./src/migrate.ts"
+	},
+	"scripts": {
+		"db:generate": "drizzle-kit generate",
+		"typecheck": "tsc --noEmit",
+		"lint": "eslint .",
+		"format": "biome check --error-on-warnings .",
+		"format:write": "biome check --write ."
+	},
+	"dependencies": {
+		"drizzle-orm": "~0.45.4",
+		"pg": "^8.23.1"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "^2.6.3",
+		"@types/node": "^26.0.0",
+		"@types/pg": "^8.23.1",
+		"drizzle-kit": "~0.31.11",
+		"eslint": "^9.0.0",
+		"typescript": "~6.0.3"
+	}
+}
