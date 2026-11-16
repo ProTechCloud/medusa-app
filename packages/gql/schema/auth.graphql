@@ -95,7 +95,8 @@ extend type Mutation {
 	"""
 	resetPassword(input: ResetPasswordInput!): Boolean!
 	"""
-	Needs a session. Ends every other session of the account.
+	Needs a session. Ends every session of the account, this one too, and
+	opens a new one: the client sends the returned token from then on.
 	"""
-	changePassword(input: ChangePasswordInput!): Boolean!
+	changePassword(input: ChangePasswordInput!): AuthPayload!
 }

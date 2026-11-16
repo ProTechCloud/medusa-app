@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { generateSignUp } from "@/better-auth/__mocks__/generate-sign-up";
+import { generateSignUp } from "@/shared/__mocks__/generate-sign-up";
 import { integrationContextForEachTest } from "@/testing/integration-context";
 
 function bearer(token: string): Headers {

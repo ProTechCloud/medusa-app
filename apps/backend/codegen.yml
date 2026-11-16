@@ -1,0 +1,27 @@
+# The API's side of the contract in packages/gql: a type for every resolver,
+# and a zod schema for every input, which each resolver parses before it
+# calls its use case. Run by the `codegen` turbo task before typecheck, lint
+# and test.
+schema:
+  - ../../packages/gql/schema/**/*.graphql
+generates:
+  ./src/__generated__/resolvers-types.ts:
+    plugins:
+      - typescript
+      - typescript-resolvers
+    config:
+      contextType: ../services/api/graphql#TGraphqlContext
+      enumsAsTypes: true
+      useTypeImports: true
+  ./src/__generated__/validation.ts:
+    plugins:
+      # The plugin imports every enum type even when a schema spells it out,
+      # which noUnusedLocals refuses; the file's exports stay typed.
+      - add:
+          content: "// @ts-nocheck"
+      - typescript-validation-schema
+    config:
+      schema: zodv4
+      enumsAsTypes: true
+      importFrom: ./resolvers-types
+      useTypeImports: true

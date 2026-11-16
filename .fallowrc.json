@@ -18,6 +18,7 @@
 		"expo-dev-client",
 		"babel-preset-expo",
 		"@posthog/react-native-plugin",
-		"@graphql-typed-document-node/core"
+		"@graphql-typed-document-node/core",
+		"graphql-codegen-typescript-validation-schema"
 	]
 }

@@ -4,6 +4,7 @@ import { initPostHog } from "@/posthog";
 import { exitOnCrash, stopOnSignal } from "@/shared/shutdown";
 import { initUseCaseContext } from "@/use-cases";
 import { createServiceContext } from "@/use-cases/build-use-case-context";
+import { buildYoga, GRAPHQL_PATH } from "./graphql";
 import { buildHttp } from "./http";
 import { HEALTH_PATH } from "./http/lib/health-path";
 import { requestCorrelation } from "./http/lib/request-correlation";
@@ -35,6 +36,13 @@ export function buildApp(): Hono {
 	);
 
 	app.route("/", buildHttp());
+
+	// GraphQL answers its own errors, with a code a client reads; the 404
+	// and 500 below are for the rest of the API.
+	const yoga = buildYoga();
+	app.on(["GET", "POST"], GRAPHQL_PATH, (context) =>
+		yoga.fetch(context.req.raw),
+	);
 
 	app.notFound((context) =>
 		context.json({ error: "not_found", path: context.req.path }, 404),
