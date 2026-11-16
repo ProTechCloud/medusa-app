@@ -15,7 +15,9 @@
 		"FORCE_COLOR",
 		"GITHUB_*",
 		"ACTIONS_*",
-		"TURBO_*"
+		"TURBO_*",
+		"DOCKER_HOST",
+		"TESTCONTAINERS_*"
 	],
 	"tasks": {
 		"codegen": {

@@ -1,7 +1,8 @@
 import { faker } from "@faker-js/faker";
 import { describe, expect, it } from "vitest";
 import { generateConfig } from "@/shared/__mocks__/generate-config";
-import { createCapturingLogger, testLogger } from "@/testing/test-logger";
+import { generateUseCaseContext } from "@/shared/__mocks__/generate-use-case-context";
+import { createCapturingLogger } from "@/testing/test-logger";
 import { useCaseContextForEachTest } from "@/testing/use-case-context";
 import {
 	ctxForTests,
@@ -16,7 +17,12 @@ describe("defineUseCase", () => {
 
 	it("the body receives the registered context and the caller's arguments", async () => {
 		const config = generateConfig();
-		setCtxForTests({ config, logger: createCapturingLogger().logger });
+		setCtxForTests(
+			generateUseCaseContext({
+				config,
+				logger: createCapturingLogger().logger,
+			}),
+		);
 		const greet = defineUseCase<{ name: string }, string>(
 			async function greetUseCase(ctx, args) {
 				return `${args.name} on ${ctx.config.environment}`;
@@ -31,7 +37,7 @@ describe("defineUseCase", () => {
 
 	it("a successful call is logged by name, with its duration", async () => {
 		const capture = createCapturingLogger();
-		setCtxForTests({ config: generateConfig(), logger: capture.logger });
+		setCtxForTests(generateUseCaseContext({ logger: capture.logger }));
 		const work = defineUseCase(async function workUseCase() {});
 
 		await work();
@@ -51,7 +57,7 @@ describe("defineUseCase", () => {
 
 	it("a failure reaches the caller unchanged and is logged as failed", async () => {
 		const capture = createCapturingLogger();
-		setCtxForTests({ config: generateConfig(), logger: capture.logger });
+		setCtxForTests(generateUseCaseContext({ logger: capture.logger }));
 		const failure = new Error(faker.lorem.sentence());
 		const broken = defineUseCase(async function brokenUseCase() {
 			throw failure;
@@ -92,7 +98,7 @@ describe("initUseCaseContext", () => {
 
 	it("builds once, however many callers ask while the build runs", async () => {
 		resetCtx();
-		const context = { config: generateConfig(), logger: testLogger };
+		const context = generateUseCaseContext();
 		let builds = 0;
 		const build = async () => {
 			builds += 1;
@@ -111,10 +117,9 @@ describe("initUseCaseContext", () => {
 	it("a use case called while the context is still building waits for it", async () => {
 		resetCtx();
 		const config = generateConfig();
-		const built = initUseCaseContext(async () => ({
-			config,
-			logger: testLogger,
-		}));
+		const built = initUseCaseContext(async () =>
+			generateUseCaseContext({ config }),
+		);
 		const environment = defineUseCase(async function environmentUseCase(ctx) {
 			return ctx.config.environment;
 		});
@@ -128,7 +133,7 @@ describe("initUseCaseContext", () => {
 	it("a failed build fails the boot, and the next call builds again", async () => {
 		resetCtx();
 		const failure = new Error(faker.lorem.sentence());
-		const context = { config: generateConfig(), logger: testLogger };
+		const context = generateUseCaseContext();
 
 		await expect(
 			initUseCaseContext(async () => {

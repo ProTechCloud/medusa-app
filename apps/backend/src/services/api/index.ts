@@ -1,9 +1,9 @@
 import { Hono } from "hono";
-import { getConfig } from "@/config";
 import { logger } from "@/logger";
 import { initPostHog } from "@/posthog";
 import { exitOnCrash, stopOnSignal } from "@/shared/shutdown";
 import { initUseCaseContext } from "@/use-cases";
+import { createServiceContext } from "@/use-cases/build-use-case-context";
 import { buildHttp } from "./http";
 import { HEALTH_PATH } from "./http/lib/health-path";
 import { requestCorrelation } from "./http/lib/request-correlation";
@@ -46,10 +46,7 @@ export function buildApp(): Hono {
 
 async function start(): Promise<void> {
 	// Every client the use cases need is built here, before the port opens.
-	const { config } = await initUseCaseContext(async () => ({
-		config: getConfig(),
-		logger,
-	}));
+	const { config } = await initUseCaseContext(createServiceContext);
 	// Before the port opens: the error client is built, and an exception or a
 	// rejection nothing catches is reported, flushed and fatal from the first
 	// request on.
@@ -76,7 +73,11 @@ if (import.meta.main) {
 		await start();
 	} catch (error) {
 		// A bad environment is the usual cause; its message lists every variable.
-		console.error(error instanceof Error ? error.message : error);
+		// A refused database connection is an AggregateError with no message of
+		// its own, so it is printed whole, with the address it tried.
+		console.error(
+			error instanceof Error && error.message ? error.message : error,
+		);
 		process.exit(1);
 	}
 }

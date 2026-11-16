@@ -7,15 +7,46 @@ import { envVar, parseEnv, portSchema } from "@/shared/env";
 
 const ENVIRONMENTS = ["local", "stg", "prd"] as const;
 
-const schema = z.object({
-	APP_ENV: z.enum(ENVIRONMENTS),
-	PORT: portSchema.default(8080),
-	// Baked into the image by the deploy; a local run has no build to name.
-	APP_VERSION: envVar.default("dev"),
-	APP_COMMIT: envVar.default("local"),
-	// Names the service when its entry point does not, or overrides it.
-	OTEL_SERVICE_NAME: envVar.optional(),
-});
+const schema = z
+	.object({
+		APP_ENV: z.enum(ENVIRONMENTS),
+		PORT: portSchema.default(8080),
+		// Baked into the image by the deploy; a local run has no build to name.
+		APP_VERSION: envVar.default("dev"),
+		APP_COMMIT: envVar.default("local"),
+		// Names the service when its entry point does not, or overrides it.
+		OTEL_SERVICE_NAME: envVar.optional(),
+		DB_HOST: envVar,
+		DB_PORT: portSchema.default(5432),
+		DB_NAME: envVar,
+		DB_USER: envVar,
+		DB_PASSWORD: envVar,
+		// Signs Better Auth's tokens; its own minimum.
+		BETTER_AUTH_SECRET: z.string().min(32, "must be at least 32 characters"),
+		BETTER_AUTH_URL: z.url("must be a URL"),
+		// Unset on Cloud Run, where the client reads the project from the
+		// service's identity; the local emulator needs it.
+		PUBSUB_PROJECT_ID: envVar.optional(),
+		PUBSUB_EMAILS_TOPIC: envVar,
+		// How many proxies in front of the service append to X-Forwarded-For:
+		// the client's address is the entry before theirs.
+		TRUSTED_PROXIES: z.coerce
+			.number()
+			.int("must be a whole number")
+			.min(0, "must be 0 or more")
+			.default(1),
+		// Without it no email is sent, and the code 111111 is accepted.
+		MAILGUN_API_KEY: envVar.optional(),
+	})
+	.superRefine((env, issues) => {
+		if (env.APP_ENV === "prd" && !env.MAILGUN_API_KEY) {
+			issues.addIssue({
+				code: "custom",
+				path: ["MAILGUN_API_KEY"],
+				message: "must be set in prd",
+			});
+		}
+	});
 
 /**
  * The service's name, which `/version`, every log line and every trace carry:
@@ -38,7 +69,25 @@ export type TConfig = {
 	port: number;
 	version: string;
 	commit: string;
+	db: { url: string };
+	auth: { secret: string; url: string };
+	pubsub: { projectId?: string; emailsTopic: string };
+	trustedProxies: number;
+	mailgun: { apiKey?: string };
 };
+
+/** A node-postgres connection string, with the user and password escaped. */
+function databaseUrl(env: {
+	DB_HOST: string;
+	DB_PORT: number;
+	DB_NAME: string;
+	DB_USER: string;
+	DB_PASSWORD: string;
+}): string {
+	const user = encodeURIComponent(env.DB_USER);
+	const password = encodeURIComponent(env.DB_PASSWORD);
+	return `postgresql://${user}:${password}@${env.DB_HOST}:${env.DB_PORT}/${env.DB_NAME}`;
+}
 
 /**
  * Parse a config from an environment and the entry point the process ran.
@@ -55,6 +104,14 @@ export function buildConfig(
 		port: parsed.PORT,
 		version: parsed.APP_VERSION,
 		commit: parsed.APP_COMMIT,
+		db: { url: databaseUrl(parsed) },
+		auth: { secret: parsed.BETTER_AUTH_SECRET, url: parsed.BETTER_AUTH_URL },
+		pubsub: {
+			projectId: parsed.PUBSUB_PROJECT_ID,
+			emailsTopic: parsed.PUBSUB_EMAILS_TOPIC,
+		},
+		trustedProxies: parsed.TRUSTED_PROXIES,
+		mailgun: { apiKey: parsed.MAILGUN_API_KEY },
 	};
 }
 

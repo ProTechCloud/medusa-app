@@ -1,16 +1,23 @@
+import type { Db } from "@medusa/db";
+import type { IMessageBus } from "@medusa/events";
 import { SpanStatusCode, trace } from "@opentelemetry/api";
 import { ATTR_ERROR_TYPE } from "@opentelemetry/semantic-conventions";
 import type { Logger } from "pino";
+import type { TAuth, TSessionCache } from "@/better-auth";
 import type { TConfig } from "@/config";
 
 /**
- * What every use case receives. The transport layer — routes, and later
- * jobs — never holds these: it calls a use case, and the use case reaches the
- * config, the logger and, as they arrive, the clients.
+ * What every use case receives. The transport layer — routes, resolvers and
+ * the worker's push handler — never holds these: it calls a use case, and the
+ * use case reaches the config, the logger and the clients.
  */
 export type TUseCaseContext = {
 	config: TConfig;
 	logger: Logger;
+	db: Db;
+	auth: TAuth;
+	sessionCache: TSessionCache;
+	bus: IMessageBus;
 };
 
 export type TUseCase<TArgs, TResult> = (
