@@ -1,0 +1,101 @@
+enum UserRole {
+	application_user
+}
+
+"""
+The signed-in user.
+"""
+type Me {
+	id: ID!
+	name: String!
+	email: String!
+	role: UserRole!
+}
+
+"""
+A new session: the user, and the token a client sends as
+`Authorization: Bearer <token>` from then on.
+"""
+type AuthPayload {
+	user: Me!
+	token: String!
+}
+
+"""
+Always true. It never says whether the address has an account, so the
+answer cannot be used to find out who has one.
+"""
+type RequestCodeResult {
+	sent: Boolean!
+}
+
+input RequestSignUpCodeInput {
+	email: String!
+}
+
+input SignUpInput {
+	email: String!
+	"""
+	The 6-digit code emailed by `requestSignUpCode`.
+	"""
+	code: String!
+	name: String!
+	password: String!
+}
+
+input SignInInput {
+	email: String!
+	password: String!
+}
+
+input RequestPasswordResetInput {
+	email: String!
+}
+
+input ResetPasswordInput {
+	email: String!
+	"""
+	The 6-digit code emailed by `requestPasswordReset`.
+	"""
+	code: String!
+	newPassword: String!
+}
+
+input ChangePasswordInput {
+	currentPassword: String!
+	newPassword: String!
+}
+
+extend type Query {
+	"""
+	Null without a valid session.
+	"""
+	me: Me
+}
+
+extend type Mutation {
+	"""
+	Emails a 6-digit code to an address with no account yet. It lives
+	15 minutes; a fifth wrong guess deletes it.
+	"""
+	requestSignUpCode(input: RequestSignUpCodeInput!): RequestCodeResult!
+	signUp(input: SignUpInput!): AuthPayload!
+	signIn(input: SignInInput!): AuthPayload!
+	"""
+	Ends the session the request was made with.
+	"""
+	signOut: Boolean!
+	"""
+	Emails a 6-digit code to an address that has an account. It lives
+	15 minutes; a fifth wrong guess deletes it.
+	"""
+	requestPasswordReset(input: RequestPasswordResetInput!): RequestCodeResult!
+	"""
+	Sets a new password and ends every session of the account.
+	"""
+	resetPassword(input: ResetPasswordInput!): Boolean!
+	"""
+	Needs a session. Ends every other session of the account.
+	"""
+	changePassword(input: ChangePasswordInput!): Boolean!
+}

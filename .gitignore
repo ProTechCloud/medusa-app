@@ -23,3 +23,6 @@ CLAUDE.md
 # Tool output
 .fallow/
 .gstack/
+
+# Written by `yarn codegen` from packages/gql/schema and operations.
+**/src/__generated__/

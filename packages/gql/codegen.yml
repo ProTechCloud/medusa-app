@@ -1,0 +1,16 @@
+# The clients' side of the contract: a type for every operation in
+# operations/, and a typed document a client sends as it is. The API
+# generates its own resolver types from the same schema, in
+# apps/backend/codegen.yml.
+schema:
+  - schema/**/*.graphql
+documents:
+  - operations/**/*.graphql
+generates:
+  ./src/__generated__/graphql.ts:
+    plugins:
+      - typescript-operations
+      - typed-document-node
+    config:
+      enumsAsTypes: true
+      useTypeImports: true

@@ -6,13 +6,20 @@
 			"!**/.turbo",
 			"!**/dist",
 			"!**/coverage",
+			"!**/__generated__",
 			"!apps/native/ios",
 			"!apps/native/android",
 			"!apps/native/.expo",
 			"!**/expo-env.d.ts"
 		]
 	},
-	"assist": { "actions": { "source": { "organizeImports": "on" } } },
+	"assist": {
+		"actions": {
+			"source": {
+				"organizeImports": "on"
+			}
+		}
+	},
 	"linter": {
 		"enabled": true,
 		"rules": {

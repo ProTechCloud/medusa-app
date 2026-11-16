@@ -15,6 +15,7 @@
 		"local:start": "bin/local-start.sh",
 		"local:stop": "bin/local-stop.sh",
 		"local:clean": "bin/local-clean.sh",
+		"codegen": "turbo run codegen",
 		"test": "turbo run test",
 		"test:coverage": "turbo run test:coverage && node bin/merge-coverage.mjs",
 		"typecheck": "turbo run typecheck",
