@@ -1,0 +1,38 @@
+# Local development only: the database and the queue the API and the worker
+# use on your machine. bin/local-create.sh starts them and provisions the
+# queue; the values come from apps/backend/.env.local (see bin/local-lib.sh).
+services:
+  postgres:
+    image: postgres:16-alpine
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    environment:
+      POSTGRES_DB: ${DB_NAME:-medusa}
+      POSTGRES_USER: ${DB_USER:-medusa}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-medusadev}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-medusa}"]
+      interval: 2s
+      timeout: 5s
+      retries: 10
+
+  # Keeps topics and subscriptions in memory only: a restart loses them, and
+  # bin/local-start.sh provisions them again.
+  pubsub:
+    image: gcr.io/google.com/cloudsdktool/google-cloud-cli:emulators
+    command: gcloud beta emulators pubsub start --host-port=0.0.0.0:8085 --project=${PUBSUB_PROJECT_ID:-medusa-local}
+    ports:
+      - "8085:8085"
+    # Its push subscription delivers to the worker, which runs on the host.
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8085 >/dev/null"]
+      interval: 2s
+      timeout: 5s
+      retries: 30
+
+volumes:
+  pgdata:
