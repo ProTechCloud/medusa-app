@@ -12,7 +12,7 @@ password reset, and one role, `application_user`. Everything goes through GraphQ
 | [`apps/backend/src/better-auth`](../apps/backend/src/better-auth/index.ts)                                                                  | Better Auth with the Drizzle adapter, `emailAndPassword` and the `bearer` plugin, and the session cache in front of it |
 | [`apps/backend/src/use-cases/cases`](../apps/backend/src/use-cases/cases)                                                                   | One use case per operation; each calls `ctx.auth.api.*`                                                                |
 | [`apps/backend/src/use-cases/lib`](../apps/backend/src/use-cases/lib)                                                                       | The codes, the rate limits, the client address and the errors a client reads                                           |
-| [`packages/events`](../packages/events/src/catalog.ts)                                                                                      | `signup.code_requested` and `password.reset_requested`, published to the `emails` topic                                |
+| [`packages/events`](../packages/events/src/lib/catalog.ts)                                                                                      | `signup.code_requested` and `password.reset_requested`, published to the `emails` topic                                |
 | [`apps/backend/src/services/worker`](../apps/backend/src/services/worker/index.ts) and [`packages/emails`](../packages/emails/src/index.ts) | The worker renders each event's email and sends it through Mailgun                                                     |
 
 ## The flows
@@ -52,8 +52,8 @@ account.
   there it would let anyone reset anyone's password with `requestPasswordReset`. Without
   `MAILGUN_API_KEY` no email is sent, so stg can sign no one up until it has the key; prd
   refuses to start without it.
-- **Pruned.** `migrate` deletes the expired codes, and the ended `rate_limit` windows, each
-  time it runs.
+- **Pruned.** The worker deletes the expired codes, and the ended `rate_limit` windows,
+  every hour, and `migrate` each time it runs.
 
 The code is in `apps/backend/src/use-cases/lib/codes.ts`.
 
@@ -63,8 +63,11 @@ Every request that names an address counts against two limits, in 15-minute wind
 
 | Key               | Limit |
 | ----------------- | ----- |
-| `address:<email>` | 10    |
 | `ip:<address>`    | 50    |
+| `address:<email>` | 10    |
+
+The client's address is counted first, so a client past its limit leaves no row behind for
+each new email it sends.
 
 The counts live in the `rate_limit` table, updated in one statement, so every instance shares
 them and concurrent requests cannot both read an old count. Past a limit the API answers
@@ -104,7 +107,7 @@ The GraphQL layer answers each expected failure with a code in `extensions.code`
 ## Locally
 
 `yarn local:create` seeds two users, `ana@example.com` and `bruno@example.com`, with the
-password in [`packages/seed/src/users.ts`](../packages/seed/src/users.ts). Sign up any
+password in [`packages/seed/src/lib/users.ts`](../packages/seed/src/lib/users.ts). Sign up any
 other address with the code `111111`. Without a Mailgun key the worker logs the address and
 subject of each email instead of sending it.
 

@@ -97,7 +97,9 @@ test, as in `shared/__tests__/env.test.ts`.
 ## What to assert
 
 - The happy path answers the shape the route promises, with its status.
-- An expected failure answers its status and its stable `error` code.
+- An expected failure answers its stable code: a REST route its status and `error`, a
+  GraphQL operation its `extensions.code`, as `services/api/graphql/__tests__/auth.test.ts`
+  checks.
 - A dependency that fails propagates: the use case rejects with the same error, as
   `use-cases/__tests__/define-use-case.test.ts` shows. The JSON 500 comes from
   `requestErrors`, which `buildApp()` installs and `buildHttp()` does not, so a route test

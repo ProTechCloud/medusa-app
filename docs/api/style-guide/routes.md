@@ -101,12 +101,22 @@ A later entry point, such as a job runner, does the same before it starts work.
 
 ## Expected failures are typed errors with a stable code
 
-A failure the caller can act on — not found, not allowed, a conflict — is an error the use
-case throws with a stable `code`, in snake_case. The route catches it and answers its status
-with `{ error: code }`, the same shape as the 404 in `shared/http/service-app.ts` and the 500
-in `shared/http/request-errors.ts`. The code is the contract; the message can change.
-No use case has an expected failure yet, so the first one adds the error type beside the
-use cases.
+A failure the caller can act on is an error the use case throws from
+[`shared/domain-errors.ts`](../../../apps/backend/src/shared/domain-errors.ts):
+`badInput(message)`, `unauthenticated()` or `tooManyRequests(retryAfterSeconds)`. Each is
+an `Error` whose `name` is one of `DOMAIN_ERROR_NAMES`; the transport reads the name, never
+the class, since a library loaded twice would fail `instanceof`. A new kind of failure is a
+new entry there and a new branch in each transport that maps them.
+
+- **GraphQL.** `maskError` in `services/api/graphql/index.ts` turns each into a
+  `GraphQLError` with the message and `extensions.code`: `BAD_USER_INPUT`,
+  `UNAUTHENTICATED` or `TOO_MANY_REQUESTS`, which adds `extensions.retryAfterSeconds`. A
+  `ZodError` from a resolver's input parse is `BAD_USER_INPUT` too. Anything else becomes
+  `INTERNAL_SERVER_ERROR` with a generic message, and the detail stays in the log. The code
+  is the contract; the message can change.
+- **REST.** A route catches the error and answers its status with `{ error: code }`, the code
+  in snake_case, the same shape as the 404 in `shared/http/service-app.ts` and the 500 in
+  `shared/http/request-errors.ts`. No REST route has an expected failure yet.
 
 ## Unexpected failures propagate to `request-errors.ts`
 

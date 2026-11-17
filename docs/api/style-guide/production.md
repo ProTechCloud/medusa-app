@@ -25,8 +25,10 @@ Paths below are under `apps/backend/src/` unless they start at the repository ro
 - **No stack trace or internal path reaches a client.** `requestErrors` in
   `shared/http/request-errors.ts` answers every unhandled error with
   `{ error: "internal_error" }`, reports the error to PostHog's error tracking once with
-  `captureError`, and logs it, with the request it broke.
-- Expected failures answer a stable `error` code: see [Routes](./routes.md#expected-failures-are-typed-errors-with-a-stable-code).
+  `captureError`, and logs it, with the request it broke. On `/graphql`, `maskError` does the
+  same job: anything unexpected answers `INTERNAL_SERVER_ERROR` with a generic message.
+- Expected failures answer a stable code, `error` on a REST route and `extensions.code` on
+  GraphQL: see [Routes](./routes.md#expected-failures-are-typed-errors-with-a-stable-code).
 
 ## Logs
 
