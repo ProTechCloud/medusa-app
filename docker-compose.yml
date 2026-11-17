@@ -5,7 +5,8 @@ services:
   postgres:
     image: postgres:16-alpine
     ports:
-      - "${DB_PORT:-5432}:5432"
+      # Loopback only: the password is a known local one.
+      - "127.0.0.1:${DB_PORT:-5432}:5432"
     environment:
       POSTGRES_DB: ${DB_NAME:-medusa}
       POSTGRES_USER: ${DB_USER:-medusa}
@@ -24,7 +25,8 @@ services:
     image: gcr.io/google.com/cloudsdktool/google-cloud-cli:emulators
     command: gcloud beta emulators pubsub start --host-port=0.0.0.0:8085 --project=${PUBSUB_PROJECT_ID:-medusa-local}
     ports:
-      - "8085:8085"
+      # Loopback only: the emulator takes any publish, with no credentials.
+      - "127.0.0.1:8085:8085"
     # Its push subscription delivers to the worker, which runs on the host.
     extra_hosts:
       - "host.docker.internal:host-gateway"

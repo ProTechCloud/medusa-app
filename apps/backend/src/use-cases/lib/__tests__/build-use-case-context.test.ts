@@ -22,14 +22,16 @@ describe("chooseServiceClients", () => {
 		]);
 	});
 
-	it("checks Google's token with the push variables, so a forged one is refused", async () => {
+	it("checks Google's token with the push variables, so a push without one is refused", async () => {
 		const capture = createCapturingLogger();
 		const { pushVerifier } = chooseServiceClients(
 			generateConfig(),
 			capture.logger,
 		);
 
-		await expect(pushVerifier.verify(ANY_TOKEN)).resolves.toBe(false);
+		// No token, so nothing is fetched: the refusal is the Google verifier's
+		// own, not the closed one's, which would log.
+		await expect(pushVerifier.verify(undefined)).resolves.toBe(false);
 		expect(capture.lines()).toEqual([]);
 	});
 

@@ -16,7 +16,7 @@ import { exitOnCrash, stopOnSignal } from "./shutdown";
  * own, so it is printed whole, with the address it tried.
  */
 export async function serveService(
-	buildApp: () => Hono,
+	buildApp: (config: TConfig) => Hono,
 	port: (config: TConfig) => number = (config) => config.port,
 ): Promise<void> {
 	try {
@@ -27,7 +27,7 @@ export async function serveService(
 		const server = Bun.serve({
 			hostname: "0.0.0.0",
 			port: port(config),
-			fetch: buildApp().fetch,
+			fetch: buildApp(config).fetch,
 		});
 		// The service and its version are on every line already.
 		logger.info(

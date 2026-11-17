@@ -1,5 +1,3 @@
-export { createMemoryBus, type IMemoryBus } from "./adapters/memory";
-export { createPubSubBus } from "./adapters/pubsub";
 export type { IMessageBus } from "./lib/bus";
 export {
 	EVENTS,
@@ -8,3 +6,5 @@ export {
 	type TTopic,
 } from "./lib/catalog";
 export { createEnvelope, parseEnvelope, type TEnvelope } from "./lib/envelope";
+export { createMemoryBus, type IMemoryBus } from "./memory-bus";
+export { createPubSubBus } from "./pubsub-bus";

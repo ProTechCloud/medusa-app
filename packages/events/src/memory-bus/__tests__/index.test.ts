@@ -1,5 +1,5 @@
 import { generateCodeRequest } from "../../__mocks__/generate-code-request";
-import { createMemoryBus } from "../memory";
+import { createMemoryBus } from "..";
 
 describe("createMemoryBus", () => {
 	it("keeps every envelope it publishes, in order", async () => {

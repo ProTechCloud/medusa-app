@@ -6,6 +6,19 @@ import { createEnvelope } from "../lib/envelope";
 type TTopics = Record<TTopic, string>;
 
 /**
+ * The part of a Pub/Sub client the bus calls, so a test's fake needs no
+ * cast: a `PubSub` has it.
+ */
+export interface IPublisher {
+	topic(name: string): {
+		publishMessage(message: {
+			json: unknown;
+			attributes: Record<string, string>;
+		}): Promise<string>;
+	};
+}
+
+/**
  * A bus that publishes each envelope as JSON to its topic, on a Pub/Sub
  * client built for `projectId`; unset, the client reads the project from the
  * environment. With PUBSUB_EMULATOR_HOST set, it talks to the emulator.
@@ -26,7 +39,7 @@ export function createPubSubBus({
  * event's type goes in an attribute too, so a subscription can filter on it.
  */
 export function createPubSubBusOn(
-	pubsub: PubSub,
+	pubsub: IPublisher,
 	topics: TTopics,
 ): IMessageBus {
 	return {

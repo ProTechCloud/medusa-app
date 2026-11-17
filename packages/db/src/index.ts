@@ -2,4 +2,5 @@
 // drizzle-orm itself.
 export { lt, sql } from "drizzle-orm";
 export { createDb, type TDb } from "./lib/client";
-export * from "./schema/auth";
+export { databaseUrl } from "./lib/database-url";
+export * from "./schema";

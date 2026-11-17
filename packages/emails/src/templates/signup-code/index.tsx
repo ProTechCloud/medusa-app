@@ -1,7 +1,7 @@
-import { Code } from "../shared/components/code";
-import { Heading } from "../shared/components/heading";
-import { Layout } from "../shared/components/layout";
-import { Paragraph } from "../shared/components/paragraph";
+import { Code } from "../../shared/components/code";
+import { Heading } from "../../shared/components/heading";
+import { Layout } from "../../shared/components/layout";
+import { Paragraph } from "../../shared/components/paragraph";
 
 export function SignUpCodeEmail({ code }: { code: string }) {
 	return (

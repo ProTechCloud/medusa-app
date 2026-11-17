@@ -1,6 +1,7 @@
 import { faker } from "@faker-js/faker";
 import { GraphQLError } from "graphql";
 import { describe, expect, it } from "vitest";
+import { z } from "zod";
 import { maskError } from "@/services/api/graphql";
 import {
 	badInput,
@@ -28,9 +29,16 @@ describe("maskError", () => {
 		});
 	});
 
-	it("hides anything else behind the generic message", () => {
-		const leak = new Error(`connect ECONNREFUSED ${faker.internet.ip()}`);
-
+	it.each([
+		[
+			"any other error",
+			new Error(`connect ECONNREFUSED ${faker.internet.ip()}`),
+		],
+		[
+			"a ZodError from deeper than the input, such as a malformed row",
+			z.object({ hash: z.string() }).safeParse({}).error as Error,
+		],
+	])("hides %s behind the generic message", (_, leak) => {
 		const masked = maskError(thrownInResolver(leak), GENERIC);
 
 		expect(masked).toMatchObject({

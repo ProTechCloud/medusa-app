@@ -1,4 +1,4 @@
-import { createDb } from "@medusa/db";
+import { createDb, databaseUrl } from "@medusa/db";
 import { z } from "zod";
 import { createAuth } from "./lib/create-auth";
 import { SEED_PASSWORD, SEED_USERS } from "./lib/users";
@@ -17,9 +17,7 @@ const env = z
 	})
 	.parse(process.env);
 
-const db = createDb(
-	`postgresql://${encodeURIComponent(env.DB_USER)}:${encodeURIComponent(env.DB_PASSWORD)}@${env.DB_HOST}:${env.DB_PORT}/${env.DB_NAME}`,
-);
+const db = createDb(databaseUrl(env));
 const auth = createAuth(db, {
 	secret: env.BETTER_AUTH_SECRET,
 	url: env.BETTER_AUTH_URL,

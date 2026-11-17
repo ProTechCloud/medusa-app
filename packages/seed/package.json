@@ -3,9 +3,6 @@
 	"version": "0.0.0",
 	"private": true,
 	"type": "module",
-	"exports": {
-		"./users": "./src/lib/users.ts"
-	},
 	"scripts": {
 		"seed": "bun --env-file=../../apps/backend/.env.local src/index.ts",
 		"typecheck": "tsc --noEmit",

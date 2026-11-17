@@ -1,4 +1,4 @@
-import type { PubSub } from "@google-cloud/pubsub";
+import type { IPublisher } from "..";
 
 type Sent = {
 	topic: string;
@@ -8,11 +8,11 @@ type Sent = {
 
 /** A Pub/Sub client that keeps every message published, by topic name. */
 export function createCapturingPubSub(): {
-	pubsub: PubSub;
+	pubsub: IPublisher;
 	sent: Sent[];
 } {
 	const sent: Sent[] = [];
-	const pubsub = {
+	const pubsub: IPublisher = {
 		topic: (topic: string) => ({
 			publishMessage: async (message: {
 				json: unknown;
@@ -22,6 +22,6 @@ export function createCapturingPubSub(): {
 				return String(sent.length);
 			},
 		}),
-	} as unknown as PubSub;
+	};
 	return { pubsub, sent };
 }

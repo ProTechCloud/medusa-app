@@ -1,3 +1,4 @@
+import { databaseUrl } from "@medusa/db";
 import { z } from "zod";
 import {
 	currentEntryPoint,
@@ -126,19 +127,6 @@ export type TConfig = {
 	workerPort?: number;
 	shouldRunMigration: boolean;
 };
-
-/** A node-postgres connection string, with the user and password escaped. */
-function databaseUrl(env: {
-	DB_HOST: string;
-	DB_PORT: number;
-	DB_NAME: string;
-	DB_USER: string;
-	DB_PASSWORD: string;
-}): string {
-	const user = encodeURIComponent(env.DB_USER);
-	const password = encodeURIComponent(env.DB_PASSWORD);
-	return `postgresql://${user}:${password}@${env.DB_HOST}:${env.DB_PORT}/${env.DB_NAME}`;
-}
 
 /**
  * Parse a config from an environment and the entry point the process ran.

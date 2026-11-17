@@ -114,3 +114,27 @@ describe("resetPasswordUseCase", () => {
 		).rejects.toThrow("The code is wrong or has expired.");
 	});
 });
+
+describe.each(["stg", "prd"] as const)(
+	"resetPasswordUseCase in %s",
+	(environment) => {
+		const { bus } = integrationContextForEachTest({ environment, mailgun: {} });
+
+		it("refuses 111111, even without a Mailgun key", async () => {
+			const { email, password } = await signUpTestUser(bus());
+			await requestPasswordResetUseCase({ email, headers: requestHeaders() });
+
+			await expect(
+				resetPasswordUseCase({
+					email,
+					code: "111111",
+					newPassword: faker.internet.password({ length: 16 }),
+					headers: requestHeaders(),
+				}),
+			).rejects.toThrow("The code is wrong or has expired.");
+			await expect(
+				signInUseCase({ email, password, headers: requestHeaders() }),
+			).resolves.toMatchObject({ user: { email } });
+		});
+	},
+);

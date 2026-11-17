@@ -1,8 +1,7 @@
 import type { EVENTS, TEnvelope, TEventType } from "@medusa/events";
 import type { ReactElement } from "react";
 import { render } from "react-email";
-import { PasswordResetEmail } from "./templates/password-reset";
-import { SignUpCodeEmail } from "./templates/signup-code";
+import { PasswordResetEmail, SignUpCodeEmail } from "./templates";
 
 // One entry per event on the emails topic. The events catalog is the source
 // of truth: an event added there on that topic without an entry here fails

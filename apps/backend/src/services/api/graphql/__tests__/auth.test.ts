@@ -89,6 +89,31 @@ describe("/graphql auth, on a local API", () => {
 		]);
 	});
 
+	it.each([
+		[
+			"an email longer than any address",
+			() => ({
+				email: `${"a".repeat(250)}@x.io`,
+				password: faker.internet.password(),
+			}),
+			"email: is too long",
+		],
+		[
+			"a password longer than Better Auth takes",
+			() => ({ email: faker.internet.email(), password: "a".repeat(129) }),
+			"password: is too long",
+		],
+	])("refuses %s before it is hashed or stored", async (_, input, message) => {
+		const result = await graphqlRequest(SignInDocument, { input: input() });
+
+		expect(result.errors).toEqual([
+			expect.objectContaining({
+				message,
+				extensions: expect.objectContaining({ code: "BAD_USER_INPUT" }),
+			}),
+		]);
+	});
+
 	it("answers a sign-out without a session with UNAUTHENTICATED", async () => {
 		const result = await graphqlRequest(SignOutDocument, {});
 
