@@ -8,7 +8,7 @@ password reset, and one role, `application_user`. Everything goes through GraphQ
 
 | Piece                                                                                                                                       | What it does                                                                                                           |
 | ------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
-| [`packages/db`](../packages/db/src/schema/auth.ts)                                                                                          | The tables: Better Auth's `user`, `session`, `account` and `verification`, and `rate_limit`                            |
+| [`packages/db`](../packages/db/src/schema/index.ts)                                                                                          | The tables: Better Auth's `user`, `session`, `account` and `verification`, and `rate_limit`                            |
 | [`apps/backend/src/better-auth`](../apps/backend/src/better-auth/index.ts)                                                                  | Better Auth with the Drizzle adapter, `emailAndPassword` and the `bearer` plugin, and the session cache in front of it |
 | [`apps/backend/src/use-cases/cases`](../apps/backend/src/use-cases/cases)                                                                   | One use case per operation; each calls `ctx.auth.api.*`                                                                |
 | [`apps/backend/src/use-cases/lib`](../apps/backend/src/use-cases/lib)                                                                       | The codes, the rate limits, the client address and the errors a client reads                                           |
@@ -84,8 +84,10 @@ Better Auth's own rate limiter is off: it guards only its HTTP routes, which are
 `apps/backend/src/better-auth/lib/session-cache.ts` keeps each session the API looked up in
 an in-process LRU for 30 seconds, keyed by the token's SHA-256, so an authenticated request
 does not read the database every time. Sign-out evicts the entry through Better Auth's
-`session.delete.after` hook. A password reset ends sessions in one query that skips the hook,
-so the use case evicts them first. Another instance keeps its copy until the 30 seconds end.
+`session.delete.after` hook. A password reset or a password change ends sessions in one query
+that skips the hook, so the use case reads their tokens before that delete and evicts them
+after it: evicted before, a request in between would cache a session again for 30 seconds.
+Another instance keeps its copy until the 30 seconds end.
 
 ## Errors
 

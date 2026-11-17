@@ -130,14 +130,16 @@ Built from the repository root, because the lockfile and the workspace manifest 
 ```bash
 docker build -f apps/backend/Dockerfile -t medusa-backend .
 docker run --rm -p 8080:8080 --env-file apps/backend/.env.local \
-  -e DB_HOST=host.docker.internal -e PUBSUB_EMULATOR_HOST=host.docker.internal:8085 \
-  medusa-backend
+  --network medusa-app_default \
+  -e DB_HOST=postgres -e DB_PORT=5432 -e PUBSUB_EMULATOR_HOST=pubsub:8085 \
+  -e LOG_FORMAT=json medusa-backend
 ```
 
-Inside the container, `localhost` is the container itself, so the database and the emulator
-are reached at `host.docker.internal`; on Colima or Linux add
-`--add-host=host.docker.internal:host-gateway`. Without a database the API refuses to start,
-and names every variable it is missing.
+It joins the network `docker-compose.yml` creates and reaches Postgres and the emulator by
+their service names: both listen on the host's loopback only, which a container cannot
+reach. `LOG_FORMAT=json` overrides the file's `pretty`, whose `pino-pretty` is a dev
+dependency the image leaves out. Without a database the API refuses to start, and names every variable it is
+missing.
 
 A build without `--build-arg APP_ENV` sets no `APP_ENV`, and the API refuses to start until
 it is told where it runs. `backend-cd` builds with `APP_ENV=stg`, and the Cloud Run service

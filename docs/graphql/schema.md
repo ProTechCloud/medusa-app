@@ -26,8 +26,10 @@ the typed documents `@medusa/gql/operations` exports, such as `SignInDocument`.
    it ends, such as `changePassword` ending every session.
 4. **The schema says the shape; the resolver says the rules.** The generated zod schema only
    knows a field is a string. The area's `resolvers.ts` extends it with what the schema
-   cannot say, such as an email lowercased or a code of 6 digits, and parses the input before
-   it calls the use case.
+   cannot say, such as an email lowercased or a code of 6 digits, and caps every text a client
+   sends: an email at 254 characters, a password at Better Auth's 128. `parseInput` parses the
+   input before the use case is called, and a bad one answers `BAD_USER_INPUT` naming each
+   field; a ZodError from anywhere else is masked as internal.
 5. **A resolver calls one use case.** It parses the input, passes the request's headers and
    returns what the use case returns. Anything else belongs in the use case.
 
