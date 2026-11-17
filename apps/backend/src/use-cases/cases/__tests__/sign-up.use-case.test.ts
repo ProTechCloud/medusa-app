@@ -1,6 +1,7 @@
 import { faker } from "@faker-js/faker";
 import { verification } from "@medusa/db";
 import type { IMemoryBus } from "@medusa/events";
+import { DateTime } from "luxon";
 import { describe, expect, it } from "vitest";
 import { generateSignUp } from "@/shared/__mocks__/generate-sign-up";
 import { integrationContextForEachTest } from "@/testing/integration-context";
@@ -90,7 +91,8 @@ describe("signUpUseCase", () => {
 		const request = await requestCode(bus());
 		await ctx()
 			.db.update(verification)
-			.set({ expiresAt: new Date(Date.now() - 1000) });
+			// The column takes a Date.
+			.set({ expiresAt: DateTime.utc().minus({ seconds: 1 }).toJSDate() });
 
 		await expect(signUpUseCase(request)).rejects.toThrow(REFUSED);
 	});

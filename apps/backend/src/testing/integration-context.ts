@@ -7,12 +7,12 @@ import {
 } from "@/shared/__mocks__/mock-mailer";
 import { createPushVerifier } from "@/shared/__mocks__/mock-push-verifier";
 import {
+	buildUseCaseContext,
 	ctxForTests,
 	resetCtx,
 	setCtxForTests,
 	type TUseCaseContext,
 } from "@/use-cases";
-import { buildUseCaseContext } from "@/use-cases/lib/build-use-case-context";
 import { createDbCloner, TEST_DB_URL_ENV } from "./test-db";
 import { testLogger } from "./test-logger";
 

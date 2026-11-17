@@ -1,4 +1,4 @@
-import { withAuthErrors } from "@/better-auth/lib/errors";
+import { withAuthErrors } from "@/better-auth";
 import { unauthenticated } from "@/shared/domain-errors";
 import { defineUseCase } from "@/use-cases";
 import { type TAuthSession, toAuthSession } from "@/use-cases/lib/auth-user";

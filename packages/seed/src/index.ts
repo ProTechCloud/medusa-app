@@ -1,7 +1,7 @@
 import { createDb } from "@medusa/db";
 import { z } from "zod";
-import { createAuth } from "./create-auth";
-import { SEED_PASSWORD, SEED_USERS } from "./users";
+import { createAuth } from "./lib/create-auth";
+import { SEED_PASSWORD, SEED_USERS } from "./lib/users";
 
 // `yarn seed` reads apps/backend/.env.local, the file the API reads.
 const env = z

@@ -1,6 +1,6 @@
 import { drizzle } from "drizzle-orm/node-postgres";
 import pg from "pg";
-import * as schema from "./schema/auth";
+import * as schema from "../schema/auth";
 
 // node-postgres' pool-sizing guidance is to keep `max` at its default of 10
 // until contention is measured. The other two settings are about connection
@@ -20,4 +20,4 @@ export function createDb(connectionString: string) {
 	return drizzle(pool, { schema });
 }
 
-export type Db = ReturnType<typeof createDb>;
+export type TDb = ReturnType<typeof createDb>;

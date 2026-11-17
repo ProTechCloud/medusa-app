@@ -1,4 +1,3 @@
-import { PubSub } from "@google-cloud/pubsub";
 import { createDb } from "@medusa/db";
 import { createPubSubBus, type IMessageBus } from "@medusa/events";
 import type { Logger } from "pino";
@@ -24,13 +23,13 @@ export function chooseServiceClients(
 	config: TConfig,
 	logger: Logger,
 ): { mailer: IMailer; pushVerifier: IPushVerifier } {
-	const { apiKey, domain, from } = config.mailgun;
+	const { apiKey, domain, from, apiUrl } = config.mailgun;
 	const { push } = config.pubsub;
 	return {
 		// The config refuses a key without its domain and sender.
 		mailer:
 			apiKey && domain && from
-				? createMailgunMailer({ apiKey, domain, from })
+				? createMailgunMailer({ apiKey, domain, from, apiUrl })
 				: createLogMailer(logger),
 		pushVerifier: push
 			? createGooglePushVerifier(push)
@@ -42,15 +41,16 @@ export function chooseServiceClients(
 
 /**
  * A service's context, for its entry point to pass to `initUseCaseContext`:
- * the process's config, the Pub/Sub bus, the mailer, the push verifier, and
+ * the config given, else the process's, the Pub/Sub bus, the mailer, the push verifier, and
  * a first query, so a database that does not answer stops the boot instead
  * of the first request.
  * With PUBSUB_EMULATOR_HOST set, the Pub/Sub client talks to the emulator.
  */
-export async function createServiceContext(): Promise<TUseCaseContext> {
-	const config = getConfig();
+export async function createServiceContext(
+	config: TConfig = getConfig(),
+): Promise<TUseCaseContext> {
 	const bus = createPubSubBus({
-		pubsub: new PubSub({ projectId: config.pubsub.projectId }),
+		projectId: config.pubsub.projectId,
 		topics: { emails: config.pubsub.emailsTopic },
 	});
 	const { mailer, pushVerifier } = chooseServiceClients(config, logger);

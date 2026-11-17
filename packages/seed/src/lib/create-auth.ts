@@ -1,4 +1,4 @@
-import { account, type Db, session, user, verification } from "@medusa/db";
+import { account, session, type TDb, user, verification } from "@medusa/db";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 
@@ -9,7 +9,7 @@ import { drizzleAdapter } from "better-auth/adapters/drizzle";
  * the API signs these users in.
  */
 export function createAuth(
-	db: Db,
+	db: TDb,
 	{ secret, url }: { secret: string; url: string },
 ) {
 	return betterAuth({

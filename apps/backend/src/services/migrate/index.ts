@@ -2,9 +2,8 @@ import { runMigrations } from "@medusa/db/migrate";
 import { getConfig, type TConfig } from "@/config";
 import { logger } from "@/logger";
 import { flushTelemetry, withinFlushTimeout } from "@/shared/flush-telemetry";
-import { initUseCaseContext } from "@/use-cases";
+import { createServiceContext, initUseCaseContext } from "@/use-cases";
 import { pruneExpiredUseCase } from "@/use-cases/cases/prune-expired.use-case";
-import { createServiceContext } from "@/use-cases/lib/build-use-case-context";
 
 /**
  * Applies the migrations not yet applied to the config's database, then
@@ -18,8 +17,9 @@ export async function migrate(config: TConfig): Promise<"applied" | "skipped"> {
 	}
 	await runMigrations(config.db.url);
 	logger.info("migrations applied");
-	// The schema is current now, so the use cases can run against it.
-	await initUseCaseContext(createServiceContext);
+	// The schema is current now, so the use cases can run against it: on the
+	// same database, from the same config.
+	await initUseCaseContext(() => createServiceContext(config));
 	await pruneExpiredUseCase();
 	return "applied";
 }

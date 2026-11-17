@@ -24,6 +24,7 @@ export function generateEnv(
 		MAILGUN_API_KEY: faker.string.alphanumeric(32),
 		MAILGUN_DOMAIN: faker.internet.domainName(),
 		MAILGUN_FROM: faker.internet.email(),
+		MAILGUN_API_URL: faker.internet.url(),
 		WORKER_PORT: String(faker.internet.port()),
 		SHOULD_RUN_MIGRATION: String(faker.datatype.boolean()),
 		...overrides,

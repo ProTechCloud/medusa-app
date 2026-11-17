@@ -6,7 +6,7 @@ export interface IMailer {
 	send(email: TRenderedEmail): Promise<void>;
 }
 
-// Mailgun's US region; an EU domain is served from api.eu.mailgun.net.
+// Mailgun's US region, unless MAILGUN_API_URL names the EU one.
 const MAILGUN_API_URL = "https://api.mailgun.net";
 
 // Past this a stalled send throws, and the push is answered with an error

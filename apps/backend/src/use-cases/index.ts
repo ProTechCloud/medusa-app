@@ -1,4 +1,4 @@
-import type { Db } from "@medusa/db";
+import type { TDb } from "@medusa/db";
 import type { IMessageBus } from "@medusa/events";
 import { SpanStatusCode, trace } from "@opentelemetry/api";
 import { ATTR_ERROR_TYPE } from "@opentelemetry/semantic-conventions";
@@ -16,13 +16,18 @@ import type { IMailer } from "@/mailgun";
 export type TUseCaseContext = {
 	config: TConfig;
 	logger: Logger;
-	db: Db;
+	db: TDb;
 	auth: TAuth;
 	sessionCache: TSessionCache;
 	bus: IMessageBus;
 	mailer: IMailer;
 	pushVerifier: IPushVerifier;
 };
+
+export {
+	buildUseCaseContext,
+	createServiceContext,
+} from "./lib/build-use-case-context";
 
 export type TUseCase<TArgs, TResult> = (
 	ctx: TUseCaseContext,

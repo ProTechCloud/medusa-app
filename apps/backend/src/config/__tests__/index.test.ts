@@ -35,6 +35,7 @@ describe("buildConfig", () => {
 				apiKey: env.MAILGUN_API_KEY,
 				domain: env.MAILGUN_DOMAIN,
 				from: env.MAILGUN_FROM,
+				apiUrl: env.MAILGUN_API_URL,
 			},
 			workerPort: Number(env.WORKER_PORT),
 			shouldRunMigration: env.SHOULD_RUN_MIGRATION === "true",
@@ -75,6 +76,7 @@ describe("buildConfig", () => {
 		["BETTER_AUTH_URL", faker.lorem.word(), "must be a URL"],
 		["TRUSTED_PROXIES", "-1", "must be 0 or more"],
 		["SHOULD_RUN_MIGRATION", "yes", "must be true or false"],
+		["MAILGUN_API_URL", faker.lorem.word(), "must be a URL"],
 	])("a bad %s is named in the error", (name, value, reason) => {
 		const env = generateEnv({ [name]: value });
 

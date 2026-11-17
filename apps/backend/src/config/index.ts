@@ -46,6 +46,9 @@ const schema = z
 		// needed once the key is set.
 		MAILGUN_DOMAIN: envVar.optional(),
 		MAILGUN_FROM: envVar.optional(),
+		// Mailgun's API for the domain's region: unset is the US one; an EU
+		// domain needs https://api.eu.mailgun.net.
+		MAILGUN_API_URL: z.url("must be a URL").optional(),
 		// Locally the API holds PORT, so the worker listens here; on Cloud
 		// Run each service has its own PORT and this stays unset.
 		WORKER_PORT: portSchema.optional(),
@@ -119,7 +122,7 @@ export type TConfig = {
 		push?: { audience: string; serviceAccount: string };
 	};
 	trustedProxies: number;
-	mailgun: { apiKey?: string; domain?: string; from?: string };
+	mailgun: { apiKey?: string; domain?: string; from?: string; apiUrl?: string };
 	workerPort?: number;
 	shouldRunMigration: boolean;
 };
@@ -170,6 +173,7 @@ export function buildConfig(
 			apiKey: parsed.MAILGUN_API_KEY,
 			domain: parsed.MAILGUN_DOMAIN,
 			from: parsed.MAILGUN_FROM,
+			apiUrl: parsed.MAILGUN_API_URL,
 		},
 		workerPort: parsed.WORKER_PORT,
 		shouldRunMigration: parsed.SHOULD_RUN_MIGRATION === "true",

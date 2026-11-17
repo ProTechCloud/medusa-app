@@ -4,7 +4,7 @@
 	"private": true,
 	"type": "module",
 	"exports": {
-		"./users": "./src/users.ts"
+		"./users": "./src/lib/users.ts"
 	},
 	"scripts": {
 		"seed": "bun --env-file=../../apps/backend/.env.local src/index.ts",

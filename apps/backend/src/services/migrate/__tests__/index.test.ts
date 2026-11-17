@@ -2,8 +2,8 @@ import pg from "pg";
 import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
 import { migrate } from "@/services/migrate";
 import { generateConfig } from "@/shared/__mocks__/generate-config";
-import { integrationContextForEachTest } from "@/testing/integration-context";
 import { createDbCloner, TEST_DB_URL_ENV } from "@/testing/test-db";
+import { ctxForTests, resetCtx } from "@/use-cases";
 
 /** The tables in `url`'s public and drizzle schemas, sorted. */
 async function tables(url: string): Promise<string[]> {
@@ -20,7 +20,6 @@ async function tables(url: string): Promise<string[]> {
 }
 
 describe("migrate", () => {
-	integrationContextForEachTest();
 	let cloner: ReturnType<typeof createDbCloner>;
 	let empty: { url: string; drop: () => Promise<void> } | undefined;
 
@@ -28,6 +27,12 @@ describe("migrate", () => {
 		cloner = createDbCloner(String(process.env[TEST_DB_URL_ENV]));
 	});
 	afterEach(async () => {
+		// `migrate` built the context the prune ran in; close its pool before
+		// the database goes.
+		if (empty) {
+			await ctxForTests().db.$client.end();
+			resetCtx();
+		}
 		await empty?.drop();
 		empty = undefined;
 	});
@@ -42,7 +47,7 @@ describe("migrate", () => {
 		expect(result).toBe("skipped");
 	});
 
-	it("creates every table in an empty database with SHOULD_RUN_MIGRATION", async () => {
+	it("creates every table in an empty database with SHOULD_RUN_MIGRATION, and prunes that one", async () => {
 		empty = await cloner.createEmpty();
 		const { url } = empty;
 		expect(await tables(url)).toEqual([]);
@@ -60,5 +65,6 @@ describe("migrate", () => {
 			"public.user",
 			"public.verification",
 		]);
+		expect(ctxForTests().config.db.url).toBe(url);
 	});
 });

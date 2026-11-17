@@ -1,6 +1,7 @@
 import type { Hono } from "hono";
 import { buildServiceApp } from "@/shared/http/service-app";
 import { serveService } from "@/shared/serve-service";
+import { startPruning } from "./lib/prune-schedule";
 import { PUSH_EMAILS_PATH, pushEmails } from "./lib/push-emails";
 
 /**
@@ -17,4 +18,5 @@ export function buildWorker(): Hono {
 // API holds PORT; on Cloud Run WORKER_PORT is unset.
 if (import.meta.main) {
 	await serveService(buildWorker, (config) => config.workerPort ?? config.port);
+	startPruning();
 }

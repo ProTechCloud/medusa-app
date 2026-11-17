@@ -2,8 +2,7 @@ import type { Hono } from "hono";
 import type { TConfig } from "@/config";
 import { logger } from "@/logger";
 import { initPostHog } from "@/posthog";
-import { initUseCaseContext } from "@/use-cases";
-import { createServiceContext } from "@/use-cases/lib/build-use-case-context";
+import { createServiceContext, initUseCaseContext } from "@/use-cases";
 import { exitOnCrash, stopOnSignal } from "./shutdown";
 
 /**

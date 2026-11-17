@@ -28,6 +28,7 @@ export function generateConfig(overrides: Partial<TConfig> = {}): TConfig {
 			apiKey: faker.string.alphanumeric(32),
 			domain: faker.internet.domainName(),
 			from: faker.internet.email(),
+			apiUrl: faker.internet.url(),
 		},
 		workerPort: faker.internet.port(),
 		shouldRunMigration: faker.datatype.boolean(),

@@ -1,9 +1,11 @@
-import { account, type Db, session, user, verification } from "@medusa/db";
+import { account, session, type TDb, user, verification } from "@medusa/db";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { bearer } from "better-auth/plugins";
 import type { TConfig } from "@/config";
 import { createSessionCache, type ISessionCache } from "./lib/session-cache";
+
+export { withAuthErrors } from "./lib/errors";
 
 /**
  * The Better Auth instance the use cases reach as `ctx.auth`, and the cache
@@ -11,7 +13,7 @@ import { createSessionCache, type ISessionCache } from "./lib/session-cache";
  * HTTP routes are never mounted, so its own rate limiter, which only guards
  * them, is off, and the limits live in the use cases.
  */
-export function createAuth(db: Db, config: TConfig) {
+export function createAuth(db: TDb, config: TConfig) {
 	// The cache and the instance need each other: the cache wraps
 	// `auth.api.getSession`, and the sign-out hook, set when the instance is
 	// built, evicts from the cache. The holder breaks the cycle; no hook can

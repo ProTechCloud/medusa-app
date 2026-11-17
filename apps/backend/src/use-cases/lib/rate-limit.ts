@@ -1,6 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { rateLimit } from "@medusa/db";
-import { sql } from "drizzle-orm";
+import { rateLimit, sql } from "@medusa/db";
 import { DateTime, Duration } from "luxon";
 import { tooManyRequests } from "@/shared/domain-errors";
 import type { TUseCaseContext } from "@/use-cases";
@@ -49,15 +48,17 @@ async function consume(
 }
 
 /**
- * The limits on every request that names an address: 10 per address and 50
- * per client address in 15 minutes. A request with no client address, such
- * as one to localhost, is counted per address only.
+ * The limits on every request that names an address: 50 per client address
+ * and 10 per email address in 15 minutes. The client is counted first, so a
+ * client past its limit leaves no row for each new address it sends. A
+ * request with no client address, such as one to localhost, is counted per
+ * email address only.
  */
 export async function limitRequest(
 	ctx: TUseCaseContext,
 	{ email, headers }: { email: string; headers: Headers },
 ): Promise<void> {
-	await consume(ctx, `address:${email}`, MAX_PER_ADDRESS);
 	const ip = clientIp(headers, ctx.config.trustedProxies);
 	if (ip) await consume(ctx, `ip:${ip}`, MAX_PER_IP);
+	await consume(ctx, `address:${email}`, MAX_PER_ADDRESS);
 }

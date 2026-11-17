@@ -1,16 +1,16 @@
 import { faker } from "@faker-js/faker";
 import { generateCodeRequest } from "../../__mocks__/generate-code-request";
-import type { TEventType } from "../../catalog";
+import type { TEventType } from "../../lib/catalog";
 import { createCapturingPubSub } from "../__mocks__/mock-pubsub";
-import { createPubSubBus } from "../pubsub";
+import { createPubSubBusOn } from "../pubsub";
 
-describe("createPubSubBus", () => {
+describe("createPubSubBusOn", () => {
 	it.each<TEventType>(["signup.code_requested", "password.reset_requested"])(
 		"publishes %s to the emails topic, with its type as an attribute",
 		async (type) => {
 			const { pubsub, sent } = createCapturingPubSub();
 			const emailsTopic = faker.lorem.slug();
-			const bus = createPubSubBus({ pubsub, topics: { emails: emailsTopic } });
+			const bus = createPubSubBusOn(pubsub, { emails: emailsTopic });
 
 			const envelope = await bus.publish(type, generateCodeRequest());
 
