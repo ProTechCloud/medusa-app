@@ -59,6 +59,22 @@ route would. It overrides only the fields the test is about, as
 what a use case logged, pass a logger from `createCapturingLogger` in
 `testing/test-logger.ts`; do not spy on pino.
 
+## Tests against the database
+
+A use case that reads or writes the database is tested against Postgres, not a mock of it.
+`testing/global-setup.ts` starts one Postgres container with Testcontainers for the whole run
+and migrates a template database once. `integrationContextForEachTest()` in
+`testing/integration-context.ts` gives each test a clone of that template, with Better Auth
+on it, the memory bus and the memory mailer, and drops it afterwards; it returns accessors
+for what a test asserts on, such as `bus().published` or `mailer().sent`. `testing/test-user.ts`
+signs a user up through the use cases, and `testing/graphql-request.ts` sends an operation
+from `@medusa/gql/operations` to `/graphql`.
+
+Docker must be running. On Colima, Testcontainers needs `DOCKER_HOST` and
+`TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE`; the [README](../../../README.md#local-services)
+gives both. These tests hash passwords and share one container, so `vitest.config.ts` gives
+each test 30 seconds.
+
 ## Mocks default to failure
 
 A mock rejects until the test sets a result. `mockLoadVersionUseCase()` builds a `vi.fn`
@@ -86,7 +102,7 @@ test, as in `shared/__tests__/env.test.ts`.
   `use-cases/__tests__/define-use-case.test.ts` shows. The JSON 500 comes from
   `requestErrors`, which `buildApp()` installs and `buildHttp()` does not, so a route test
   that asserts it adds `.onError(requestErrors)` to the app it builds, as
-  `services/api/http/lib/__tests__/request-errors.test.ts` does.
+  `shared/http/__tests__/request-errors.test.ts` does.
 
 ## Keep HTTP-level tests few
 

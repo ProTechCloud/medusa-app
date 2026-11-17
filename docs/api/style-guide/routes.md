@@ -54,8 +54,9 @@ goes through `ROUTES`.
 
 ## `/health` is the one path the entry point mounts
 
-`services/api/index.ts` answers `GET` on `HEALTH_PATH`, from
-`services/api/http/lib/health-path.ts`, before `buildHttp()`. It is liveness only, so it stays
+`buildServiceApp` in `shared/http/service-app.ts`, which the API and the worker both build
+on, answers `GET` on `HEALTH_PATH`, from `shared/http/health-path.ts`, before the service's
+own routes. It is liveness only, so it stays
 outside `ROUTES` and calls no use case: see [Production](./production.md#liveness).
 
 ## Only use cases hold dependencies
@@ -81,7 +82,8 @@ client of its own.
 
 `initUseCaseContext` takes an async builder and builds the context at once, so a bad
 environment or an unreachable client fails the boot rather than the first request. The entry
-point awaits it before `Bun.serve`, as `services/api/index.ts` does:
+point awaits it before `Bun.serve`, as `serveService` in `shared/serve-service.ts` does for
+the API and the worker:
 
 ```ts
 const { config } = await initUseCaseContext(async () => ({
@@ -96,15 +98,15 @@ A later entry point, such as a job runner, does the same before it starts work.
 
 A failure the caller can act on — not found, not allowed, a conflict — is an error the use
 case throws with a stable `code`, in snake_case. The route catches it and answers its status
-with `{ error: code }`, the same shape as the 404 in `services/api/index.ts` and the 500 in
-`services/api/http/lib/request-errors.ts`. The code is the contract; the message can change.
+with `{ error: code }`, the same shape as the 404 in `shared/http/service-app.ts` and the 500
+in `shared/http/request-errors.ts`. The code is the contract; the message can change.
 No use case has an expected failure yet, so the first one adds the error type beside the
 use cases.
 
 ## Unexpected failures propagate to `request-errors.ts`
 
 Anything else is not caught. `defineUseCase` logs it as `<name> failed` and rethrows it
-unchanged, and `requestErrors` in `services/api/http/lib/request-errors.ts` logs it once with
+unchanged, and `requestErrors` in `shared/http/request-errors.ts` logs it once with
 the request and answers `500` with `{ error: "internal_error" }`. No message, stack or path
 reaches the caller. A route never wraps a use case in `try`/`catch` to answer 500 itself.
 

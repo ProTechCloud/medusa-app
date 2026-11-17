@@ -8,7 +8,7 @@ Rules for the API in `apps/backend` (Hono on Bun). For the rules every app follo
 | Guide                         | What it covers                                                                     |
 | ----------------------------- | ---------------------------------------------------------------------------------- |
 | [Routes](./routes.md)         | one use case per route, `ROUTES`, the context, typed errors and the 500            |
-| [Testing](./testing.md)       | route tests through `buildHttp()`, use-case tests, mocks that default to failure   |
+| [Testing](./testing.md)       | route tests through `buildHttp()`, use-case tests, the database, mocks that fail   |
 | [Production](./production.md) | fail fast, parse don't cast, no leaks, structured logs, liveness, binding, secrets |
 
 ## See also

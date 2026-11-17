@@ -1,7 +1,8 @@
 # Deployment
 
 [`backend-cd.yml`](../.github/workflows/backend-cd.yml) builds one image of `apps/backend` and
-rolls the API's Cloud Run service onto it. The GCP side (the service definition, the load
+rolls the API's Cloud Run service onto it. The image also runs the worker and the
+migrations, picked by `APP_PROCESS`; their services are not deployed yet. The GCP side (the service definition, the load
 balancer, the registry, the deploy identity) lives in `medusa-platform`.
 
 ## Branches and environments
@@ -13,7 +14,8 @@ balancer, the registry, the deploy identity) lives in `medusa-platform`.
 | Any other branch                               | refused       |                                                            |
 
 `stg` only receives promotions from `dev`, so a merge to `dev` deploys nothing; the promotion
-does. A push deploys only when it touches `apps/backend`, the root manifests, the Dockerfile's
+does. A push deploys only when it touches `apps/backend`, the workspace packages the image
+carries (`packages/db`, `emails`, `events` and `gql`), the root manifests, the Dockerfile's
 inputs, `.github/workflows/backend-cd.yml`, `.github/actions/install-trivy/` or
 `.github/scripts/deploy/`. One rollout runs at a time; a newer one waits and is never cancelled.
 

@@ -23,7 +23,7 @@ Paths below are under `apps/backend/src/` unless they start at the repository ro
 ## Errors
 
 - **No stack trace or internal path reaches a client.** `requestErrors` in
-  `services/api/http/lib/request-errors.ts` answers every unhandled error with
+  `shared/http/request-errors.ts` answers every unhandled error with
   `{ error: "internal_error" }`, reports the error to PostHog's error tracking once with
   `captureError`, and logs it, with the request it broke.
 - Expected failures answer a stable `error` code: see [Routes](./routes.md#expected-failures-are-typed-errors-with-a-stable-code).
@@ -42,7 +42,7 @@ Paths below are under `apps/backend/src/` unless they start at the repository ro
 - **Lines link to the app's person and session** when it sent them: `posthogDistinctId` and
   `sessionId`, the names PostHog matches to a person and a session replay.
 - **Every request is logged with method, path, status and duration**, by `requestLogger` in
-  `services/api/http/lib/request-logger.ts`, after the response: a 5xx as `error`, a 4xx as
+  `shared/http/request-logger.ts`, after the response: a 5xx as `error`, a 4xx as
   `warn`. The health probe is not logged.
 - **Never a secret.** No token, key, password, cookie or full request body in a log line. Log
   an id that finds the record instead. As a backstop, the logger replaces `password`,
@@ -85,14 +85,14 @@ the variables.
 
 ## Liveness
 
-`GET /health` answers `{ status, uptime }` from `services/api/index.ts` and depends on
+`GET /health` answers `{ status, uptime }` from `shared/http/service-app.ts` and depends on
 nothing: no use case, no client. It stays truthful when a dependency is down, because it says
 only that the process answers. A readiness check that tests a database or a downstream
 service is a separate path, added with the first such dependency.
 
 ## Binding
 
-Bind to the interface the environment needs. `Bun.serve` in `services/api/index.ts` listens on
+Bind to the interface the environment needs. `Bun.serve` in `shared/serve-service.ts` listens on
 `0.0.0.0` because it runs in a container, where the port must be reachable from outside the
 container's own loopback. On Cloud Run, only the load balancer reaches it: the service has no
 `run.app` URL and accepts internal load balancer traffic only, as defined in `medusa-platform`.
@@ -101,7 +101,7 @@ container's own loopback. On Cloud Run, only the load balancer reaches it: the s
 
 - **None in code, and none in the image.** `.dockerignore` at the repository root leaves out
   every `.env` and `.env.*`, and the Dockerfile copies only the manifests, `tsconfig.json`,
-  `bunfig.toml` and `apps/backend/src`.
+  `bunfig.toml`, `apps/backend/src` and the workspace packages the backend depends on.
 - `gitleaks` runs on every pull request, in the `Security — Secret Scan` job of
   `.github/workflows/backend-code-quality.yml`.
 - A secret the API needs is read from Secret Manager at runtime, never passed as a build
