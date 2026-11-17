@@ -25,6 +25,10 @@ describe("buildConfig", () => {
 			pubsub: {
 				projectId: env.PUBSUB_PROJECT_ID,
 				emailsTopic: env.PUBSUB_EMAILS_TOPIC,
+				push: {
+					audience: env.PUBSUB_PUSH_AUDIENCE,
+					serviceAccount: env.PUBSUB_PUSH_SERVICE_ACCOUNT,
+				},
 			},
 			trustedProxies: Number(env.TRUSTED_PROXIES),
 			mailgun: {
@@ -105,6 +109,26 @@ describe("buildConfig", () => {
 		expect(() => buildConfig(env, API_ENTRY_POINT)).toThrow(
 			["  MAILGUN_DOMAIN: is not set", "  MAILGUN_FROM: is not set"].join("\n"),
 		);
+	});
+
+	it.each(["PUBSUB_PUSH_AUDIENCE", "PUBSUB_PUSH_SERVICE_ACCOUNT"])(
+		"refuses %s alone",
+		(missing) => {
+			const env = generateEnv({ [missing]: undefined });
+
+			expect(() => buildConfig(env, API_ENTRY_POINT)).toThrow(
+				`${missing}: is not set`,
+			);
+		},
+	);
+
+	it("leaves the push unverified without either push variable", () => {
+		const env = generateEnv({
+			PUBSUB_PUSH_AUDIENCE: undefined,
+			PUBSUB_PUSH_SERVICE_ACCOUNT: undefined,
+		});
+
+		expect(buildConfig(env, API_ENTRY_POINT).pubsub.push).toBeUndefined();
 	});
 
 	it("escapes the database password in the connection string", () => {

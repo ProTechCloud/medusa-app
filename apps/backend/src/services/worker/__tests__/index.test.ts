@@ -1,9 +1,14 @@
 import { faker } from "@faker-js/faker";
 import { createEnvelope } from "@medusa/events";
 import { describe, expect, it } from "vitest";
+import { MailgunRefusedError } from "@/mailgun";
 import { buildWorker } from "@/services/worker";
-import { PUSH_EMAILS_PATH } from "@/services/worker/push-emails";
-import { createMemoryMailer } from "@/shared/__mocks__/mock-mailer";
+import { PUSH_EMAILS_PATH } from "@/services/worker/lib/push-emails";
+import {
+	createFailingMailer,
+	createMemoryMailer,
+} from "@/shared/__mocks__/mock-mailer";
+import { createPushVerifier } from "@/shared/__mocks__/mock-push-verifier";
 import { useCaseContextForEachTest } from "@/testing/use-case-context";
 
 /** The body a Pub/Sub push subscription posts, around `data`. */
@@ -17,15 +22,27 @@ function pushBody(data: unknown): string {
 	});
 }
 
+function signUpCodePush(): string {
+	return pushBody(
+		createEnvelope("signup.code_requested", {
+			email: faker.internet.email(),
+			code: faker.string.numeric(6),
+		}),
+	);
+}
+
 async function push(body: string): Promise<Response> {
 	return await buildWorker().request(PUSH_EMAILS_PATH, {
 		method: "POST",
-		headers: { "content-type": "application/json" },
+		headers: {
+			"content-type": "application/json",
+			authorization: `Bearer ${faker.string.alphanumeric(40)}`,
+		},
 		body,
 	});
 }
 
-describe("the worker", () => {
+describe("the worker, with a trusted push", () => {
 	let mailer = createMemoryMailer();
 	useCaseContextForEachTest(() => {
 		mailer = createMemoryMailer();
@@ -53,6 +70,7 @@ describe("the worker", () => {
 	);
 
 	it.each([
+		["a body that is not JSON", faker.lorem.sentence()],
 		["a body that is not a push", JSON.stringify({ [faker.lorem.word()]: 1 })],
 		["data that is not an envelope", pushBody({ type: faker.lorem.word() })],
 	])("acknowledges %s and sends nothing", async (_, body) => {
@@ -62,26 +80,62 @@ describe("the worker", () => {
 		expect(mailer.sent).toEqual([]);
 	});
 
-	it("answers a failed send with a 500, so Pub/Sub delivers it again", async () => {
-		mailer.send = async () => {
-			throw new Error(faker.lorem.sentence());
-		};
-
-		const response = await push(
-			pushBody(
-				createEnvelope("signup.code_requested", {
-					email: faker.internet.email(),
-					code: faker.string.numeric(6),
-				}),
-			),
-		);
-
-		expect(response.status).toBe(500);
-	});
-
 	it("the health check reports ok", async () => {
 		const response = await buildWorker().request("/health");
 
 		expect(response.status).toBe(200);
 	});
 });
+
+describe("the worker, with a push it does not trust", () => {
+	const mailer = createMemoryMailer();
+	useCaseContextForEachTest(() => ({
+		mailer,
+		pushVerifier: createPushVerifier(false),
+	}));
+
+	it("answers with a 401, and sends nothing", async () => {
+		const response = await push(signUpCodePush());
+
+		expect(response.status).toBe(401);
+		expect(mailer.sent).toEqual([]);
+	});
+});
+
+describe.each([
+	[
+		"Mailgun failing",
+		() => new MailgunRefusedError(503, faker.lorem.sentence()),
+	],
+	[
+		"Mailgun's rate limit",
+		() => new MailgunRefusedError(429, faker.lorem.sentence()),
+	],
+	["a timeout", () => new MailgunRefusedError(408, faker.lorem.sentence())],
+	["any other error", () => new Error(faker.lorem.sentence())],
+])("the worker, when a send meets %s", (_, error) => {
+	useCaseContextForEachTest(() => ({ mailer: createFailingMailer(error()) }));
+
+	it("answers with a 500, so Pub/Sub delivers the push again", async () => {
+		const response = await push(signUpCodePush());
+
+		expect(response.status).toBe(500);
+	});
+});
+
+describe.each([400, 401, 403])(
+	"the worker, when Mailgun refuses a send with a %i",
+	(status) => {
+		useCaseContextForEachTest(() => ({
+			mailer: createFailingMailer(
+				new MailgunRefusedError(status, faker.lorem.sentence()),
+			),
+		}));
+
+		it("acknowledges the push, since no retry would succeed", async () => {
+			const response = await push(signUpCodePush());
+
+			expect(response.status).toBe(204);
+		});
+	},
+);

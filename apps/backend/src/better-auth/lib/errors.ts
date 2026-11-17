@@ -1,5 +1,5 @@
 import { isAPIError } from "better-auth/api";
-import { badInput } from "@/use-cases/lib/domain-errors";
+import { badInput } from "@/shared/domain-errors";
 
 /**
  * Better Auth's error codes a client can act on, each with the message it

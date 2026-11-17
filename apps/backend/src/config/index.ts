@@ -28,6 +28,11 @@ const schema = z
 		// service's identity; the local emulator needs it.
 		PUBSUB_PROJECT_ID: envVar.optional(),
 		PUBSUB_EMAILS_TOPIC: envVar,
+		// Who may push to the worker: the audience of the OIDC token the push
+		// subscription sends, and the service account it signs as. Both or
+		// neither; without them only a local worker accepts a push.
+		PUBSUB_PUSH_AUDIENCE: envVar.optional(),
+		PUBSUB_PUSH_SERVICE_ACCOUNT: envVar.optional(),
 		// How many proxies in front of the service append to X-Forwarded-For:
 		// the client's address is the entry before theirs.
 		TRUSTED_PROXIES: z.coerce
@@ -35,7 +40,7 @@ const schema = z
 			.int("must be a whole number")
 			.min(0, "must be 0 or more")
 			.default(1),
-		// Without it no email is sent, and the code 111111 is accepted.
+		// Without it no email is sent; only a local API accepts the code 111111.
 		MAILGUN_API_KEY: envVar.optional(),
 		// The domain the key sends from, and the From of every email; both
 		// needed once the key is set.
@@ -57,6 +62,21 @@ const schema = z
 				path: ["MAILGUN_API_KEY"],
 				message: "must be set in prd",
 			});
+		}
+		const pushVars = [
+			"PUBSUB_PUSH_AUDIENCE",
+			"PUBSUB_PUSH_SERVICE_ACCOUNT",
+		] as const;
+		if (pushVars.some((name) => env[name])) {
+			for (const name of pushVars) {
+				if (!env[name]) {
+					issues.addIssue({
+						code: "custom",
+						path: [name],
+						message: "must be set with the other PUBSUB_PUSH_ variable",
+					});
+				}
+			}
 		}
 		if (!env.MAILGUN_API_KEY) return;
 		for (const name of ["MAILGUN_DOMAIN", "MAILGUN_FROM"] as const) {
@@ -93,7 +113,11 @@ export type TConfig = {
 	commit: string;
 	db: { url: string };
 	auth: { secret: string; url: string };
-	pubsub: { projectId?: string; emailsTopic: string };
+	pubsub: {
+		projectId?: string;
+		emailsTopic: string;
+		push?: { audience: string; serviceAccount: string };
+	};
 	trustedProxies: number;
 	mailgun: { apiKey?: string; domain?: string; from?: string };
 	workerPort?: number;
@@ -133,6 +157,13 @@ export function buildConfig(
 		pubsub: {
 			projectId: parsed.PUBSUB_PROJECT_ID,
 			emailsTopic: parsed.PUBSUB_EMAILS_TOPIC,
+			push:
+				parsed.PUBSUB_PUSH_AUDIENCE && parsed.PUBSUB_PUSH_SERVICE_ACCOUNT
+					? {
+							audience: parsed.PUBSUB_PUSH_AUDIENCE,
+							serviceAccount: parsed.PUBSUB_PUSH_SERVICE_ACCOUNT,
+						}
+					: undefined,
 		},
 		trustedProxies: parsed.TRUSTED_PROXIES,
 		mailgun: {

@@ -1,5 +1,5 @@
+import { unauthenticated } from "@/shared/domain-errors";
 import { defineUseCase } from "@/use-cases";
-import { unauthenticated } from "@/use-cases/lib/domain-errors";
 
 /**
  * Ends the session the request's bearer token opened. Better Auth's

@@ -18,6 +18,10 @@ export function generateConfig(overrides: Partial<TConfig> = {}): TConfig {
 		pubsub: {
 			projectId: faker.lorem.slug(),
 			emailsTopic: faker.lorem.slug(),
+			push: {
+				audience: faker.internet.url(),
+				serviceAccount: faker.internet.email(),
+			},
 		},
 		trustedProxies: faker.number.int({ min: 0, max: 3 }),
 		mailgun: {

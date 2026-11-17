@@ -6,7 +6,7 @@ import {
 	badInput,
 	tooManyRequests,
 	unauthenticated,
-} from "@/use-cases/lib/domain-errors";
+} from "@/shared/domain-errors";
 
 const GENERIC = "Unexpected error.";
 

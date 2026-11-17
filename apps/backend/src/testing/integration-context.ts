@@ -5,13 +5,14 @@ import {
 	createMemoryMailer,
 	type IMemoryMailer,
 } from "@/shared/__mocks__/mock-mailer";
+import { createPushVerifier } from "@/shared/__mocks__/mock-push-verifier";
 import {
 	ctxForTests,
 	resetCtx,
 	setCtxForTests,
 	type TUseCaseContext,
 } from "@/use-cases";
-import { buildUseCaseContext } from "@/use-cases/build-use-case-context";
+import { buildUseCaseContext } from "@/use-cases/lib/build-use-case-context";
 import { createDbCloner, TEST_DB_URL_ENV } from "./test-db";
 import { testLogger } from "./test-logger";
 
@@ -57,6 +58,7 @@ export function integrationContextForEachTest(
 				logger: testLogger,
 				bus,
 				mailer,
+				pushVerifier: createPushVerifier(true),
 			}),
 		);
 	});

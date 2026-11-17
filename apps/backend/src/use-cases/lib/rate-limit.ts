@@ -1,11 +1,12 @@
 import { randomUUID } from "node:crypto";
 import { rateLimit } from "@medusa/db";
 import { sql } from "drizzle-orm";
+import { DateTime, Duration } from "luxon";
+import { tooManyRequests } from "@/shared/domain-errors";
 import type { TUseCaseContext } from "@/use-cases";
 import { clientIp } from "./client-ip";
-import { tooManyRequests } from "./domain-errors";
 
-const WINDOW_MS = 15 * 60 * 1000;
+export const RATE_LIMIT_WINDOW = Duration.fromObject({ minutes: 15 });
 const MAX_PER_ADDRESS = 10;
 const MAX_PER_IP = 50;
 
@@ -20,25 +21,30 @@ async function consume(
 	key: string,
 	max: number,
 ): Promise<void> {
-	const now = Date.now();
-	const windowStart = now - WINDOW_MS;
+	// `rate_limit` keeps times as epoch milliseconds, the column Better Auth's
+	// schema gives it; they are converted here, at the query.
+	const now = DateTime.utc();
+	const nowMs = now.toMillis();
+	const windowStart = now.minus(RATE_LIMIT_WINDOW).toMillis();
 	const expired = sql`${rateLimit.lastRequest} < ${windowStart}`;
 
 	const [row] = await ctx.db
 		.insert(rateLimit)
-		.values({ id: randomUUID(), key, count: 1, lastRequest: now })
+		.values({ id: randomUUID(), key, count: 1, lastRequest: nowMs })
 		.onConflictDoUpdate({
 			target: rateLimit.key,
 			set: {
 				count: sql`CASE WHEN ${expired} THEN 1 ELSE ${rateLimit.count} + 1 END`,
-				lastRequest: sql`CASE WHEN ${expired} THEN ${now} ELSE ${rateLimit.lastRequest} END`,
+				lastRequest: sql`CASE WHEN ${expired} THEN ${nowMs} ELSE ${rateLimit.lastRequest} END`,
 			},
 		})
 		.returning({ count: rateLimit.count, opened: rateLimit.lastRequest });
 
 	if (row && row.count > max) {
-		const retryAfterMs = row.opened + WINDOW_MS - now;
-		throw tooManyRequests(Math.max(1, Math.ceil(retryAfterMs / 1000)));
+		const retryAfter = DateTime.fromMillis(row.opened)
+			.plus(RATE_LIMIT_WINDOW)
+			.diff(now);
+		throw tooManyRequests(Math.max(1, Math.ceil(retryAfter.as("seconds"))));
 	}
 }
 

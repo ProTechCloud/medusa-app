@@ -14,8 +14,8 @@ import { generateSignUp } from "@/shared/__mocks__/generate-sign-up";
 import { graphqlRequest } from "@/testing/graphql-request";
 import { integrationContextForEachTest } from "@/testing/integration-context";
 
-describe("/graphql auth, without a Mailgun key", () => {
-	integrationContextForEachTest({ mailgun: {}, trustedProxies: 1 });
+describe("/graphql auth, on a local API", () => {
+	integrationContextForEachTest({ environment: "local", trustedProxies: 1 });
 
 	it("signs up with 111111, signs in, changes the password, signs out and resets it", async () => {
 		const { email, name, password } = generateSignUp();

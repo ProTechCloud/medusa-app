@@ -3,7 +3,7 @@ import { GraphQLError } from "graphql";
 import { createSchema, createYoga } from "graphql-yoga";
 import type { ZodError } from "zod";
 import { logger } from "@/logger";
-import { DOMAIN_ERROR_NAMES } from "@/use-cases/lib/domain-errors";
+import { DOMAIN_ERROR_NAMES } from "@/shared/domain-errors";
 import { createAuthResolvers } from "./auth/resolvers";
 import { yogaLogger } from "./lib/yoga-logger";
 

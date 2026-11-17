@@ -1,8 +1,8 @@
+import { badInput } from "@/shared/domain-errors";
 import { defineUseCase } from "@/use-cases";
 import { checkCode } from "@/use-cases/lib/codes";
-import { badInput } from "@/use-cases/lib/domain-errors";
 import { limitRequest } from "@/use-cases/lib/rate-limit";
-import { evictSessions } from "@/use-cases/lib/sessions";
+import { revokeSessions } from "@/use-cases/lib/sessions";
 
 /**
  * Sets a new password with the emailed code, and ends every session of the
@@ -38,8 +38,9 @@ export const resetPasswordUseCase = defineUseCase<
 
 	const hash = await authContext.password.hash(newPassword);
 	await authContext.internalAdapter.updatePassword(found.user.id, hash);
-	await evictSessions(ctx, found.user.id);
-	await authContext.internalAdapter.deleteUserSessions(found.user.id);
+	await revokeSessions(ctx, found.user.id, () =>
+		authContext.internalAdapter.deleteUserSessions(found.user.id),
+	);
 	await burn();
 	return true;
 });

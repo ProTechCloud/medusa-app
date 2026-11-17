@@ -3,7 +3,7 @@ import type { TConfig } from "@/config";
 import { logger } from "@/logger";
 import { initPostHog } from "@/posthog";
 import { initUseCaseContext } from "@/use-cases";
-import { createServiceContext } from "@/use-cases/build-use-case-context";
+import { createServiceContext } from "@/use-cases/lib/build-use-case-context";
 import { exitOnCrash, stopOnSignal } from "./shutdown";
 
 /**

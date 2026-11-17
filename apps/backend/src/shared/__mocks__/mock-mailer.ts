@@ -16,3 +16,12 @@ export function createMemoryMailer(): IMemoryMailer {
 		},
 	};
 }
+
+/** A mailer whose every send throws `error`, for the paths that handle it. */
+export function createFailingMailer(error: Error): IMailer {
+	return {
+		async send() {
+			throw error;
+		},
+	};
+}

@@ -1,8 +1,8 @@
 import { withAuthErrors } from "@/better-auth/lib/errors";
+import { unauthenticated } from "@/shared/domain-errors";
 import { defineUseCase } from "@/use-cases";
 import { type TAuthSession, toAuthSession } from "@/use-cases/lib/auth-user";
-import { unauthenticated } from "@/use-cases/lib/domain-errors";
-import { evictSessions } from "@/use-cases/lib/sessions";
+import { revokeSessions } from "@/use-cases/lib/sessions";
 
 /**
  * Changes the password of the signed-in user. Every session of the account
@@ -19,12 +19,13 @@ export const changePasswordUseCase = defineUseCase<
 	const session = await ctx.sessionCache.get(headers);
 	if (!session) throw unauthenticated();
 
-	await evictSessions(ctx, session.user.id);
-	const result = await withAuthErrors(() =>
-		ctx.auth.api.changePassword({
-			body: { currentPassword, newPassword, revokeOtherSessions: true },
-			headers,
-		}),
+	const result = await revokeSessions(ctx, session.user.id, () =>
+		withAuthErrors(() =>
+			ctx.auth.api.changePassword({
+				body: { currentPassword, newPassword, revokeOtherSessions: true },
+				headers,
+			}),
+		),
 	);
 	return toAuthSession(result);
 });

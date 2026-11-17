@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import { DateTime } from "luxon";
 import { z } from "zod";
 import {
 	EVENT_TYPES,
@@ -30,7 +31,7 @@ export function createEnvelope<TType extends TEventType>(
 	return {
 		id: randomUUID(),
 		type,
-		occurredAt: new Date().toISOString(),
+		occurredAt: DateTime.utc().toISO(),
 		data: EVENTS[type].data.parse(data),
 	} as TEnvelope;
 }

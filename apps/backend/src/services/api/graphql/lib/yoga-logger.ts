@@ -32,5 +32,8 @@ export function yogaLogger(logger: Logger): TYogaLogging {
 						: prefixOrAttrs,
 				),
 			),
+		// Yoga types `logging` as @graphql-hive/logger's `Logger` class, whose
+		// `#private` field no object literal can have, so `satisfies` cannot
+		// check this. These are the only methods Yoga calls.
 	} as unknown as TYogaLogging;
 }

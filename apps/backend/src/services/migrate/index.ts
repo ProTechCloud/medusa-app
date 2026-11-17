@@ -2,10 +2,14 @@ import { runMigrations } from "@medusa/db/migrate";
 import { getConfig, type TConfig } from "@/config";
 import { logger } from "@/logger";
 import { flushTelemetry, withinFlushTimeout } from "@/shared/flush-telemetry";
+import { initUseCaseContext } from "@/use-cases";
+import { pruneExpiredUseCase } from "@/use-cases/cases/prune-expired.use-case";
+import { createServiceContext } from "@/use-cases/lib/build-use-case-context";
 
 /**
- * Applies the migrations not yet applied to the config's database, only when
- * SHOULD_RUN_MIGRATION is `true`; otherwise it says so and changes nothing.
+ * Applies the migrations not yet applied to the config's database, then
+ * prunes the expired rate limits and codes, only when SHOULD_RUN_MIGRATION
+ * is `true`; otherwise it says so and changes nothing, not even connecting.
  */
 export async function migrate(config: TConfig): Promise<"applied" | "skipped"> {
 	if (!config.shouldRunMigration) {
@@ -14,6 +18,9 @@ export async function migrate(config: TConfig): Promise<"applied" | "skipped"> {
 	}
 	await runMigrations(config.db.url);
 	logger.info("migrations applied");
+	// The schema is current now, so the use cases can run against it.
+	await initUseCaseContext(createServiceContext);
+	await pruneExpiredUseCase();
 	return "applied";
 }
 

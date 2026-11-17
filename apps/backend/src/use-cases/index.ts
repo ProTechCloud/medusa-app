@@ -5,6 +5,7 @@ import { ATTR_ERROR_TYPE } from "@opentelemetry/semantic-conventions";
 import type { Logger } from "pino";
 import type { TAuth, TSessionCache } from "@/better-auth";
 import type { TConfig } from "@/config";
+import type { IPushVerifier } from "@/google-auth";
 import type { IMailer } from "@/mailgun";
 
 /**
@@ -20,6 +21,7 @@ export type TUseCaseContext = {
 	sessionCache: TSessionCache;
 	bus: IMessageBus;
 	mailer: IMailer;
+	pushVerifier: IPushVerifier;
 };
 
 export type TUseCase<TArgs, TResult> = (

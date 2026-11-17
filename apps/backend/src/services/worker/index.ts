@@ -1,7 +1,7 @@
 import type { Hono } from "hono";
 import { buildServiceApp } from "@/shared/http/service-app";
 import { serveService } from "@/shared/serve-service";
-import { PUSH_EMAILS_PATH, pushEmails } from "./push-emails";
+import { PUSH_EMAILS_PATH, pushEmails } from "./lib/push-emails";
 
 /**
  * The worker: what Pub/Sub pushes to, in the shell every service shares. Its

@@ -1,11 +1,16 @@
 import { createHmac, randomInt, timingSafeEqual } from "node:crypto";
+import { DateTime, Duration } from "luxon";
 import { z } from "zod";
+import { badInput } from "@/shared/domain-errors";
 import type { TUseCaseContext } from "@/use-cases";
-import { badInput } from "./domain-errors";
 
-const CODE_TTL_MS = 15 * 60 * 1000;
+const CODE_TTL = Duration.fromObject({ minutes: 15 });
 const MAX_ATTEMPTS = 5;
-/** Accepted beside the emailed code while no email can be sent. */
+/**
+ * Accepted beside the emailed code on a local API only, where no email is
+ * usually sent. Never on a deployed one, key or not: there it would let
+ * anyone reset anyone's password.
+ */
 const FIXED_CODE = "111111";
 
 export type TCodeFlow = "sign-up" | "password-reset";
@@ -49,7 +54,8 @@ export async function issueCode(
 	await internalAdapter.createVerificationValue({
 		identifier: identifier(flow, email),
 		value: JSON.stringify({ hash: hashCode(ctx, code), attempts: 0 }),
-		expiresAt: new Date(Date.now() + CODE_TTL_MS),
+		// The adapter stores a Date.
+		expiresAt: DateTime.utc().plus(CODE_TTL).toJSDate(),
 	});
 	return code;
 }
@@ -57,8 +63,8 @@ export async function issueCode(
 /**
  * Checks `code` for `email` in `flow`. A wrong one counts an attempt, and the
  * fifth deletes the code; a missing or expired one is refused the same way,
- * so the answer never says which. Without a Mailgun key, `111111` is
- * accepted beside the stored code. Returns `burn`, which deletes the code:
+ * so the answer never says which. On a local API, `111111` is accepted
+ * beside the stored code. Returns `burn`, which deletes the code:
  * the caller burns it once what the code allowed has happened.
  */
 export async function checkCode(
@@ -72,7 +78,7 @@ export async function checkCode(
 	const refused = badInput("The code is wrong or has expired.");
 
 	const row = await internalAdapter.findVerificationValue(id);
-	if (!row || row.expiresAt.getTime() <= Date.now()) {
+	if (!row || DateTime.fromJSDate(row.expiresAt) <= DateTime.utc()) {
 		if (row) await internalAdapter.deleteVerificationByIdentifier(id);
 		throw refused;
 	}
@@ -80,7 +86,7 @@ export async function checkCode(
 	const stored = storedSchema.parse(JSON.parse(row.value));
 	const accepted =
 		matches(stored.hash, hashCode(ctx, code)) ||
-		(!ctx.config.mailgun.apiKey && code === FIXED_CODE);
+		(ctx.config.environment === "local" && code === FIXED_CODE);
 
 	if (!accepted) {
 		const attempts = stored.attempts + 1;
