@@ -28,6 +28,9 @@ export default defineConfig({
 		// that needs a database clones it (src/testing/integration-context.ts).
 		globalSetup: ["./src/testing/global-setup.ts"],
 		hookTimeout: 120_000,
+		// Many tests run against that database and hash passwords, which is
+		// slow on purpose; under a parallel turbo run, 5 s is not enough.
+		testTimeout: 30_000,
 		coverage,
 	},
 });

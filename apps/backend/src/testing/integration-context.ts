@@ -2,6 +2,10 @@ import { createMemoryBus, type IMemoryBus } from "@medusa/events";
 import { afterAll, afterEach, beforeAll, beforeEach } from "vitest";
 import { generateConfig } from "@/shared/__mocks__/generate-config";
 import {
+	createMemoryMailer,
+	type IMemoryMailer,
+} from "@/shared/__mocks__/mock-mailer";
+import {
 	ctxForTests,
 	resetCtx,
 	setCtxForTests,
@@ -14,15 +18,20 @@ import { testLogger } from "./test-logger";
 /**
  * For a test file whose use cases query the database: before each test, a
  * database of its own, cloned from the migrated template, with Better Auth
- * on it and the memory bus; after it, the database is dropped. Returns
+ * on it, the memory bus and the memory mailer; after it, the database is dropped. Returns
  * accessors for what a test asserts on.
  */
 export function integrationContextForEachTest(
 	configOverrides: Parameters<typeof generateConfig>[0] = {},
-): { ctx: () => TUseCaseContext; bus: () => IMemoryBus } {
+): {
+	ctx: () => TUseCaseContext;
+	bus: () => IMemoryBus;
+	mailer: () => IMemoryMailer;
+} {
 	let cloner: ReturnType<typeof createDbCloner>;
 	let drop: (() => Promise<void>) | undefined;
 	let bus: IMemoryBus;
+	let mailer: IMemoryMailer;
 
 	beforeAll(() => {
 		const url = process.env[TEST_DB_URL_ENV];
@@ -38,6 +47,7 @@ export function integrationContextForEachTest(
 		const clone = await cloner.clone();
 		drop = clone.drop;
 		bus = createMemoryBus();
+		mailer = createMemoryMailer();
 		setCtxForTests(
 			buildUseCaseContext({
 				config: generateConfig({
@@ -46,6 +56,7 @@ export function integrationContextForEachTest(
 				}),
 				logger: testLogger,
 				bus,
+				mailer,
 			}),
 		);
 	});
@@ -60,5 +71,5 @@ export function integrationContextForEachTest(
 		await cloner.close();
 	});
 
-	return { ctx: ctxForTests, bus: () => bus };
+	return { ctx: ctxForTests, bus: () => bus, mailer: () => mailer };
 }

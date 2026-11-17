@@ -17,6 +17,11 @@ on:
     branches: [stg]
     paths:
       - apps/backend/**
+      # The workspace packages the image carries.
+      - packages/db/**
+      - packages/emails/**
+      - packages/events/**
+      - packages/gql/**
       - package.json
       - yarn.lock
       - .yarnrc.yml

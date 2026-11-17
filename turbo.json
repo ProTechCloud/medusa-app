@@ -34,6 +34,10 @@
 			"cache": false,
 			"persistent": true
 		},
+		"dev:worker": {
+			"cache": false,
+			"persistent": true
+		},
 		"typecheck": {
 			"dependsOn": [
 				"^codegen",

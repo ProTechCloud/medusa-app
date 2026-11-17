@@ -37,6 +37,18 @@ const schema = z
 			.default(1),
 		// Without it no email is sent, and the code 111111 is accepted.
 		MAILGUN_API_KEY: envVar.optional(),
+		// The domain the key sends from, and the From of every email; both
+		// needed once the key is set.
+		MAILGUN_DOMAIN: envVar.optional(),
+		MAILGUN_FROM: envVar.optional(),
+		// Locally the API holds PORT, so the worker listens here; on Cloud
+		// Run each service has its own PORT and this stays unset.
+		WORKER_PORT: portSchema.optional(),
+		// The migrate process applies migrations only when this is `true`, so
+		// running it by mistake changes nothing.
+		SHOULD_RUN_MIGRATION: z
+			.enum(["true", "false"], "must be true or false")
+			.default("false"),
 	})
 	.superRefine((env, issues) => {
 		if (env.APP_ENV === "prd" && !env.MAILGUN_API_KEY) {
@@ -45,6 +57,16 @@ const schema = z
 				path: ["MAILGUN_API_KEY"],
 				message: "must be set in prd",
 			});
+		}
+		if (!env.MAILGUN_API_KEY) return;
+		for (const name of ["MAILGUN_DOMAIN", "MAILGUN_FROM"] as const) {
+			if (!env[name]) {
+				issues.addIssue({
+					code: "custom",
+					path: [name],
+					message: "must be set with MAILGUN_API_KEY",
+				});
+			}
 		}
 	});
 
@@ -73,7 +95,9 @@ export type TConfig = {
 	auth: { secret: string; url: string };
 	pubsub: { projectId?: string; emailsTopic: string };
 	trustedProxies: number;
-	mailgun: { apiKey?: string };
+	mailgun: { apiKey?: string; domain?: string; from?: string };
+	workerPort?: number;
+	shouldRunMigration: boolean;
 };
 
 /** A node-postgres connection string, with the user and password escaped. */
@@ -111,7 +135,13 @@ export function buildConfig(
 			emailsTopic: parsed.PUBSUB_EMAILS_TOPIC,
 		},
 		trustedProxies: parsed.TRUSTED_PROXIES,
-		mailgun: { apiKey: parsed.MAILGUN_API_KEY },
+		mailgun: {
+			apiKey: parsed.MAILGUN_API_KEY,
+			domain: parsed.MAILGUN_DOMAIN,
+			from: parsed.MAILGUN_FROM,
+		},
+		workerPort: parsed.WORKER_PORT,
+		shouldRunMigration: parsed.SHOULD_RUN_MIGRATION === "true",
 	};
 }
 

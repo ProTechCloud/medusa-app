@@ -1,10 +1,12 @@
 # HTTP routes
 
 Every route the API serves lives under `routes/`. The entry point,
-[`../index.ts`](../index.ts), adds what applies to every request, in this order: the server
-span (`lib/request-tracing.ts`), the app's PostHog identity (`lib/request-identity.ts`), the
-correlation ID (`lib/request-correlation.ts`) and the request logger; then the health check
-at `HEALTH_PATH`, the JSON 404 and the JSON 500 from `lib/request-errors.ts`.
+[`../index.ts`](../index.ts), builds the app with `buildServiceApp`
+([`src/shared/http/service-app.ts`](../../../shared/http/service-app.ts)), which the worker
+shares. It adds what applies to every request, in this order: the server span
+(`request-tracing.ts`), the app's PostHog identity (`lib/request-identity.ts`, the API's
+own), the correlation ID (`request-correlation.ts`) and the request logger; then the health
+check at `HEALTH_PATH`, the JSON 404 and the JSON 500 from `request-errors.ts`.
 
 ## Rules
 

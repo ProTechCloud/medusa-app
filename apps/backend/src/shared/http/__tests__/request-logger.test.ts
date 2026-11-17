@@ -1,8 +1,8 @@
 import { faker } from "@faker-js/faker";
 import { Hono } from "hono";
 import { describe, expect, it } from "vitest";
-import { HEALTH_PATH } from "@/services/api/http/lib/health-path";
-import { createRequestLogger } from "@/services/api/http/lib/request-logger";
+import { HEALTH_PATH } from "@/shared/http/health-path";
+import { createRequestLogger } from "@/shared/http/request-logger";
 import { createCapturingLogger } from "@/testing/test-logger";
 
 const pinoLevel = (name: string) => ({ info: 30, warn: 40, error: 50 })[name];

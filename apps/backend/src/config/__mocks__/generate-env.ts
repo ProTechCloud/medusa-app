@@ -20,6 +20,10 @@ export function generateEnv(
 		PUBSUB_EMAILS_TOPIC: faker.lorem.slug(),
 		TRUSTED_PROXIES: String(faker.number.int({ min: 0, max: 3 })),
 		MAILGUN_API_KEY: faker.string.alphanumeric(32),
+		MAILGUN_DOMAIN: faker.internet.domainName(),
+		MAILGUN_FROM: faker.internet.email(),
+		WORKER_PORT: String(faker.internet.port()),
+		SHOULD_RUN_MIGRATION: String(faker.datatype.boolean()),
 		...overrides,
 	};
 }

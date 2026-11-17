@@ -2,6 +2,8 @@
 	"extends": "../../tsconfig.json",
 	"compilerOptions": {
 		"types": ["bun-types"],
+		// @medusa/emails ships its templates as .tsx, which this check reads.
+		"jsx": "react-jsx",
 		"paths": {
 			"@/*": ["./src/*"]
 		}

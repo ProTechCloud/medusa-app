@@ -27,7 +27,13 @@ describe("buildConfig", () => {
 				emailsTopic: env.PUBSUB_EMAILS_TOPIC,
 			},
 			trustedProxies: Number(env.TRUSTED_PROXIES),
-			mailgun: { apiKey: env.MAILGUN_API_KEY },
+			mailgun: {
+				apiKey: env.MAILGUN_API_KEY,
+				domain: env.MAILGUN_DOMAIN,
+				from: env.MAILGUN_FROM,
+			},
+			workerPort: Number(env.WORKER_PORT),
+			shouldRunMigration: env.SHOULD_RUN_MIGRATION === "true",
 		});
 	});
 
@@ -64,6 +70,7 @@ describe("buildConfig", () => {
 		],
 		["BETTER_AUTH_URL", faker.lorem.word(), "must be a URL"],
 		["TRUSTED_PROXIES", "-1", "must be 0 or more"],
+		["SHOULD_RUN_MIGRATION", "yes", "must be true or false"],
 	])("a bad %s is named in the error", (name, value, reason) => {
 		const env = generateEnv({ [name]: value });
 
@@ -87,6 +94,17 @@ describe("buildConfig", () => {
 		});
 
 		expect(buildConfig(env, API_ENTRY_POINT).mailgun.apiKey).toBeUndefined();
+	});
+
+	it("refuses a Mailgun key without its domain and sender", () => {
+		const env = generateEnv({
+			MAILGUN_DOMAIN: undefined,
+			MAILGUN_FROM: undefined,
+		});
+
+		expect(() => buildConfig(env, API_ENTRY_POINT)).toThrow(
+			["  MAILGUN_DOMAIN: is not set", "  MAILGUN_FROM: is not set"].join("\n"),
+		);
 	});
 
 	it("escapes the database password in the connection string", () => {

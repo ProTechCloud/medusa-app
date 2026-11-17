@@ -5,6 +5,7 @@ import { ATTR_ERROR_TYPE } from "@opentelemetry/semantic-conventions";
 import type { Logger } from "pino";
 import type { TAuth, TSessionCache } from "@/better-auth";
 import type { TConfig } from "@/config";
+import type { IMailer } from "@/mailgun";
 
 /**
  * What every use case receives. The transport layer — routes, resolvers and
@@ -18,6 +19,7 @@ export type TUseCaseContext = {
 	auth: TAuth;
 	sessionCache: TSessionCache;
 	bus: IMessageBus;
+	mailer: IMailer;
 };
 
 export type TUseCase<TArgs, TResult> = (

@@ -1,6 +1,6 @@
 import { faker } from "@faker-js/faker";
 import { describe, expect, it } from "vitest";
-import { redactQuery } from "@/services/api/http/lib/request-tracing";
+import { redactQuery } from "@/shared/http/request-tracing";
 
 describe("redactQuery", () => {
 	it("replaces every query value with REDACTED and keeps the names", () => {

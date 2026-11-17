@@ -20,7 +20,13 @@ export function generateConfig(overrides: Partial<TConfig> = {}): TConfig {
 			emailsTopic: faker.lorem.slug(),
 		},
 		trustedProxies: faker.number.int({ min: 0, max: 3 }),
-		mailgun: { apiKey: faker.string.alphanumeric(32) },
+		mailgun: {
+			apiKey: faker.string.alphanumeric(32),
+			domain: faker.internet.domainName(),
+			from: faker.internet.email(),
+		},
+		workerPort: faker.internet.port(),
+		shouldRunMigration: faker.datatype.boolean(),
 		...overrides,
 	};
 }

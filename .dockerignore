@@ -3,6 +3,9 @@
 **/node_modules
 **/.turbo
 **/dist
+**/coverage
+# Generated in the image from the schema, never taken from a local run.
+**/src/__generated__
 **/build
 .yarn
 .git
