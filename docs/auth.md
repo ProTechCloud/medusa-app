@@ -47,8 +47,13 @@ account.
   message as a wrong one.
 - **Burned after the work.** Sign-up deletes the code only once Better Auth created the
   account, so a failed sign-up, such as a short password, can be retried with the same code.
-- **`111111` without Mailgun.** Without `MAILGUN_API_KEY` no email is sent, and `111111` is
-  accepted beside the stored code. prd refuses to start without the key.
+- **`111111` locally only.** A local API (`APP_ENV=local`) accepts `111111` beside the
+  stored code, so a sign-up works without an email. A deployed one never does, key or not:
+  there it would let anyone reset anyone's password with `requestPasswordReset`. Without
+  `MAILGUN_API_KEY` no email is sent, so stg can sign no one up until it has the key; prd
+  refuses to start without it.
+- **Pruned.** `migrate` deletes the expired codes, and the ended `rate_limit` windows, each
+  time it runs.
 
 The code is in `apps/backend/src/use-cases/lib/codes.ts`.
 
@@ -99,6 +104,20 @@ The GraphQL layer answers each expected failure with a code in `extensions.code`
 ## Locally
 
 `yarn local:create` seeds two users, `ana@example.com` and `bruno@example.com`, with the
-password in [`packages/seed/src/users.ts`](../packages/seed/src/users.ts). Without a Mailgun
-key, sign up any other address with the code `111111`; the worker logs the address and
+password in [`packages/seed/src/users.ts`](../packages/seed/src/users.ts). Sign up any
+other address with the code `111111`. Without a Mailgun key the worker logs the address and
 subject of each email instead of sending it.
+
+## The worker's pushes
+
+The worker sends only what a push it trusts asks for: with `PUBSUB_PUSH_AUDIENCE` and
+`PUBSUB_PUSH_SERVICE_ACCOUNT` set, a push must carry a Google-signed OIDC token for that
+audience, issued to that service account, as a push subscription set to authenticate sends
+it; anything else is answered 401. A local worker, whose emulator sends no token, trusts
+every push. A deployed worker without the two variables refuses every push, and logs why.
+The verifier is in [`apps/backend/src/google-auth`](../apps/backend/src/google-auth/index.ts).
+
+A push whose body is not an email envelope, or whose email Mailgun refuses for good (a 4xx
+other than 408 and 429, such as a wrong key), is acknowledged and logged: retrying cannot
+help. Any other failure, Mailgun's own, its rate limit or a send past 10 seconds, answers
+500, and Pub/Sub delivers the push again.

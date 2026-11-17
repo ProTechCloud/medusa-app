@@ -2,7 +2,10 @@
 
 [`backend-cd.yml`](../.github/workflows/backend-cd.yml) builds one image of `apps/backend` and
 rolls the API's Cloud Run service onto it. The image also runs the worker and the
-migrations, picked by `APP_PROCESS`; their services are not deployed yet. The GCP side (the service definition, the load
+migrations, picked by `APP_PROCESS`; their services are not deployed yet. When the worker
+is, its push subscription must authenticate with an OIDC token, and the worker needs
+`PUBSUB_PUSH_AUDIENCE` and `PUBSUB_PUSH_SERVICE_ACCOUNT` to match it, or it refuses every
+push ([Auth](auth.md#the-workers-pushes)). The GCP side (the service definition, the load
 balancer, the registry, the deploy identity) lives in `medusa-platform`.
 
 ## Branches and environments

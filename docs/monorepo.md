@@ -83,7 +83,8 @@ change invalidates every workspace's cache: `tsconfig.json`, `biome.json`,
 `dev`, `dev:worker` and `format:write` are never cached: the first two are servers that keep
 running, the other changes files. `typecheck`, `lint`, `test` and `test:coverage` depend on
 `codegen`, in the workspace and in the packages it depends on, so the generated GraphQL files
-exist before they run ([Code generation](graphql/codegen.md)).
+exist before they run ([Code generation](graphql/codegen.md)). `dev` and `dev:worker` depend
+on it too.
 
 To run one workspace only:
 

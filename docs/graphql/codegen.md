@@ -15,7 +15,7 @@ never edited or committed.
 
 - `yarn codegen` runs the `codegen` turbo task in every workspace that has the script. Run it
   after changing a `.graphql` file.
-- `typecheck`, `lint`, `test` and `test:coverage` depend on `codegen` in `turbo.json`, so they
-  regenerate first; a fresh checkout needs nothing else.
+- `dev`, `dev:worker`, `typecheck`, `lint`, `test` and `test:coverage` depend on `codegen`
+  in `turbo.json`, so they regenerate first; a fresh checkout needs nothing else.
 - The image builds them in its `codegen` stage, from the schema alone
   ([README](../../README.md#container)).

@@ -62,8 +62,9 @@ and the database. `local:start` creates the topic again, since the emulator forg
 - **Port 5432 taken**, by a Postgres from Homebrew for example: set `DB_PORT=5433` in
   `.env.local` before `local:create`; the container and the API both read it.
 - **Sign in** as `ana@example.com` or `bruno@example.com`, which the seed creates, or sign up
-  any address with the code `111111`: without a Mailgun key no email is sent, and the worker
-  logs the address and subject instead ([Auth](docs/auth.md)).
+  any address with the code `111111`, which only a local API accepts. Without a Mailgun key
+  no email is sent, and the worker logs the address and subject instead
+  ([Auth](docs/auth.md)).
 - **Tests on Colima.** The backend's tests start Postgres with Testcontainers, which looks
   for Docker's socket where Colima does not put it. Add to `~/.zshrc`:
 

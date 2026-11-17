@@ -34,7 +34,7 @@ its own `/` and never repeats its path; a deeper path is a folder inside it.
 `kebab-case-folders` in `@medusa/eslint-plugin` reports a folder under `src/` whose name is
 not kebab-case, so a URL segment is always kebab-case too.
 
-## `ROUTES` is the only place a top-level route is mounted
+## `ROUTES` is where a top-level REST route is mounted
 
 `services/api/http/index.ts` holds the `ROUTES` table, and `buildHttp()` mounts each entry at
 its path. A new top-level route is a folder plus one line there:
@@ -49,10 +49,15 @@ A deeper path is the one exception: `/version/history` would be a folder inside
 `routes/version/`, mounted by its parent with `.route("/history", ...)`, and gets no line in
 `ROUTES`. A route inside a grouping folder, which has no `index.ts`, is top-level and does.
 The [routes README](../../../apps/backend/src/services/api/http/README.md) shows both. A
-route never mounts a sibling, and the entry point mounts only `/health`; every other route
-goes through `ROUTES`.
+route never mounts a sibling, and every REST route goes through `ROUTES`.
 
-## `/health` is the one path the entry point mounts
+Two paths are mounted outside it. `buildServiceApp` mounts `/health`, which every service
+answers ([below](#health-is-mounted-by-the-shell-every-service-shares)). The entry point,
+`services/api/index.ts`, mounts `/graphql`: GraphQL Yoga answers `GET` and `POST` there with
+`yoga.fetch`, and its resolvers, one use case each, live under `services/api/graphql/`
+([GraphQL](../../graphql/schema.md)).
+
+## `/health` is mounted by the shell every service shares
 
 `buildServiceApp` in `shared/http/service-app.ts`, which the API and the worker both build
 on, answers `GET` on `HEALTH_PATH`, from `shared/http/health-path.ts`, before the service's
