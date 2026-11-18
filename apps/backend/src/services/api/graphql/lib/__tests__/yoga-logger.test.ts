@@ -20,6 +20,22 @@ describe("yogaLogger", () => {
 		]);
 	});
 
+	it.each([
+		["debug", 20],
+		["info", 30],
+		["warn", 40],
+		["error", 50],
+	] as const)("writes %s at pino's %s", (method, level) => {
+		const capture = createCapturingLogger();
+		const message = faker.lorem.sentence();
+
+		yogaLogger(capture.logger)[method](message);
+
+		expect(capture.lines()).toEqual([
+			expect.objectContaining({ level, msg: message }),
+		]);
+	});
+
 	it("names a child's lines by its prefix", () => {
 		const capture = createCapturingLogger();
 		const prefix = faker.lorem.word();

@@ -1,4 +1,5 @@
 import { createHmac, randomInt, timingSafeEqual } from "node:crypto";
+import { sql, verification } from "@medusa/db";
 import { DateTime, Duration } from "luxon";
 import { z } from "zod";
 import { badInput } from "@/shared/domain-errors";
@@ -89,13 +90,20 @@ export async function checkCode(
 		(ctx.config.environment === "local" && code === FIXED_CODE);
 
 	if (!accepted) {
-		const attempts = stored.attempts + 1;
-		if (attempts >= MAX_ATTEMPTS) {
+		// Counted in one statement, so parallel wrong guesses each count: read
+		// here and written back, two could read the same count.
+		const [counted] = await ctx.db
+			.update(verification)
+			.set({
+				value: sql`jsonb_set(${verification.value}::jsonb, '{attempts}', to_jsonb((${verification.value}::jsonb->>'attempts')::int + 1))::text`,
+			})
+			.where(sql`${verification.id} = ${row.id}`)
+			.returning({ value: verification.value });
+		if (
+			counted &&
+			storedSchema.parse(JSON.parse(counted.value)).attempts >= MAX_ATTEMPTS
+		) {
 			await internalAdapter.deleteVerificationByIdentifier(id);
-		} else {
-			await internalAdapter.updateVerificationByIdentifier(id, {
-				value: JSON.stringify({ ...stored, attempts }),
-			});
 		}
 		throw refused;
 	}

@@ -49,7 +49,7 @@ Paths below are under `apps/backend/src/` unless they start at the repository ro
 - **Never a secret.** No token, key, password, cookie or full request body in a log line. Log
   an id that finds the record instead. As a backstop, the logger replaces `password`,
   `newPassword`, `currentPassword`, `token`, `accessToken`, `refreshToken`, `idToken`,
-  `pushToken`, `authorization`, `cookie` and `email` with `[redacted]`, at the top of a line
+  `pushToken`, `authorization`, `cookie`, `email` and `to` with `[redacted]`, at the top of a line
   and one level down.
 
 ## Telemetry

@@ -1,6 +1,7 @@
 import { faker } from "@faker-js/faker";
 import { describe, expect, it } from "vitest";
 import { generateSignUp } from "@/shared/__mocks__/generate-sign-up";
+import { DOMAIN_ERROR_NAMES } from "@/shared/domain-errors";
 import { integrationContextForEachTest } from "@/testing/integration-context";
 import { requestHeaders, signUpTestUser } from "@/testing/test-user";
 import { loadMeUseCase } from "@/use-cases/cases/load-me.use-case";
@@ -43,6 +44,23 @@ describe("signInUseCase", () => {
 
 describe("signOutUseCase and loadMeUseCase", () => {
 	const { bus } = integrationContextForEachTest();
+
+	it("refuses the eleventh sign-in for one address with TOO_MANY_REQUESTS", async () => {
+		const { email } = generateSignUp();
+		const signIn = () =>
+			signInUseCase({
+				email,
+				password: faker.internet.password({ length: 16 }),
+				headers: requestHeaders(),
+			});
+		for (let attempt = 1; attempt <= 10; attempt++) {
+			await expect(signIn()).rejects.toThrow("Wrong email or password.");
+		}
+
+		await expect(signIn()).rejects.toMatchObject({
+			name: DOMAIN_ERROR_NAMES.TOO_MANY_REQUESTS,
+		});
+	});
 
 	it("loads the signed-in user, and nothing once it signs out", async () => {
 		const { token, email } = await signUpTestUser(bus());

@@ -37,6 +37,8 @@ const REDACTED_KEYS = [
 	"authorization",
 	"cookie",
 	"email",
+	// A recipient, as the log mailer writes it.
+	"to",
 ];
 const REDACT_PATHS = REDACTED_KEYS.flatMap((key) => [key, `*.${key}`]);
 

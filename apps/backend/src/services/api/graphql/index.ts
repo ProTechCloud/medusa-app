@@ -96,8 +96,10 @@ export function buildYoga({ local = false }: { local?: boolean } = {}) {
 		context: ({ request }) => ({ headers: request.headers }),
 		maskedErrors: { maskError },
 		// Yoga types `logging` as @graphql-hive/logger's `Logger` class, whose
-		// `#private` field no object can have; `yogaLogger` has every method
-		// Yoga calls on it.
+		// `#private` field no object can have: a class with a private member
+		// takes only its own instances
+		// (https://www.typescriptlang.org/docs/handbook/type-compatibility.html#private-and-protected-members-in-classes).
+		// `yogaLogger` has every method Yoga calls on it, each tested.
 		logging: yogaLogger(logger) as unknown as TYogaLogging,
 		graphiql: local,
 		plugins: local ? [] : [noIntrospection],

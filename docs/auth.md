@@ -110,8 +110,8 @@ The GraphQL layer answers each expected failure with a code in `extensions.code`
 
 `yarn local:create` seeds two users, `ana@example.com` and `bruno@example.com`, with the
 password in [`packages/seed/src/lib/users.ts`](../packages/seed/src/lib/users.ts). Sign up any
-other address with the code `111111`. Without a Mailgun key the worker logs the address and
-subject of each email instead of sending it.
+other address with the code `111111`. Without a Mailgun key the worker logs the subject of
+each email, with the address redacted, instead of sending it.
 
 ## The worker's pushes
 

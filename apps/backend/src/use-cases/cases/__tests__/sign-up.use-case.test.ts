@@ -4,6 +4,7 @@ import type { IMemoryBus } from "@medusa/events";
 import { DateTime } from "luxon";
 import { describe, expect, it } from "vitest";
 import { generateSignUp } from "@/shared/__mocks__/generate-sign-up";
+import { DOMAIN_ERROR_NAMES } from "@/shared/domain-errors";
 import { integrationContextForEachTest } from "@/testing/integration-context";
 import { lastCode, requestHeaders } from "@/testing/test-user";
 import { requestSignUpCodeUseCase } from "@/use-cases/cases/request-sign-up-code.use-case";
@@ -85,6 +86,32 @@ describe("signUpUseCase", () => {
 		}
 
 		await expect(signUpUseCase(request)).rejects.toThrow(REFUSED);
+	});
+
+	it("counts each of five wrong guesses sent at once, and deletes the code", async () => {
+		const request = await requestCode(bus());
+
+		await Promise.allSettled(
+			[1, 2, 3, 4, 5].map(() =>
+				signUpUseCase({ ...request, code: wrongCode(request.code) }),
+			),
+		);
+
+		await expect(signUpUseCase(request)).rejects.toThrow(REFUSED);
+	});
+
+	it("refuses the eleventh guess for one address with TOO_MANY_REQUESTS", async () => {
+		const request = await requestCode(bus());
+		// The code request was the first of the address's ten.
+		for (let attempt = 1; attempt <= 9; attempt++) {
+			await expect(
+				signUpUseCase({ ...request, code: wrongCode(request.code) }),
+			).rejects.toThrow(REFUSED);
+		}
+
+		await expect(signUpUseCase(request)).rejects.toMatchObject({
+			name: DOMAIN_ERROR_NAMES.TOO_MANY_REQUESTS,
+		});
 	});
 
 	it("refuses a code after its 15 minutes", async () => {

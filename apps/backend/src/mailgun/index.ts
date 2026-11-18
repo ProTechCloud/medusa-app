@@ -68,8 +68,8 @@ export function createMailgunMailer({
 
 /**
  * Without a Mailgun key: sends nothing and logs what it would have sent,
- * without the body, which holds the code. A local API accepts the code
- * 111111 instead.
+ * without the body, which holds the code. The logger redacts the address,
+ * `to`. A local API accepts the code 111111 instead.
  */
 export function createLogMailer(logger: Logger): IMailer {
 	return {
