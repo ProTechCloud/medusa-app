@@ -1,5 +1,5 @@
-import type { IMessageBus } from "../lib/bus";
-import { createEnvelope, type TEnvelope } from "../lib/envelope";
+import type { IMessageBus } from "#src/lib/bus.ts";
+import { createEnvelope, type TEnvelope } from "#src/lib/envelope.ts";
 
 export interface IMemoryBus extends IMessageBus {
 	/** Every envelope published, oldest first. */

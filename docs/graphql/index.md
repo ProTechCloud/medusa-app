@@ -9,6 +9,10 @@ A local API (`APP_ENV=local`) also serves GraphiQL at `http://localhost:8080/gra
 browser, and answers introspection. A deployed one does neither: clients build from the
 schema files in `packages/gql`, not from the running API.
 
+Every API, local or not, refuses an operation that asks for more than 10 top-level fields,
+aliases and the fields inside fragments included: each runs a resolver, and a rate-limited
+one writes a row. A request body past 100 KB is answered 413 before it is parsed.
+
 ## Documents
 
 - [Schema](./schema.md) — where types and operations live, and how to add them

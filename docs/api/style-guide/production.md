@@ -29,6 +29,8 @@ Paths below are under `apps/backend/src/` unless they start at the repository ro
   same job: anything unexpected answers `INTERNAL_SERVER_ERROR` with a generic message.
 - Expected failures answer a stable code, `error` on a REST route and `extensions.code` on
   GraphQL: see [Routes](./routes.md#expected-failures-are-typed-errors-with-a-stable-code).
+  `defineUseCase` logs one as a warning, since the client caused it, and anything else as an
+  error.
 
 ## Logs
 
@@ -67,7 +69,8 @@ the variables.
   fails. The health probe gets no span. Neither the preload nor the logger parses the
   config: they read the service's identity from the environment as it is
   (`readServiceIdentity` in `opentelemetry/lib/resource.ts`), so a bad environment still
-  reaches `start()` and stops the boot in one line.
+  reaches the entry point's config parse (`serveService`, or `migrate`) and stops the boot
+  in one line.
 - **Log lines** go to stdout and, from `LOG_POSTHOG_LEVEL` up (`LOG_LEVEL` unless set), to
   PostHog's logs, tied to the span they were written in.
 - **Errors** reach PostHog's error tracking through `captureError` in `posthog/index.ts`,

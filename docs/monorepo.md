@@ -38,6 +38,10 @@ Root files hold what every workspace shares. A workspace holds only what is its 
 | Imported by others | no                                               | yes                                  |
 | Name               | `@medusa/<name>`                                 | `@medusa/<name>`                     |
 
+`@medusa/seed` is the one job under `packages/`, and the backend's foundation packages are
+imported by the backend alone so far: [Package conventions](style-guide/packages.md#when-to-extract)
+says why.
+
 An app depends on packages; a package never depends on an app. If two apps need the same
 code, that code becomes a package rather than one app importing from the other.
 

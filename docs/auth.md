@@ -11,7 +11,7 @@ password reset, and one role, `application_user`. Everything goes through GraphQ
 | [`packages/db`](../packages/db/src/schema/index.ts)                                                                                          | The tables: Better Auth's `user`, `session`, `account` and `verification`, and `rate_limit`                            |
 | [`apps/backend/src/better-auth`](../apps/backend/src/better-auth/index.ts)                                                                  | Better Auth with the Drizzle adapter, `emailAndPassword` and the `bearer` plugin, and the session cache in front of it |
 | [`apps/backend/src/use-cases/cases`](../apps/backend/src/use-cases/cases)                                                                   | One use case per operation; each calls `ctx.auth.api.*`                                                                |
-| [`apps/backend/src/use-cases/lib`](../apps/backend/src/use-cases/lib)                                                                       | The codes, the rate limits, the client address and the errors a client reads                                           |
+| [`apps/backend/src/use-cases/lib`](../apps/backend/src/use-cases/lib)                                                                       | The codes, the rate limits, the client address and the sessions                                                        |
 | [`packages/events`](../packages/events/src/lib/catalog.ts)                                                                                      | `signup.code_requested` and `password.reset_requested`, published to the `emails` topic                                |
 | [`apps/backend/src/services/worker`](../apps/backend/src/services/worker/index.ts) and [`packages/emails`](../packages/emails/src/index.ts) | The worker renders each event's email and sends it through Mailgun                                                     |
 
@@ -32,8 +32,9 @@ A session is a token. The client sends it as `Authorization: Bearer <token>` on 
 after `signUp`, `signIn` or `changePassword`, which all return `{ user, token }`.
 
 `requestSignUpCode` and `requestPasswordReset` always answer `{ sent: true }`, and a wrong
-email or a wrong password are the same error, so no answer says whether an address has an
-account.
+email or a wrong password are the same error, so no answer's content says whether an address
+has an account. How long an answer takes still can: only the branch that sends an email
+writes a code and publishes, so it is slower by a database write and a Pub/Sub publish.
 
 ## Codes
 
@@ -59,7 +60,8 @@ The code is in `apps/backend/src/use-cases/lib/codes.ts`.
 
 ## Rate limits
 
-Every request that names an address counts against two limits, in 15-minute windows:
+Every request that names an address counts against two limits, in 15-minute windows, and so
+does `changePassword`, under the signed-in account's address, since it checks a password:
 
 | Key               | Limit |
 | ----------------- | ----- |
@@ -68,6 +70,11 @@ Every request that names an address counts against two limits, in 15-minute wind
 
 The client's address is counted first, so a client past its limit leaves no row behind for
 each new email it sends.
+
+Every operation that names an address draws on the same `address:<email>` count. Ten requests
+from anywhere, such as ten wrong passwords, therefore lock that address out of sign-in, codes
+and resets until the window ends. That is the trade-off for one count per address: whoever
+guesses at an account gets ten tries in 15 minutes across every flow, not ten in each.
 
 The counts live in the `rate_limit` table, updated in one statement, so every instance shares
 them and concurrent requests cannot both read an old count. Past a limit the API answers

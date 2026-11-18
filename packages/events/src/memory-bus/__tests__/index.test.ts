@@ -1,5 +1,5 @@
-import { generateCodeRequest } from "../../testing";
-import { createMemoryBus } from "..";
+import { createMemoryBus } from "#src/memory-bus/index.ts";
+import { generateCodeRequest } from "#src/testing/index.ts";
 
 describe("createMemoryBus", () => {
 	it("keeps every envelope it publishes, in order", async () => {

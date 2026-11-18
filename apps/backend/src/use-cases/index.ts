@@ -7,6 +7,7 @@ import type { TAuth, TSessionCache } from "@/better-auth";
 import type { TConfig } from "@/config";
 import type { IPushVerifier } from "@/google-auth";
 import type { IMailer } from "@/mailgun";
+import { isDomainError } from "@/shared/domain-errors";
 
 /**
  * What every use case receives. The transport layer — routes, resolvers and
@@ -115,7 +116,8 @@ export function resetCtx(): void {
  *   loadVersionUseCase ok      durationMs=1
  *
  * Each call is also a span, `use-case <name>`, under the request's. A
- * failure is logged with its duration, marked on the span with its
+ * failure is logged with its duration, as a warning when it is a
+ * domain error the client caused, marked on the span with its
  * `error.type` and the error status, and rethrown unchanged, so the caller
  * decides what it means.
  */
@@ -144,7 +146,9 @@ export function defineUseCase<TArgs = void, TResult = unknown>(
 				);
 				return result;
 			} catch (error) {
-				context.logger.error(
+				// A wrong password or a reached limit is the client's, and its
+				// code reaches the client: a warning. Anything else is an error.
+				context.logger[isDomainError(error) ? "warn" : "error"](
 					{ useCase: name, durationMs: elapsed(), err: error },
 					`${name} failed`,
 				);

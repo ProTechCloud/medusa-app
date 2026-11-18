@@ -4,7 +4,7 @@ import type { TSession } from "./generate-session";
  * A `getSession` that counts its calls and answers each one with the next
  * queued answer: a session, null, or one the test settles later.
  */
-export function createFakeGetSession() {
+export function mockGetSession() {
 	let calls = 0;
 	const answers: Array<Promise<TSession | null>> = [];
 

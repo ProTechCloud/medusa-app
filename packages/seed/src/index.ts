@@ -1,7 +1,8 @@
 import { createDb, databaseUrl } from "@medusa/db";
 import { z } from "zod";
 import { createAuth } from "./lib/create-auth";
-import { SEED_PASSWORD, SEED_USERS } from "./lib/users";
+import { seedUsers } from "./lib/seed-users";
+import { SEED_PASSWORD } from "./lib/users";
 
 // `yarn seed` reads apps/backend/.env.local, the file the API reads.
 const env = z
@@ -23,27 +24,16 @@ const auth = createAuth(db, {
 	url: env.BETTER_AUTH_URL,
 });
 
-/**
- * Signs each seed user up through Better Auth, as the API would. A user
- * already there is left as it is, so the seed runs again safely.
- */
-async function seed(): Promise<void> {
-	const { internalAdapter } = await auth.$context;
-	for (const { name, email } of SEED_USERS) {
-		if (await internalAdapter.findUserByEmail(email)) {
-			console.log(`  ${email}: already there`);
-			continue;
-		}
-		await auth.api.signUpEmail({
-			body: { name, email, password: SEED_PASSWORD },
-		});
-		console.log(`  ${email}: signed up`);
-	}
-}
-
 try {
 	console.log("Seeding the local database...");
-	await seed();
+	const { internalAdapter } = await auth.$context;
+	await seedUsers(
+		{
+			findUserByEmail: (email) => internalAdapter.findUserByEmail(email),
+			signUp: (body) => auth.api.signUpEmail({ body }),
+		},
+		console.log,
+	);
 	console.log(`Seeded. Every user's password is ${SEED_PASSWORD}.`);
 } catch (error) {
 	console.error("Seed failed:", error);

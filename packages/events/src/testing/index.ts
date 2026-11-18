@@ -1,5 +1,5 @@
 import { faker } from "@faker-js/faker";
-import type { TEventData } from "../lib/catalog";
+import type { TEventData } from "#src/lib/catalog.ts";
 
 /** The data of a sign-up or password-reset code request. */
 export function generateCodeRequest(

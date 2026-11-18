@@ -1,7 +1,7 @@
 import { faker } from "@faker-js/faker";
-import type { TEventType } from "../lib/catalog";
-import { createEnvelope, parseEnvelope } from "../lib/envelope";
-import { generateCodeRequest } from "../testing";
+import type { TEventType } from "#src/lib/catalog.ts";
+import { createEnvelope, parseEnvelope } from "#src/lib/envelope.ts";
+import { generateCodeRequest } from "#src/testing/index.ts";
 
 const TYPES: TEventType[] = [
 	"signup.code_requested",

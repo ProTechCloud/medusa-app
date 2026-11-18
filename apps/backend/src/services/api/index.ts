@@ -1,8 +1,9 @@
 import type { Hono } from "hono";
+import { bodyLimit } from "hono/body-limit";
 import type { TConfig } from "@/config";
 import { buildServiceApp } from "@/shared/http/service-app";
 import { serveService } from "@/shared/serve-service";
-import { buildYoga, GRAPHQL_PATH } from "./graphql";
+import { buildYoga, GRAPHQL_MAX_BODY_BYTES, GRAPHQL_PATH } from "./graphql";
 import { buildHttp } from "./http";
 import { requestIdentity } from "./http/lib/request-identity";
 
@@ -18,8 +19,14 @@ export function buildApp(config?: Pick<TConfig, "environment">): Hono {
 		// GraphQL answers its own errors, with a code a client reads; the 404
 		// and 500 are for the rest of the API.
 		const yoga = buildYoga({ local: config?.environment === "local" });
-		app.on(["GET", "POST"], GRAPHQL_PATH, (context) =>
-			yoga.fetch(context.req.raw),
+		app.on(
+			["GET", "POST"],
+			GRAPHQL_PATH,
+			bodyLimit({
+				maxSize: GRAPHQL_MAX_BODY_BYTES,
+				onError: (context) => context.json({ error: "payload_too_large" }, 413),
+			}),
+			(context) => yoga.fetch(context.req.raw),
 		);
 	}, requestIdentity);
 }

@@ -1,7 +1,7 @@
 import { PubSub } from "@google-cloud/pubsub";
-import type { IMessageBus } from "../lib/bus";
-import { EVENTS, type TTopic } from "../lib/catalog";
-import { createEnvelope } from "../lib/envelope";
+import type { IMessageBus } from "#src/lib/bus.ts";
+import { EVENTS, type TTopic } from "#src/lib/catalog.ts";
+import { createEnvelope } from "#src/lib/envelope.ts";
 
 type TTopics = Record<TTopic, string>;
 

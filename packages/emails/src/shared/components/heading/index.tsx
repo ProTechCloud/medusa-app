@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { Heading as EmailHeading } from "react-email";
-import { colors, spacing, typography } from "../../tokens";
+import { colors, spacing, typography } from "#src/shared/tokens.ts";
 
 const style = {
 	color: colors.text,

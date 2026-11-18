@@ -1,7 +1,7 @@
-import { Code } from "../../shared/components/code";
-import { Heading } from "../../shared/components/heading";
-import { Layout } from "../../shared/components/layout";
-import { Paragraph } from "../../shared/components/paragraph";
+import { Code } from "#src/shared/components/code/index.tsx";
+import { Heading } from "#src/shared/components/heading/index.tsx";
+import { Layout } from "#src/shared/components/layout/index.tsx";
+import { Paragraph } from "#src/shared/components/paragraph/index.tsx";
 
 export function PasswordResetEmail({ code }: { code: string }) {
 	return (

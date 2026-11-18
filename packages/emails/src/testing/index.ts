@@ -1,7 +1,7 @@
 import { faker } from "@faker-js/faker";
 import { createEnvelope, type TEventData } from "@medusa/events";
 import { generateCodeRequest } from "@medusa/events/testing";
-import type { TEmailType, TRenderedEmail } from "..";
+import type { TEmailType, TRenderedEmail } from "#src/index.ts";
 
 /** An envelope for an email event, with a random address and code. */
 export function generateEmailEnvelope(

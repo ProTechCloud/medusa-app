@@ -80,8 +80,8 @@ export const loadVersionUseCase = defineUseCase<void, TVersion>(
 ```
 
 That is `use-cases/cases/load-version.use-case.ts`. A new client is a field on
-`TUseCaseContext`, built in the entry point's builder; a route or a module never imports a
-client of its own.
+`TUseCaseContext`, built in `buildUseCaseContext` (`use-cases/lib/build-use-case-context.ts`);
+a route or a module never imports a client of its own.
 
 ## Entry points call `initUseCaseContext` once, before serving
 
@@ -91,11 +91,11 @@ point awaits it before `Bun.serve`, as `serveService` in `shared/serve-service.t
 the API and the worker:
 
 ```ts
-const { config } = await initUseCaseContext(async () => ({
-	config: getConfig(),
-	logger,
-}));
+const { config } = await initUseCaseContext(createServiceContext);
 ```
+
+`createServiceContext` parses the config, builds every client from it and runs a first query,
+so a database that does not answer stops the boot.
 
 A later entry point, such as a job runner, does the same before it starts work.
 

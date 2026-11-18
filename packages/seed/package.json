@@ -3,7 +3,12 @@
 	"version": "0.0.0",
 	"private": true,
 	"type": "module",
+	"imports": {
+		"#src/*": "./src/*"
+	},
 	"scripts": {
+		"test": "vitest run",
+		"test:coverage": "vitest run --coverage",
 		"seed": "bun --env-file=../../apps/backend/.env.local src/index.ts",
 		"typecheck": "tsc --noEmit",
 		"lint": "eslint .",
@@ -18,7 +23,11 @@
 	"devDependencies": {
 		"@biomejs/biome": "^2.6.3",
 		"@types/bun": "^1.1.14",
+		"@types/node": "^26.0.0",
+		"@vitest/coverage-istanbul": "^5.0.5",
 		"eslint": "^9.0.0",
-		"typescript": "~6.0.3"
+		"typescript": "~6.0.3",
+		"vite": "^8.3.5",
+		"vitest": "^5.0.5"
 	}
 }

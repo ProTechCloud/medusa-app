@@ -1,6 +1,6 @@
 import { drizzle } from "drizzle-orm/node-postgres";
 import pg from "pg";
-import * as schema from "../schema";
+import * as schema from "#src/schema/index.ts";
 
 // node-postgres' pool-sizing guidance is to keep `max` at its default of 10
 // until contention is measured. The other two settings are about connection

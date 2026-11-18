@@ -8,7 +8,7 @@ import {
 	Section,
 	Text,
 } from "react-email";
-import { colors, spacing, typography } from "../../tokens";
+import { colors, spacing, typography } from "#src/shared/tokens.ts";
 
 const body = {
 	backgroundColor: colors.background,

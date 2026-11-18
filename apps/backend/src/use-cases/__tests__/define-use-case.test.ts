@@ -2,6 +2,7 @@ import { faker } from "@faker-js/faker";
 import { describe, expect, it } from "vitest";
 import { generateConfig } from "@/shared/__mocks__/generate-config";
 import { generateUseCaseContext } from "@/shared/__mocks__/generate-use-case-context";
+import { badInput } from "@/shared/domain-errors";
 import { createCapturingLogger } from "@/testing/test-logger";
 import { useCaseContextForEachTest } from "@/testing/use-case-context";
 import {
@@ -66,10 +67,24 @@ describe("defineUseCase", () => {
 		await expect(broken()).rejects.toBe(failure);
 		expect(capture.lines().at(-1)).toEqual(
 			expect.objectContaining({
+				level: 50,
 				useCase: "brokenUseCase",
 				msg: "brokenUseCase failed",
 				durationMs: expect.any(Number),
 			}),
+		);
+	});
+
+	it("a domain error, which the client caused, is logged as a warning", async () => {
+		const capture = createCapturingLogger();
+		setCtxForTests(generateUseCaseContext({ logger: capture.logger }));
+		const refused = defineUseCase(async function refusedUseCase() {
+			throw badInput(faker.lorem.sentence());
+		});
+
+		await expect(refused()).rejects.toThrow();
+		expect(capture.lines().at(-1)).toEqual(
+			expect.objectContaining({ level: 40, msg: "refusedUseCase failed" }),
 		);
 	});
 

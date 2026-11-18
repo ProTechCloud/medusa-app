@@ -1,11 +1,8 @@
 import { createMemoryBus, type IMemoryBus } from "@medusa/events";
 import { afterAll, afterEach, beforeAll, beforeEach } from "vitest";
 import { generateConfig } from "@/shared/__mocks__/generate-config";
-import {
-	createMemoryMailer,
-	type IMemoryMailer,
-} from "@/shared/__mocks__/mock-mailer";
-import { createPushVerifier } from "@/shared/__mocks__/mock-push-verifier";
+import { type IMemoryMailer, mockMailer } from "@/shared/__mocks__/mock-mailer";
+import { mockPushVerifier } from "@/shared/__mocks__/mock-push-verifier";
 import {
 	buildUseCaseContext,
 	ctxForTests,
@@ -48,7 +45,7 @@ export function integrationContextForEachTest(
 		const clone = await cloner.clone();
 		drop = clone.drop;
 		bus = createMemoryBus();
-		mailer = createMemoryMailer();
+		mailer = mockMailer();
 		setCtxForTests(
 			buildUseCaseContext({
 				config: generateConfig({
@@ -58,7 +55,7 @@ export function integrationContextForEachTest(
 				logger: testLogger,
 				bus,
 				mailer,
-				pushVerifier: createPushVerifier(true),
+				pushVerifier: mockPushVerifier(true),
 			}),
 		);
 	});

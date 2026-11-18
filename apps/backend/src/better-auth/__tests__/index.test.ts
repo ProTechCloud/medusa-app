@@ -9,9 +9,11 @@ describe("createAuth", () => {
 	it("gives every new user the application_user role, whatever the sign-up sends", async () => {
 		const { auth } = ctx();
 
-		const { user } = await auth.api.signUpEmail({
-			body: { ...generateSignUp(), role: "admin" } as never,
-		});
+		// Built apart from the call, so TypeScript takes the field its sign-up
+		// type leaves out, as a client's request body would carry it.
+		const body = { ...generateSignUp(), role: "admin" };
+
+		const { user } = await auth.api.signUpEmail({ body });
 
 		expect(user.role).toBe("application_user");
 	});

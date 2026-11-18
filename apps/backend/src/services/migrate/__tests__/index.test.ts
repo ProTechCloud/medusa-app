@@ -1,6 +1,6 @@
 import { faker } from "@faker-js/faker";
+import { createAdminPool } from "@medusa/db/testing";
 import { DateTime } from "luxon";
-import pg from "pg";
 import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
 import { migrate } from "@/services/migrate";
 import { generateConfig } from "@/shared/__mocks__/generate-config";
@@ -8,17 +8,16 @@ import { createDbCloner, TEST_DB_URL_ENV } from "@/testing/test-db";
 import { ctxForTests, resetCtx } from "@/use-cases";
 
 /** Runs one statement on `url` and returns its rows. */
-async function query<TRow extends pg.QueryResultRow>(
+async function query<TRow>(
 	url: string,
 	text: string,
 	values: unknown[] = [],
 ): Promise<TRow[]> {
-	const client = new pg.Client({ connectionString: url });
-	await client.connect();
+	const pool = createAdminPool(url, 1);
 	try {
-		return (await client.query<TRow>(text, values)).rows;
+		return (await pool.query(text, values)).rows as TRow[];
 	} finally {
-		await client.end();
+		await pool.end();
 	}
 }
 
@@ -92,8 +91,8 @@ describe("migrate", () => {
 				faker.string.uuid(),
 				`sign-up:${faker.internet.email()}`,
 				faker.string.alphanumeric(64),
-				// A UTC string: the column has no time zone, and node-postgres
-				// would write a Date in the machine's.
+				// An ISO string with its offset, so the stored time does not
+				// depend on the machine's time zone.
 				DateTime.utc().minus({ minutes: 1 }).toISO(),
 			],
 		);

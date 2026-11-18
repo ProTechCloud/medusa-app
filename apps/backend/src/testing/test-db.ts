@@ -1,4 +1,4 @@
-import pg from "pg";
+import { createAdminPool } from "@medusa/db/testing";
 
 /** Where the global setup leaves the migrated database's connection string. */
 export const TEST_DB_URL_ENV = "MEDUSA_TEST_DB_URL";
@@ -23,10 +23,7 @@ function withDatabase(connectionString: string, name: string): string {
  */
 export function createDbCloner(connectionString: string) {
 	const baseName = new URL(connectionString).pathname.slice(1);
-	const admin = new pg.Pool({
-		connectionString: withDatabase(connectionString, "postgres"),
-		max: 5,
-	});
+	const admin = createAdminPool(withDatabase(connectionString, "postgres"));
 
 	async function terminate(name: string): Promise<void> {
 		await admin.query(

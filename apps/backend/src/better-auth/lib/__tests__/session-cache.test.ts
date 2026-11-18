@@ -1,7 +1,7 @@
 import { faker } from "@faker-js/faker";
 import { describe, expect, it } from "vitest";
 import { generateSession } from "@/better-auth/lib/__mocks__/generate-session";
-import { createFakeGetSession } from "@/better-auth/lib/__mocks__/mock-get-session";
+import { mockGetSession } from "@/better-auth/lib/__mocks__/mock-get-session";
 import { createSessionCache } from "@/better-auth/lib/session-cache";
 import { requestHeaders } from "@/testing/test-user";
 
@@ -9,7 +9,7 @@ import { requestHeaders } from "@/testing/test-user";
 // `performance.now()`, which fake timers do not move.
 describe("createSessionCache", () => {
 	it("serves a token's second lookup from the cache", async () => {
-		const fake = createFakeGetSession();
+		const fake = mockGetSession();
 		const session = generateSession();
 		fake.answer(session);
 		const cache = createSessionCache(fake.getSession);
@@ -23,7 +23,7 @@ describe("createSessionCache", () => {
 	});
 
 	it("looks a token up once while concurrent requests wait for it", async () => {
-		const fake = createFakeGetSession();
+		const fake = mockGetSession();
 		const settle = fake.answerLater();
 		const cache = createSessionCache(fake.getSession);
 		const token = faker.string.alphanumeric(32);
@@ -43,7 +43,7 @@ describe("createSessionCache", () => {
 			new Headers({ authorization: "Bearer " }),
 		],
 	])("asks every time for a request with %s", async (_, headers) => {
-		const fake = createFakeGetSession();
+		const fake = mockGetSession();
 		fake.answer(generateSession(), generateSession());
 		const cache = createSessionCache(fake.getSession);
 
@@ -54,7 +54,7 @@ describe("createSessionCache", () => {
 	});
 
 	it("does not remember a token that had no session", async () => {
-		const fake = createFakeGetSession();
+		const fake = mockGetSession();
 		const session = generateSession();
 		fake.answer(null, session);
 		const cache = createSessionCache(fake.getSession);
@@ -68,7 +68,7 @@ describe("createSessionCache", () => {
 	});
 
 	it("looks a token up again after sign-out evicts it", async () => {
-		const fake = createFakeGetSession();
+		const fake = mockGetSession();
 		fake.answer(generateSession(), null);
 		const cache = createSessionCache(fake.getSession);
 		const token = faker.string.alphanumeric(32);
@@ -81,7 +81,7 @@ describe("createSessionCache", () => {
 	});
 
 	it("does not keep a session whose sign-out landed while it was being looked up", async () => {
-		const fake = createFakeGetSession();
+		const fake = mockGetSession();
 		const settle = fake.answerLater();
 		fake.answer(null);
 		const cache = createSessionCache(fake.getSession);
@@ -97,7 +97,7 @@ describe("createSessionCache", () => {
 	});
 
 	it("keeps other tokens' sessions when one signs out", async () => {
-		const fake = createFakeGetSession();
+		const fake = mockGetSession();
 		const kept = generateSession();
 		fake.answer(generateSession(), kept);
 		const cache = createSessionCache(fake.getSession);

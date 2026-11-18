@@ -1,7 +1,7 @@
 import { readdirSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { buildASTSchema, parse, validate } from "graphql";
-import { typeDefs } from "..";
+import { typeDefs } from "#src/index.ts";
 
 const operationsDir = resolve(import.meta.dirname, "../../operations");
 

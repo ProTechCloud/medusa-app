@@ -4,8 +4,8 @@ import { limitRequest } from "@/use-cases/lib/rate-limit";
 
 /**
  * Emails a sign-up code to an address with no account. For an address that
- * has one it sends nothing, and answers the same, so the answer never says
- * who has an account.
+ * has one it sends nothing, and answers the same, so no answer's content says
+ * who has an account; its timing can (docs/auth.md).
  */
 export const requestSignUpCodeUseCase = defineUseCase<
 	{ email: string; headers: Headers },

@@ -109,9 +109,9 @@ test, as in `shared/__tests__/env.test.ts`.
 ## Keep HTTP-level tests few
 
 Most behaviour is tested on the use case, which is fast and needs no HTTP. A route gets one
-test per answer it can give. Tests of the whole app, through `buildApp()` in
-`services/api/__tests__/index.test.ts`, cover only what the entry point adds: `/health` and
-the 404.
+test per answer it can give. Tests of the whole app, through `buildApp()`, cover only what the entry point adds: `/health`
+and the 404 in `services/api/__tests__/index.test.ts`, and what `/graphql` refuses before a
+resolver runs, in `services/api/graphql/__tests__/`.
 
 ## Anti-patterns
 

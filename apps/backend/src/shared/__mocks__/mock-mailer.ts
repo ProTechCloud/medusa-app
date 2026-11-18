@@ -7,7 +7,7 @@ export interface IMemoryMailer extends IMailer {
 }
 
 /** A mailer that keeps what it sends in memory, for tests. */
-export function createMemoryMailer(): IMemoryMailer {
+export function mockMailer(): IMemoryMailer {
 	const sent: TRenderedEmail[] = [];
 	return {
 		sent,
@@ -18,7 +18,7 @@ export function createMemoryMailer(): IMemoryMailer {
 }
 
 /** A mailer whose every send throws `error`, for the paths that handle it. */
-export function createFailingMailer(error: Error): IMailer {
+export function mockFailingMailer(error: Error): IMailer {
 	return {
 		async send() {
 			throw error;

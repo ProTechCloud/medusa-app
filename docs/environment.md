@@ -14,7 +14,8 @@ The API reads its settings from environment variables, and only at startup:
 - [`apps/backend/src/logger/index.ts`](../apps/backend/src/logger/index.ts) parses the
   `LOG_*` variables when it is first imported, and reads the service's identity
   (`OTEL_SERVICE_NAME`, `APP_ENV`, `APP_VERSION`) as `opentelemetry/lib/resource.ts` does,
-  without refusing a bad value: the config parse in `start()` does that, in one line.
+  without refusing a bad value: the entry point's config parse does that, in one line
+  (`serveService` in `shared/serve-service.ts`, or `migrate`).
 - [`apps/backend/src/posthog/index.ts`](../apps/backend/src/posthog/index.ts) parses the
   `POSTHOG_*` variables, with `lib/config.ts`, the first time they are asked for.
 - [`apps/backend/src/opentelemetry/index.ts`](../apps/backend/src/opentelemetry/index.ts),

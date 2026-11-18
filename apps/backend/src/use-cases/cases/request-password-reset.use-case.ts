@@ -4,8 +4,8 @@ import { limitRequest } from "@/use-cases/lib/rate-limit";
 
 /**
  * Emails a password reset code to an address that has an account. For one
- * that has none it sends nothing, and answers the same, so the answer never
- * says who has an account.
+ * that has none it sends nothing, and answers the same, so no answer's
+ * content says who has an account; its timing can (docs/auth.md).
  */
 export const requestPasswordResetUseCase = defineUseCase<
 	{ email: string; headers: Headers },

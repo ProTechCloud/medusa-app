@@ -2,8 +2,8 @@ import { createMemoryBus, type IMessageBus } from "@medusa/events";
 import type { Logger } from "pino";
 import type { TConfig } from "@/config";
 import { generateConfig } from "@/shared/__mocks__/generate-config";
-import { createMemoryMailer } from "@/shared/__mocks__/mock-mailer";
-import { createPushVerifier } from "@/shared/__mocks__/mock-push-verifier";
+import { mockMailer } from "@/shared/__mocks__/mock-mailer";
+import { mockPushVerifier } from "@/shared/__mocks__/mock-push-verifier";
 import { testLogger } from "@/testing/test-logger";
 import { buildUseCaseContext } from "@/use-cases";
 
@@ -20,7 +20,7 @@ export function generateUseCaseContext(
 		config: overrides.config ?? generateConfig(),
 		logger: overrides.logger ?? testLogger,
 		bus: overrides.bus ?? createMemoryBus(),
-		mailer: createMemoryMailer(),
-		pushVerifier: createPushVerifier(true),
+		mailer: mockMailer(),
+		pushVerifier: mockPushVerifier(true),
 	});
 }

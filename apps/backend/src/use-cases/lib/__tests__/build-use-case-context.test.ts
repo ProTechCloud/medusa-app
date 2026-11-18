@@ -3,8 +3,8 @@ import { generateEmail } from "@medusa/emails/testing";
 import { createMemoryBus } from "@medusa/events";
 import { describe, expect, it } from "vitest";
 import { generateConfig } from "@/shared/__mocks__/generate-config";
-import { createMemoryMailer } from "@/shared/__mocks__/mock-mailer";
-import { createPushVerifier } from "@/shared/__mocks__/mock-push-verifier";
+import { mockMailer } from "@/shared/__mocks__/mock-mailer";
+import { mockPushVerifier } from "@/shared/__mocks__/mock-push-verifier";
 import { createCapturingLogger } from "@/testing/test-logger";
 import {
 	buildUseCaseContext,
@@ -78,8 +78,8 @@ describe("buildUseCaseContext", () => {
 			config: generateConfig(),
 			logger: capture.logger,
 			bus: createMemoryBus(),
-			mailer: createMemoryMailer(),
-			pushVerifier: createPushVerifier(true),
+			mailer: mockMailer(),
+			pushVerifier: mockPushVerifier(true),
 		});
 		const message = faker.lorem.sentence();
 

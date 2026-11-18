@@ -1,5 +1,11 @@
 import { typeDefs } from "@medusa/gql";
-import { GraphQLError, type ValidationContext } from "graphql";
+import {
+	type FieldNode,
+	GraphQLError,
+	type OperationDefinitionNode,
+	type SelectionSetNode,
+	type ValidationContext,
+} from "graphql";
 import { createSchema, createYoga, type Plugin } from "graphql-yoga";
 import { logger } from "@/logger";
 import { DOMAIN_ERROR_NAMES } from "@/shared/domain-errors";
@@ -13,6 +19,12 @@ type TYogaLogging = NonNullable<Parameters<typeof createYoga>[0]["logging"]>;
 export type TGraphqlContext = { headers: Headers };
 
 export const GRAPHQL_PATH = "/graphql";
+
+/**
+ * The largest request body `/graphql` reads: far past any operation in
+ * @medusa/gql, far short of a document built to cost parsing and validation.
+ */
+export const GRAPHQL_MAX_BODY_BYTES = 100 * 1024;
 
 /**
  * What a client may read of an error. A domain error, from a use case or
@@ -69,12 +81,61 @@ export function maskError(error: unknown, message: string): Error {
 const noIntrospection: Plugin = {
 	onValidate({ addValidationRule }) {
 		addValidationRule((context: ValidationContext) => ({
-			Field(node: { name: { value: string } }) {
+			Field(node: FieldNode) {
 				if (node.name.value === "__schema" || node.name.value === "__type") {
 					context.reportError(
 						new GraphQLError("GraphQL introspection is not allowed.", {
-							nodes: [node as never],
+							nodes: [node],
 						}),
+					);
+				}
+			},
+		}));
+	},
+};
+
+/** The most top-level fields, aliases included, one operation may ask for. */
+export const MAX_ROOT_FIELDS = 10;
+
+/**
+ * The fields a selection set asks for, with each inline fragment and named
+ * fragment at its level opened: `... on Mutation { a b }` is two fields, not
+ * one. A fragment is opened once, so one that spreads itself cannot loop.
+ */
+function countFields(
+	selectionSet: SelectionSetNode,
+	context: ValidationContext,
+	opened: Set<string> = new Set(),
+): number {
+	let count = 0;
+	for (const selection of selectionSet.selections) {
+		if (selection.kind === "Field") {
+			count += 1;
+		} else if (selection.kind === "InlineFragment") {
+			count += countFields(selection.selectionSet, context, opened);
+		} else if (!opened.has(selection.name.value)) {
+			opened.add(selection.name.value);
+			const fragment = context.getFragment(selection.name.value);
+			if (fragment)
+				count += countFields(fragment.selectionSet, context, opened);
+		}
+	}
+	return count;
+}
+
+// Every top-level field runs a resolver, and each rate-limited one writes a
+// row, so a document of a thousand aliases would cost a thousand of both.
+// Applied in every environment.
+const limitRootFields: Plugin = {
+	onValidate({ addValidationRule }) {
+		addValidationRule((context: ValidationContext) => ({
+			OperationDefinition(node: OperationDefinitionNode) {
+				if (countFields(node.selectionSet, context) > MAX_ROOT_FIELDS) {
+					context.reportError(
+						new GraphQLError(
+							`An operation may ask for at most ${MAX_ROOT_FIELDS} top-level fields.`,
+							{ nodes: [node] },
+						),
 					);
 				}
 			},
@@ -84,7 +145,8 @@ const noIntrospection: Plugin = {
 
 /**
  * The GraphQL endpoint: the schema in @medusa/gql, and its resolvers. Only
- * a local API (`local: true`) serves GraphiQL and answers introspection.
+ * a local API (`local: true`) serves GraphiQL and answers introspection;
+ * every API caps the top-level fields of one operation.
  */
 export function buildYoga({ local = false }: { local?: boolean } = {}) {
 	return createYoga<TGraphqlContext>({
@@ -102,6 +164,6 @@ export function buildYoga({ local = false }: { local?: boolean } = {}) {
 		// `yogaLogger` has every method Yoga calls on it, each tested.
 		logging: yogaLogger(logger) as unknown as TYogaLogging,
 		graphiql: local,
-		plugins: local ? [] : [noIntrospection],
+		plugins: local ? [limitRootFields] : [limitRootFields, noIntrospection],
 	});
 }

@@ -4,11 +4,8 @@ import { describe, expect, it } from "vitest";
 import { MailgunRefusedError } from "@/mailgun";
 import { buildWorker } from "@/services/worker";
 import { PUSH_EMAILS_PATH } from "@/services/worker/lib/push-emails";
-import {
-	createFailingMailer,
-	createMemoryMailer,
-} from "@/shared/__mocks__/mock-mailer";
-import { createPushVerifier } from "@/shared/__mocks__/mock-push-verifier";
+import { mockFailingMailer, mockMailer } from "@/shared/__mocks__/mock-mailer";
+import { mockPushVerifier } from "@/shared/__mocks__/mock-push-verifier";
 import { useCaseContextForEachTest } from "@/testing/use-case-context";
 
 /** The body a Pub/Sub push subscription posts, around `data`. */
@@ -38,9 +35,9 @@ async function push(body: string): Promise<Response> {
 }
 
 describe("the worker, with a trusted push", () => {
-	let mailer = createMemoryMailer();
+	let mailer = mockMailer();
 	useCaseContextForEachTest(() => {
-		mailer = createMemoryMailer();
+		mailer = mockMailer();
 		return { mailer };
 	});
 
@@ -81,10 +78,10 @@ describe("the worker, with a trusted push", () => {
 });
 
 describe("the worker, with a push it does not trust", () => {
-	const mailer = createMemoryMailer();
+	const mailer = mockMailer();
 	useCaseContextForEachTest(() => ({
 		mailer,
-		pushVerifier: createPushVerifier(false),
+		pushVerifier: mockPushVerifier(false),
 	}));
 
 	it("answers with a 401, and sends nothing", async () => {
@@ -107,7 +104,7 @@ describe.each([
 	["a timeout", () => new MailgunRefusedError(408, faker.lorem.sentence())],
 	["any other error", () => new Error(faker.lorem.sentence())],
 ])("the worker, when a send meets %s", (_, error) => {
-	useCaseContextForEachTest(() => ({ mailer: createFailingMailer(error()) }));
+	useCaseContextForEachTest(() => ({ mailer: mockFailingMailer(error()) }));
 
 	it("answers with a 500, so Pub/Sub delivers the push again", async () => {
 		const response = await push(signUpCodePush());
@@ -120,7 +117,7 @@ describe.each([400, 401, 403])(
 	"the worker, when Mailgun refuses a send with a %i",
 	(status) => {
 		useCaseContextForEachTest(() => ({
-			mailer: createFailingMailer(
+			mailer: mockFailingMailer(
 				new MailgunRefusedError(status, faker.lorem.sentence()),
 			),
 		}));

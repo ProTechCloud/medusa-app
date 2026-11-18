@@ -1,4 +1,4 @@
-import type { IPublisher } from "..";
+import type { IPublisher } from "#src/pubsub-bus/index.ts";
 
 type Sent = {
 	topic: string;
@@ -7,7 +7,7 @@ type Sent = {
 };
 
 /** A Pub/Sub client that keeps every message published, by topic name. */
-export function createCapturingPubSub(): {
+export function mockPubSub(): {
 	pubsub: IPublisher;
 	sent: Sent[];
 } {

@@ -1,5 +1,5 @@
-import { renderEmail, type TEmailType } from "..";
-import { generateEmailEnvelope } from "../testing";
+import { renderEmail, type TEmailType } from "#src/index.ts";
+import { generateEmailEnvelope } from "#src/testing/index.ts";
 
 describe("renderEmail", () => {
 	it.each<[TEmailType, string]>([

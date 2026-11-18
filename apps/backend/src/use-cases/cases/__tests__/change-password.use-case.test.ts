@@ -1,5 +1,6 @@
 import { faker } from "@faker-js/faker";
 import { describe, expect, it } from "vitest";
+import { DOMAIN_ERROR_NAMES } from "@/shared/domain-errors";
 import { integrationContextForEachTest } from "@/testing/integration-context";
 import { requestHeaders, signUpTestUser } from "@/testing/test-user";
 import { changePasswordUseCase } from "@/use-cases/cases/change-password.use-case";
@@ -51,6 +52,24 @@ describe("changePasswordUseCase", () => {
 				headers: requestHeaders(user.token),
 			}),
 		).rejects.toThrow("The current password is wrong.");
+	});
+
+	it("counts each guess against the account's address, and refuses the eleventh", async () => {
+		const user = await signUpTestUser(bus());
+		const guess = () =>
+			changePasswordUseCase({
+				currentPassword: faker.internet.password({ length: 16 }),
+				newPassword: faker.internet.password({ length: 16 }),
+				headers: requestHeaders(user.token),
+			});
+		// The code request and the sign-up were the address's first two.
+		for (let attempt = 3; attempt <= 10; attempt++) {
+			await expect(guess()).rejects.toThrow("The current password is wrong.");
+		}
+
+		await expect(guess()).rejects.toMatchObject({
+			name: DOMAIN_ERROR_NAMES.TOO_MANY_REQUESTS,
+		});
 	});
 
 	it("needs a session", async () => {

@@ -9,6 +9,17 @@ export const DOMAIN_ERROR_NAMES = {
 	TOO_MANY_REQUESTS: "TooManyRequestsError",
 } as const;
 
+/**
+ * Whether `error` is one of the failures above, which a client is told
+ * about and caused, rather than one the code did not expect.
+ */
+export function isDomainError(error: unknown): boolean {
+	return (
+		error instanceof Error &&
+		(Object.values(DOMAIN_ERROR_NAMES) as string[]).includes(error.name)
+	);
+}
+
 /** The input cannot be acted on, and the message says why. */
 export function badInput(message: string): Error {
 	return Object.assign(new Error(message), {
