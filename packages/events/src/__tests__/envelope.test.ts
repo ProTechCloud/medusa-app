@@ -1,7 +1,7 @@
 import { faker } from "@faker-js/faker";
-import { generateCodeRequest } from "../__mocks__/generate-code-request";
 import type { TEventType } from "../lib/catalog";
 import { createEnvelope, parseEnvelope } from "../lib/envelope";
+import { generateCodeRequest } from "../testing";
 
 const TYPES: TEventType[] = [
 	"signup.code_requested",

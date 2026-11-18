@@ -25,7 +25,7 @@ the typed documents `@medusa/gql/operations` exports, such as `SignInDocument`.
 3. **Describe what a client cannot guess.** A field's description says what it needs and what
    it ends, such as `changePassword` ending every session.
 4. **The schema says the shape; the resolver says the rules.** The generated zod schema only
-   knows a field is a string. The area's `resolvers.ts` extends it with what the schema
+   knows a field is a string. The area's `index.ts` extends it with what the schema
    cannot say, such as an email lowercased or a code of 6 digits, and caps every text a client
    sends: an email at 254 characters, a password at Better Auth's 128. `parseInput` parses the
    input before the use case is called, and a bad one answers `BAD_USER_INPUT` naming each
@@ -37,8 +37,8 @@ the typed documents `@medusa/gql/operations` exports, such as `SignInDocument`.
 
 1. Add the field to the area's file in `packages/gql/schema/`, with its input type.
 2. Add the client's operation to `packages/gql/operations/`.
-3. Run `yarn codegen`, then add the resolver in the area's `resolvers.ts` and the use case it
+3. Run `yarn codegen`, then add the resolver in the area's `index.ts` and the use case it
    calls.
 
-A new area is a schema file, a folder under `services/api/graphql/` with its `resolvers.ts`,
+A new area is a schema file, a folder under `services/api/graphql/` with its `index.ts`,
 and its resolvers merged in `services/api/graphql/index.ts`.

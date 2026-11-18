@@ -1,4 +1,4 @@
-import { generateCodeRequest } from "../../__mocks__/generate-code-request";
+import { generateCodeRequest } from "../../testing";
 import { createMemoryBus } from "..";
 
 describe("createMemoryBus", () => {

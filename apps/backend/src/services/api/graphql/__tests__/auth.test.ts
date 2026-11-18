@@ -114,6 +114,45 @@ describe("/graphql auth, on a local API", () => {
 		]);
 	});
 
+	it("trims and lowercases an email, so a sign-up and a sign-in agree on it", async () => {
+		const { email, name, password } = generateSignUp();
+		const typed = `  ${email.toUpperCase()}  `;
+
+		await graphqlRequest(RequestSignUpCodeDocument, {
+			input: { email: typed },
+		});
+		const signedUp = await graphqlRequest(SignUpDocument, {
+			input: { email: typed, code: "111111", name, password },
+		});
+		expect(signedUp.data?.signUp.user.email).toBe(email);
+
+		const signedIn = await graphqlRequest(SignInDocument, {
+			input: { email: typed, password },
+		});
+		expect(signedIn.data?.signIn.user.email).toBe(email);
+	});
+
+	it.each([
+		[
+			"a code that is not 6 digits",
+			{ code: "12345" },
+			"code: must be 6 digits",
+		],
+		["a blank name", { name: "   " }, "name: is required"],
+		["a name too long", { name: "a".repeat(101) }, "name: is too long"],
+	])("refuses a sign-up with %s", async (_, override, message) => {
+		const result = await graphqlRequest(SignUpDocument, {
+			input: { ...generateSignUp(), code: "111111", ...override },
+		});
+
+		expect(result.errors).toEqual([
+			expect.objectContaining({
+				message,
+				extensions: expect.objectContaining({ code: "BAD_USER_INPUT" }),
+			}),
+		]);
+	});
+
 	it("answers a sign-out without a session with UNAUTHENTICATED", async () => {
 		const result = await graphqlRequest(SignOutDocument, {});
 

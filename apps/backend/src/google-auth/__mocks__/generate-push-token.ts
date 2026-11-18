@@ -20,6 +20,14 @@ export function generateSigningKey() {
 	};
 }
 
+/**
+ * Hands `createGooglePushVerifier` the key's certificates, in place of
+ * fetching Google's.
+ */
+export function mockGetCerts(key: ReturnType<typeof generateSigningKey>) {
+	return async () => key.certs;
+}
+
 function base64url(value: unknown): string {
 	return Buffer.from(JSON.stringify(value)).toString("base64url");
 }

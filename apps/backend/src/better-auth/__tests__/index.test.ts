@@ -1,10 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { generateSignUp } from "@/shared/__mocks__/generate-sign-up";
 import { integrationContextForEachTest } from "@/testing/integration-context";
-
-function bearer(token: string): Headers {
-	return new Headers({ authorization: `Bearer ${token}` });
-}
+import { requestHeaders } from "@/testing/test-user";
 
 describe("createAuth", () => {
 	const { ctx } = integrationContextForEachTest();
@@ -24,7 +21,7 @@ describe("createAuth", () => {
 		const signUp = generateSignUp();
 
 		const { token } = await auth.api.signUpEmail({ body: signUp });
-		const session = await sessionCache.get(bearer(String(token)));
+		const session = await sessionCache.get(requestHeaders(String(token)));
 
 		expect(session?.user.email).toBe(signUp.email);
 	});
@@ -32,7 +29,7 @@ describe("createAuth", () => {
 	it("forgets a session as soon as it signs out", async () => {
 		const { auth, sessionCache } = ctx();
 		const { token } = await auth.api.signUpEmail({ body: generateSignUp() });
-		const headers = bearer(String(token));
+		const headers = requestHeaders(String(token));
 		await sessionCache.get(headers);
 
 		await auth.api.signOut({ headers });

@@ -1,4 +1,5 @@
 import { faker } from "@faker-js/faker";
+import { generateEmail } from "@medusa/emails/testing";
 import { afterEach, describe, expect, it } from "vitest";
 import {
 	createLogMailer,
@@ -9,7 +10,6 @@ import {
 	type IMockMailgunServer,
 	startMockMailgunServer,
 } from "@/mailgun/__mocks__/mock-mailgun-server";
-import { generateEmail } from "@/shared/__mocks__/generate-email";
 import { createCapturingLogger } from "@/testing/test-logger";
 
 let mailgun: IMockMailgunServer | undefined;

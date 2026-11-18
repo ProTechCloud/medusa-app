@@ -8,17 +8,17 @@ import { createSessionCache, type ISessionCache } from "./lib/session-cache";
 export { withAuthErrors } from "./lib/errors";
 
 /**
- * The Better Auth instance the use cases reach as `ctx.auth`, and the cache
- * in front of its session lookups. Use cases call `auth.api.*` directly; its
- * HTTP routes are never mounted, so its own rate limiter, which only guards
- * them, is off, and the limits live in the use cases.
- */
-/**
  * The longest password Better Auth takes, its own default, set here so the
  * resolvers cap every password field at the same length before hashing.
  */
 export const MAX_PASSWORD_LENGTH = 128;
 
+/**
+ * The Better Auth instance the use cases reach as `ctx.auth`, and the cache
+ * in front of its session lookups. Use cases call `auth.api.*` directly; its
+ * HTTP routes are never mounted, so its own rate limiter, which only guards
+ * them, is off, and the limits live in the use cases.
+ */
 export function createAuth(db: TDb, config: TConfig) {
 	// The cache and the instance need each other: the cache wraps
 	// `auth.api.getSession`, and the sign-out hook, set when the instance is

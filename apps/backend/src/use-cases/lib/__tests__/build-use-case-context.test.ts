@@ -1,7 +1,7 @@
 import { faker } from "@faker-js/faker";
+import { generateEmail } from "@medusa/emails/testing";
 import { describe, expect, it } from "vitest";
 import { generateConfig } from "@/shared/__mocks__/generate-config";
-import { generateEmail } from "@/shared/__mocks__/generate-email";
 import { createCapturingLogger } from "@/testing/test-logger";
 import { chooseServiceClients } from "@/use-cases/lib/build-use-case-context";
 

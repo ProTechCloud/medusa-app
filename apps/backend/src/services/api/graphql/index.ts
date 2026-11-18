@@ -3,7 +3,7 @@ import { GraphQLError, type ValidationContext } from "graphql";
 import { createSchema, createYoga, type Plugin } from "graphql-yoga";
 import { logger } from "@/logger";
 import { DOMAIN_ERROR_NAMES } from "@/shared/domain-errors";
-import { createAuthResolvers } from "./auth/resolvers";
+import { createAuthResolvers } from "./auth";
 import { yogaLogger } from "./lib/yoga-logger";
 
 type TYogaLogging = NonNullable<Parameters<typeof createYoga>[0]["logging"]>;

@@ -1,6 +1,6 @@
 import { faker } from "@faker-js/faker";
-import { generateCodeRequest } from "../../__mocks__/generate-code-request";
 import type { TEventType } from "../../lib/catalog";
+import { generateCodeRequest } from "../../testing";
 import { createPubSubBusOn } from "..";
 import { createCapturingPubSub } from "../__mocks__/mock-pubsub";
 

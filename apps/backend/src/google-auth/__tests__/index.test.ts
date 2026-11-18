@@ -9,6 +9,7 @@ import {
 import {
 	generatePushToken,
 	generateSigningKey,
+	mockGetCerts,
 } from "@/google-auth/__mocks__/generate-push-token";
 import { createCapturingLogger } from "@/testing/test-logger";
 
@@ -19,7 +20,7 @@ describe("createGooglePushVerifier", () => {
 	const verifier = createGooglePushVerifier({
 		audience,
 		serviceAccount,
-		getCerts: async () => key.certs,
+		getCerts: mockGetCerts(key),
 	});
 
 	it("trusts a token for its audience, from its service account", async () => {

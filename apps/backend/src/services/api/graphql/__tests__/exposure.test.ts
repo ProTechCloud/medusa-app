@@ -2,13 +2,17 @@ import { describe, expect, it } from "vitest";
 import { buildApp } from "@/services/api";
 import { GRAPHQL_PATH } from "@/services/api/graphql";
 
-const INTROSPECTION = "{ __schema { queryType { name } } }";
+const SCHEMA_QUERY = "{ __schema { queryType { name } } }";
+const TYPE_QUERY = '{ __type(name: "Query") { name } }';
 
-async function introspect(environment: "local" | "stg" | "prd") {
+async function introspect(
+	environment: "local" | "stg" | "prd",
+	query = SCHEMA_QUERY,
+) {
 	const response = await buildApp({ environment }).request(GRAPHQL_PATH, {
 		method: "POST",
 		headers: { "content-type": "application/json" },
-		body: JSON.stringify({ query: INTROSPECTION }),
+		body: JSON.stringify({ query }),
 	});
 	return (await response.json()) as {
 		data?: unknown;
@@ -23,10 +27,15 @@ async function openGraphiql(environment: "local" | "stg" | "prd") {
 }
 
 describe("/graphql on a deployed API", () => {
-	it.each(["stg", "prd"] as const)(
-		"refuses introspection in %s",
-		async (environment) => {
-			const result = await introspect(environment);
+	it.each([
+		["stg", "__schema", SCHEMA_QUERY],
+		["prd", "__schema", SCHEMA_QUERY],
+		["stg", "__type", TYPE_QUERY],
+		["prd", "__type", TYPE_QUERY],
+	] as const)(
+		"refuses introspection in %s, through %s",
+		async (environment, _, query) => {
+			const result = await introspect(environment, query);
 
 			expect(result.data).toBeUndefined();
 			expect(result.errors?.[0]?.message).toContain("introspection");

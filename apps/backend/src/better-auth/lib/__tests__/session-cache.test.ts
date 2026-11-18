@@ -1,11 +1,11 @@
 import { faker } from "@faker-js/faker";
 import { describe, expect, it } from "vitest";
 import {
-	bearerHeaders,
 	createFakeGetSession,
 	generateSession,
 } from "@/better-auth/lib/__mocks__/mock-get-session";
 import { createSessionCache } from "@/better-auth/lib/session-cache";
+import { requestHeaders } from "@/testing/test-user";
 
 // The TTL itself is lru-cache's, tested upstream; its clock is
 // `performance.now()`, which fake timers do not move.
@@ -17,8 +17,8 @@ describe("createSessionCache", () => {
 		const cache = createSessionCache(fake.getSession);
 		const token = faker.string.alphanumeric(32);
 
-		await cache.get(bearerHeaders(token));
-		const second = await cache.get(bearerHeaders(token));
+		await cache.get(requestHeaders(token));
+		const second = await cache.get(requestHeaders(token));
 
 		expect(second).toEqual(session);
 		expect(fake.calls()).toBe(1);
@@ -30,7 +30,7 @@ describe("createSessionCache", () => {
 		const cache = createSessionCache(fake.getSession);
 		const token = faker.string.alphanumeric(32);
 
-		const lookups = [1, 2, 3].map(() => cache.get(bearerHeaders(token)));
+		const lookups = [1, 2, 3].map(() => cache.get(requestHeaders(token)));
 		settle(generateSession());
 		await Promise.all(lookups);
 
@@ -62,8 +62,8 @@ describe("createSessionCache", () => {
 		const cache = createSessionCache(fake.getSession);
 		const token = faker.string.alphanumeric(32);
 
-		const first = await cache.get(bearerHeaders(token));
-		const second = await cache.get(bearerHeaders(token));
+		const first = await cache.get(requestHeaders(token));
+		const second = await cache.get(requestHeaders(token));
 
 		expect(first).toBeNull();
 		expect(second).toEqual(session);
@@ -75,9 +75,9 @@ describe("createSessionCache", () => {
 		const cache = createSessionCache(fake.getSession);
 		const token = faker.string.alphanumeric(32);
 
-		await cache.get(bearerHeaders(token));
+		await cache.get(requestHeaders(token));
 		cache.invalidateByToken(token);
-		const after = await cache.get(bearerHeaders(token));
+		const after = await cache.get(requestHeaders(token));
 
 		expect(after).toBeNull();
 	});
@@ -89,11 +89,11 @@ describe("createSessionCache", () => {
 		const cache = createSessionCache(fake.getSession);
 		const token = faker.string.alphanumeric(32);
 
-		const pending = cache.get(bearerHeaders(token));
+		const pending = cache.get(requestHeaders(token));
 		cache.invalidateByToken(token);
 		settle(generateSession());
 		await pending;
-		const after = await cache.get(bearerHeaders(token));
+		const after = await cache.get(requestHeaders(token));
 
 		expect(after).toBeNull();
 	});
@@ -106,10 +106,10 @@ describe("createSessionCache", () => {
 		const signedOut = faker.string.alphanumeric(32);
 		const other = faker.string.alphanumeric(33);
 
-		await cache.get(bearerHeaders(signedOut));
-		await cache.get(bearerHeaders(other));
+		await cache.get(requestHeaders(signedOut));
+		await cache.get(requestHeaders(other));
 		cache.invalidateByToken(signedOut);
-		const otherAgain = await cache.get(bearerHeaders(other));
+		const otherAgain = await cache.get(requestHeaders(other));
 
 		expect(otherAgain).toEqual(kept);
 		expect(fake.calls()).toBe(2);

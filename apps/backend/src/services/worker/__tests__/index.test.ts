@@ -1,5 +1,5 @@
 import { faker } from "@faker-js/faker";
-import { createEnvelope } from "@medusa/events";
+import { generateEmailEnvelope } from "@medusa/emails/testing";
 import { describe, expect, it } from "vitest";
 import { MailgunRefusedError } from "@/mailgun";
 import { buildWorker } from "@/services/worker";
@@ -23,12 +23,7 @@ function pushBody(data: unknown): string {
 }
 
 function signUpCodePush(): string {
-	return pushBody(
-		createEnvelope("signup.code_requested", {
-			email: faker.internet.email(),
-			code: faker.string.numeric(6),
-		}),
-	);
+	return pushBody(generateEmailEnvelope("signup.code_requested"));
 }
 
 async function push(body: string): Promise<Response> {
@@ -55,12 +50,10 @@ describe("the worker, with a trusted push", () => {
 	] as const)(
 		"sends the email a pushed %s asks for, and acknowledges it",
 		async (type, subject) => {
-			const email = faker.internet.email();
-			const code = faker.string.numeric(6);
+			const envelope = generateEmailEnvelope(type);
+			const { email, code } = envelope.data;
 
-			const response = await push(
-				pushBody(createEnvelope(type, { email, code })),
-			);
+			const response = await push(pushBody(envelope));
 
 			expect(response.status).toBe(204);
 			expect(mailer.sent).toEqual([

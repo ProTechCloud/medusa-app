@@ -41,7 +41,3 @@ export function createFakeGetSession() {
 		},
 	};
 }
-
-export function bearerHeaders(token: string): Headers {
-	return new Headers({ authorization: `Bearer ${token}` });
-}

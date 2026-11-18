@@ -1,5 +1,5 @@
 import { renderEmail, type TEmailType } from "..";
-import { generateEmailEnvelope } from "../__mocks__/generate-email-envelope";
+import { generateEmailEnvelope } from "../testing";
 
 describe("renderEmail", () => {
 	it.each<[TEmailType, string]>([

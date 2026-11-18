@@ -1,3 +1,5 @@
+import { faker } from "@faker-js/faker";
+import { DateTime } from "luxon";
 import pg from "pg";
 import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
 import { migrate } from "@/services/migrate";
@@ -5,18 +7,28 @@ import { generateConfig } from "@/shared/__mocks__/generate-config";
 import { createDbCloner, TEST_DB_URL_ENV } from "@/testing/test-db";
 import { ctxForTests, resetCtx } from "@/use-cases";
 
-/** The tables in `url`'s public and drizzle schemas, sorted. */
-async function tables(url: string): Promise<string[]> {
+/** Runs one statement on `url` and returns its rows. */
+async function query<TRow extends pg.QueryResultRow>(
+	url: string,
+	text: string,
+	values: unknown[] = [],
+): Promise<TRow[]> {
 	const client = new pg.Client({ connectionString: url });
 	await client.connect();
 	try {
-		const { rows } = await client.query<{ name: string }>(
-			"select table_schema || '.' || table_name as name from information_schema.tables where table_schema in ('public', 'drizzle') order by name",
-		);
-		return rows.map((row) => row.name);
+		return (await client.query<TRow>(text, values)).rows;
 	} finally {
 		await client.end();
 	}
+}
+
+/** The tables in `url`'s public and drizzle schemas, sorted. */
+async function tables(url: string): Promise<string[]> {
+	const rows = await query<{ name: string }>(
+		url,
+		"select table_schema || '.' || table_name as name from information_schema.tables where table_schema in ('public', 'drizzle') order by name",
+	);
+	return rows.map((row) => row.name);
 }
 
 describe("migrate", () => {
@@ -66,5 +78,26 @@ describe("migrate", () => {
 			"public.verification",
 		]);
 		expect(ctxForTests().config.db.url).toBe(url);
+	});
+
+	it("prunes an expired code each time it runs", async () => {
+		empty = await cloner.createEmpty();
+		const { url } = empty;
+		const config = generateConfig({ shouldRunMigration: true, db: { url } });
+		await migrate(config);
+		await query(
+			url,
+			"insert into verification (id, identifier, value, expires_at) values ($1, $2, $3, $4)",
+			[
+				faker.string.uuid(),
+				`sign-up:${faker.internet.email()}`,
+				faker.string.alphanumeric(64),
+				DateTime.utc().minus({ minutes: 1 }).toJSDate(),
+			],
+		);
+
+		await migrate(config);
+
+		expect(await query(url, "select id from verification")).toEqual([]);
 	});
 });
