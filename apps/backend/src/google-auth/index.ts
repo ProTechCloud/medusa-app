@@ -37,10 +37,14 @@ export function createGooglePushVerifier({
 		async verify(authorization) {
 			const token = /^Bearer (.+)$/.exec(authorization ?? "")?.[1];
 			if (!token) return false;
+			// Fetched outside the `try`: a failed fetch is not a forged token,
+			// so it throws, the push is answered 500 with the error logged, and
+			// Pub/Sub retries it.
+			const keys = await certs();
 			try {
 				const ticket = await client.verifySignedJwtWithCertsAsync(
 					token,
-					await certs(),
+					keys,
 					audience,
 					GOOGLE_ISSUERS,
 				);

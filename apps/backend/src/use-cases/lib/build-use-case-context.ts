@@ -84,7 +84,9 @@ export function buildUseCaseContext({
 	mailer: IMailer;
 	pushVerifier: IPushVerifier;
 }): TUseCaseContext {
-	const db = createDb(config.db.url);
+	const db = createDb(config.db.url, (error) =>
+		logger.error({ err: error }, "idle database connection lost"),
+	);
 	const { auth, sessionCache } = createAuth(db, config);
 	return { config, logger, db, auth, sessionCache, bus, mailer, pushVerifier };
 }

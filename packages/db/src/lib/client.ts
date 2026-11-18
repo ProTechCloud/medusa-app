@@ -10,13 +10,23 @@ import * as schema from "../schema";
 const POOL_MAX = 10;
 const POOL_IDLE_TIMEOUT_MS = 60_000;
 
-export function createDb(connectionString: string) {
+/**
+ * A Drizzle client over a node-postgres pool. `onIdleError` hears an idle
+ * connection fail, such as at a Postgres restart: the pool drops that
+ * connection and opens another on the next query, but an `error` event with
+ * no listener would throw and stop the process.
+ */
+export function createDb(
+	connectionString: string,
+	onIdleError: (error: Error) => void,
+) {
 	const pool = new pg.Pool({
 		connectionString,
 		max: POOL_MAX,
 		idleTimeoutMillis: POOL_IDLE_TIMEOUT_MS,
 		keepAlive: true,
 	});
+	pool.on("error", onIdleError);
 	return drizzle(pool, { schema });
 }
 

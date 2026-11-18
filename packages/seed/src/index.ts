@@ -17,7 +17,7 @@ const env = z
 	})
 	.parse(process.env);
 
-const db = createDb(databaseUrl(env));
+const db = createDb(databaseUrl(env), (error) => console.error(error));
 const auth = createAuth(db, {
 	secret: env.BETTER_AUTH_SECRET,
 	url: env.BETTER_AUTH_URL,

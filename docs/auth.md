@@ -118,8 +118,10 @@ each email, with the address redacted, instead of sending it.
 The worker sends only what a push it trusts asks for: with `PUBSUB_PUSH_AUDIENCE` and
 `PUBSUB_PUSH_SERVICE_ACCOUNT` set, a push must carry a Google-signed OIDC token for that
 audience, issued to that service account, as a push subscription set to authenticate sends
-it; anything else is answered 401. A local worker, whose emulator sends no token, trusts
-every push. A deployed worker without the two variables refuses every push, and logs why.
+it; anything else is answered 401. A failed fetch of Google's certificates is not a refusal:
+the push is answered 500, with the error logged, and Pub/Sub delivers it again. A local
+worker, whose emulator sends no token, trusts every push. A deployed worker without the two
+variables refuses every push, and logs why.
 The verifier is in [`apps/backend/src/google-auth`](../apps/backend/src/google-auth/index.ts).
 
 A push whose body is not an email envelope, or whose email Mailgun refuses for good (a 4xx

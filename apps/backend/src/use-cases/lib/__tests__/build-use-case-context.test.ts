@@ -1,9 +1,15 @@
 import { faker } from "@faker-js/faker";
 import { generateEmail } from "@medusa/emails/testing";
+import { createMemoryBus } from "@medusa/events";
 import { describe, expect, it } from "vitest";
 import { generateConfig } from "@/shared/__mocks__/generate-config";
+import { createMemoryMailer } from "@/shared/__mocks__/mock-mailer";
+import { createPushVerifier } from "@/shared/__mocks__/mock-push-verifier";
 import { createCapturingLogger } from "@/testing/test-logger";
-import { chooseServiceClients } from "@/use-cases/lib/build-use-case-context";
+import {
+	buildUseCaseContext,
+	chooseServiceClients,
+} from "@/use-cases/lib/build-use-case-context";
 
 const ANY_TOKEN = `Bearer ${faker.string.alphanumeric(40)}`;
 
@@ -63,4 +69,29 @@ describe("chooseServiceClients", () => {
 			]);
 		},
 	);
+});
+
+describe("buildUseCaseContext", () => {
+	it("logs an idle database connection's error instead of throwing it", async () => {
+		const capture = createCapturingLogger();
+		const { db } = buildUseCaseContext({
+			config: generateConfig(),
+			logger: capture.logger,
+			bus: createMemoryBus(),
+			mailer: createMemoryMailer(),
+			pushVerifier: createPushVerifier(true),
+		});
+		const message = faker.lorem.sentence();
+
+		db.$client.emit("error", new Error(message));
+		await db.$client.end();
+
+		expect(capture.lines()).toEqual([
+			expect.objectContaining({
+				level: 50,
+				msg: "idle database connection lost",
+				err: expect.objectContaining({ message }),
+			}),
+		]);
+	});
 });

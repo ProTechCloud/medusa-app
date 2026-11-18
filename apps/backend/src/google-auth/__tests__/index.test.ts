@@ -9,6 +9,7 @@ import {
 import {
 	generatePushToken,
 	generateSigningKey,
+	mockFailingGetCerts,
 	mockGetCerts,
 } from "@/google-auth/__mocks__/generate-push-token";
 import { createCapturingLogger } from "@/testing/test-logger";
@@ -64,6 +65,21 @@ describe("createGooglePushVerifier", () => {
 		],
 	])("refuses %s", async (_, authorization) => {
 		await expect(verifier.verify(authorization())).resolves.toBe(false);
+	});
+});
+
+describe("createGooglePushVerifier, when Google's certificates cannot be fetched", () => {
+	it("throws instead of refusing, so the push is retried", async () => {
+		const key = generateSigningKey();
+		const verifier = createGooglePushVerifier({
+			audience: faker.internet.url(),
+			serviceAccount: faker.internet.email(),
+			getCerts: mockFailingGetCerts(),
+		});
+
+		await expect(
+			verifier.verify(`Bearer ${generatePushToken(key)}`),
+		).rejects.toThrow("certificates");
 	});
 });
 
