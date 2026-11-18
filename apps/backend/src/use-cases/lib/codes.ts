@@ -5,6 +5,8 @@ import { z } from "zod";
 import { badInput } from "@/shared/domain-errors";
 import type { TUseCaseContext } from "@/use-cases";
 
+// The emails say "15 minutes": change packages/emails/src/templates/
+// signup-code and password-reset with it.
 const CODE_TTL = Duration.fromObject({ minutes: 15 });
 const MAX_ATTEMPTS = 5;
 /**

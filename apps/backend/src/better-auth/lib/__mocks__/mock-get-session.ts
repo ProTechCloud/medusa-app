@@ -1,14 +1,4 @@
-import { faker } from "@faker-js/faker";
-
-type Session = { session: { id: string }; user: { id: string } };
-
-/** A session as `getSession` resolves it. */
-export function generateSession(): Session {
-	return {
-		session: { id: faker.string.alphanumeric(32) },
-		user: { id: faker.string.alphanumeric(32) },
-	};
-}
+import type { TSession } from "./generate-session";
 
 /**
  * A `getSession` that counts its calls and answers each one with the next
@@ -16,7 +6,7 @@ export function generateSession(): Session {
  */
 export function createFakeGetSession() {
 	let calls = 0;
-	const answers: Array<Promise<Session | null>> = [];
+	const answers: Array<Promise<TSession | null>> = [];
 
 	return {
 		getSession: async (_: { headers: Headers }) => {
@@ -26,12 +16,12 @@ export function createFakeGetSession() {
 			return next;
 		},
 		calls: () => calls,
-		answer(...sessions: Array<Session | null>) {
+		answer(...sessions: Array<TSession | null>) {
 			for (const session of sessions) answers.push(Promise.resolve(session));
 		},
 		/** Queues an answer the test settles by calling the returned function. */
-		answerLater(): (session: Session | null) => void {
-			let settle: (session: Session | null) => void = () => {};
+		answerLater(): (session: TSession | null) => void {
+			let settle: (session: TSession | null) => void = () => {};
 			answers.push(
 				new Promise((resolve) => {
 					settle = resolve;

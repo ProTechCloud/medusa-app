@@ -92,7 +92,9 @@ describe("migrate", () => {
 				faker.string.uuid(),
 				`sign-up:${faker.internet.email()}`,
 				faker.string.alphanumeric(64),
-				DateTime.utc().minus({ minutes: 1 }).toJSDate(),
+				// A UTC string: the column has no time zone, and node-postgres
+				// would write a Date in the machine's.
+				DateTime.utc().minus({ minutes: 1 }).toISO(),
 			],
 		);
 

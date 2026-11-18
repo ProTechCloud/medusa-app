@@ -22,7 +22,8 @@ function readEnvelope(body: unknown): TEnvelope | null {
 }
 
 /**
- * One push from the emails topic, with the request's `Authorization` header.
+ * One push from the emails topic, with the request's `Authorization` header
+ * and a reader for its body, called only once the push is trusted.
  *
  * - `unauthorized`: the push verifier did not trust it; nothing is read.
  * - `dropped`: no retry can succeed, so the push is acknowledged and logged:
@@ -34,15 +35,15 @@ function readEnvelope(body: unknown): TEnvelope | null {
  * push is answered with an error and Pub/Sub delivers it again.
  */
 export const deliverPushedEmailUseCase = defineUseCase<
-	{ authorization: string | undefined; body: unknown },
+	{ authorization: string | undefined; readBody: () => Promise<unknown> },
 	"unauthorized" | "dropped" | "sent"
->(async function deliverPushedEmailUseCase(ctx, { authorization, body }) {
+>(async function deliverPushedEmailUseCase(ctx, { authorization, readBody }) {
 	if (!(await ctx.pushVerifier.verify(authorization))) {
 		ctx.logger.warn("push refused: not from the trusted subscription");
 		return "unauthorized";
 	}
 
-	const envelope = readEnvelope(body);
+	const envelope = readEnvelope(await readBody());
 	if (!envelope) {
 		ctx.logger.error("push dropped: not an email envelope");
 		return "dropped";

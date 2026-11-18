@@ -36,7 +36,8 @@ require_command() {
 
 # Creates the emails topic and its push subscription to the worker. The
 # emulator forgets both when it stops, so start runs this as well as create.
-# A 409 means it already exists.
+# A 409 means it already exists. The 60 s ack deadline stays above the
+# worker's 10 s Mailgun timeout, so a slow send is not delivered twice.
 provision_pubsub() {
 	local base="http://$PUBSUB_EMULATOR_HOST/v1/projects/$PUBSUB_PROJECT_ID"
 	local topic="projects/$PUBSUB_PROJECT_ID/topics/$PUBSUB_EMAILS_TOPIC"
@@ -44,7 +45,7 @@ provision_pubsub() {
 
 	pubsub_put "$base/topics/$PUBSUB_EMAILS_TOPIC" '{}'
 	pubsub_put "$base/subscriptions/$PUBSUB_EMAILS_TOPIC-push" \
-		"{\"topic\":\"$topic\",\"pushConfig\":{\"pushEndpoint\":\"$endpoint\"}}"
+		"{\"topic\":\"$topic\",\"pushConfig\":{\"pushEndpoint\":\"$endpoint\"},\"ackDeadlineSeconds\":60}"
 
 	echo "  Pub/Sub: $topic, pushed to $endpoint"
 }

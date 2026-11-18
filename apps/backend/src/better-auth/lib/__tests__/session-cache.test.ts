@@ -1,9 +1,7 @@
 import { faker } from "@faker-js/faker";
 import { describe, expect, it } from "vitest";
-import {
-	createFakeGetSession,
-	generateSession,
-} from "@/better-auth/lib/__mocks__/mock-get-session";
+import { generateSession } from "@/better-auth/lib/__mocks__/generate-session";
+import { createFakeGetSession } from "@/better-auth/lib/__mocks__/mock-get-session";
 import { createSessionCache } from "@/better-auth/lib/session-cache";
 import { requestHeaders } from "@/testing/test-user";
 

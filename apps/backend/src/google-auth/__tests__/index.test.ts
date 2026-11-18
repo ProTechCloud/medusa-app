@@ -9,9 +9,11 @@ import {
 import {
 	generatePushToken,
 	generateSigningKey,
+} from "@/google-auth/__mocks__/generate-push-token";
+import {
 	mockFailingGetCerts,
 	mockGetCerts,
-} from "@/google-auth/__mocks__/generate-push-token";
+} from "@/google-auth/__mocks__/mock-get-certs";
 import { createCapturingLogger } from "@/testing/test-logger";
 
 describe("createGooglePushVerifier", () => {

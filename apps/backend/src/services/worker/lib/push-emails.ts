@@ -12,7 +12,8 @@ export const PUSH_EMAILS_PATH = "/push/emails";
 export const pushEmails: Handler = async (context) => {
 	const result = await deliverPushedEmailUseCase({
 		authorization: context.req.header("authorization"),
-		body: await context.req.json().catch(() => null),
+		// Read only once the push is trusted.
+		readBody: () => context.req.json().catch(() => null),
 	});
 	return context.body(null, result === "unauthorized" ? 401 : 204);
 };

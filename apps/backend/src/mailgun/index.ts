@@ -10,7 +10,9 @@ export interface IMailer {
 const MAILGUN_API_URL = "https://api.mailgun.net";
 
 // Past this a stalled send throws, and the push is answered with an error
-// Pub/Sub retries, well inside its acknowledgement deadline.
+// Pub/Sub retries, inside the push subscription's 60 s acknowledgement
+// deadline: set in bin/local-lib.sh locally, and in medusa-platform for a
+// deployed one.
 const MAILGUN_TIMEOUT_MS = 10_000;
 
 /**
