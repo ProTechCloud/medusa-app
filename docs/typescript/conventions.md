@@ -82,5 +82,5 @@ How we name things and handle dates in every app and package.
    if (expiresAt.getTime() < Date.now()) {}
    ```
 
-   `@medusa/backend` and `@medusa/events` depend on Luxon; another workspace that handles a
-   date adds it to its own dependencies.
+   `@medusa/backend`, `@medusa/events` and `@medusa/db` depend on Luxon; another workspace
+   that handles a date adds it to its own dependencies.
