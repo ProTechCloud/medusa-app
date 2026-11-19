@@ -1,6 +1,7 @@
 import { faker } from "@faker-js/faker";
 import { describe, expect, it } from "vitest";
 import { generateSignUp } from "@/shared/__mocks__/generate-sign-up";
+import { DOMAIN_ERROR_NAMES } from "@/shared/domain-errors";
 import { integrationContextForEachTest } from "@/testing/integration-context";
 import { lastCode, requestHeaders, signUpTestUser } from "@/testing/test-user";
 import { loadMeUseCase } from "@/use-cases/cases/load-me.use-case";
@@ -32,6 +33,19 @@ describe("requestPasswordResetUseCase", () => {
 
 		expect(result).toEqual({ sent: true });
 		expect(bus().published).toEqual([]);
+	});
+
+	it("refuses the eleventh request for one address with TOO_MANY_REQUESTS", async () => {
+		const { email } = generateSignUp();
+		const request = () =>
+			requestPasswordResetUseCase({ email, headers: requestHeaders() });
+		for (let attempt = 1; attempt <= 10; attempt++) {
+			await expect(request()).resolves.toEqual({ sent: true });
+		}
+
+		await expect(request()).rejects.toMatchObject({
+			name: DOMAIN_ERROR_NAMES.TOO_MANY_REQUESTS,
+		});
 	});
 });
 
@@ -112,6 +126,26 @@ describe("resetPasswordUseCase", () => {
 				headers: requestHeaders(),
 			}),
 		).rejects.toThrow("The code is wrong or has expired.");
+	});
+
+	it("refuses the eleventh guess for one address with TOO_MANY_REQUESTS", async () => {
+		const { email } = generateSignUp();
+		const guess = () =>
+			resetPasswordUseCase({
+				email,
+				code: faker.string.numeric(6),
+				newPassword: faker.internet.password({ length: 16 }),
+				headers: requestHeaders(),
+			});
+		for (let attempt = 1; attempt <= 10; attempt++) {
+			await expect(guess()).rejects.toThrow(
+				"The code is wrong or has expired.",
+			);
+		}
+
+		await expect(guess()).rejects.toMatchObject({
+			name: DOMAIN_ERROR_NAMES.TOO_MANY_REQUESTS,
+		});
 	});
 });
 

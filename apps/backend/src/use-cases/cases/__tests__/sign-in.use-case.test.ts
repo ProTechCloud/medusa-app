@@ -40,10 +40,6 @@ describe("signInUseCase", () => {
 			}),
 		).rejects.toThrow("Wrong email or password.");
 	});
-});
-
-describe("signOutUseCase and loadMeUseCase", () => {
-	const { bus } = integrationContextForEachTest();
 
 	it("refuses the eleventh sign-in for one address with TOO_MANY_REQUESTS", async () => {
 		const { email } = generateSignUp();
@@ -61,6 +57,10 @@ describe("signOutUseCase and loadMeUseCase", () => {
 			name: DOMAIN_ERROR_NAMES.TOO_MANY_REQUESTS,
 		});
 	});
+});
+
+describe("signOutUseCase and loadMeUseCase", () => {
+	const { bus } = integrationContextForEachTest();
 
 	it("loads the signed-in user, and nothing once it signs out", async () => {
 		const { token, email } = await signUpTestUser(bus());

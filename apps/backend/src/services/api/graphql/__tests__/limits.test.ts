@@ -5,6 +5,7 @@ import {
 	GRAPHQL_PATH,
 	MAX_ROOT_FIELDS,
 } from "@/services/api/graphql";
+import { graphqlQuery } from "@/testing/graphql-request";
 
 /** A query that asks for `me` under `count` aliases. */
 function aliasedMe(count: number): string {
@@ -15,23 +16,14 @@ function aliasedMe(count: number): string {
 	return `{ ${fields.join(" ")} }`;
 }
 
-async function query(environment: "local" | "stg" | "prd", body: string) {
-	const response = await buildApp({ environment }).request(GRAPHQL_PATH, {
-		method: "POST",
-		headers: { "content-type": "application/json" },
-		body: JSON.stringify({ query: body }),
-	});
-	return (await response.json()) as {
-		data?: unknown;
-		errors?: Array<{ message: string }>;
-	};
-}
-
 describe("/graphql's cap on top-level fields", () => {
 	it.each(["local", "stg", "prd"] as const)(
 		"refuses one operation past the cap in %s",
 		async (environment) => {
-			const result = await query(environment, aliasedMe(MAX_ROOT_FIELDS + 1));
+			const result = await graphqlQuery(
+				environment,
+				aliasedMe(MAX_ROOT_FIELDS + 1),
+			);
 
 			expect(result.data).toBeUndefined();
 			expect(result.errors?.[0]?.message).toContain(
@@ -53,7 +45,7 @@ describe("/graphql's cap on top-level fields", () => {
 	])("counts the fields inside %s", async (_, wrap) => {
 		const fields = aliasedMe(MAX_ROOT_FIELDS + 1).slice(2, -2);
 
-		const result = await query("prd", wrap(fields));
+		const result = await graphqlQuery("prd", wrap(fields));
 
 		expect(result.errors?.[0]?.message).toContain(
 			`at most ${MAX_ROOT_FIELDS} top-level fields`,
@@ -76,7 +68,7 @@ describe("/graphql's cap on top-level fields", () => {
 	});
 
 	it("lets one operation at the cap through validation", async () => {
-		const result = await query("prd", aliasedMe(MAX_ROOT_FIELDS));
+		const result = await graphqlQuery("prd", aliasedMe(MAX_ROOT_FIELDS));
 
 		expect(JSON.stringify(result.errors ?? [])).not.toContain(
 			"top-level fields",
