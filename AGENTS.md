@@ -19,16 +19,21 @@ and the tests; Bun is the runtime for the API only; Expo builds the native app.
 
 ### Apps
 
-| App               | Path           | Framework                | Runtime         |
-| ----------------- | -------------- | ------------------------ | --------------- |
-| `@medusa/backend` | `apps/backend` | Hono 4                   | Bun             |
-| `@medusa/native`  | `apps/native`  | Expo SDK 57, Expo Router | iOS and Android |
+| App               | Path           | Framework                           | Runtime                                                                      |
+| ----------------- | -------------- | ----------------------------------- | ---------------------------------------------------------------------------- |
+| `@medusa/backend` | `apps/backend` | Hono 4, GraphQL Yoga 6, Better Auth | Bun; `src/services/{api,worker,migrate}`, one image, picked by `APP_PROCESS` |
+| `@medusa/native`  | `apps/native`  | Expo SDK 57, Expo Router            | iOS and Android                                                              |
 
 ### Packages
 
-| Package                 | Path                     | Framework               | Runtime                |
-| ----------------------- | ------------------------ | ----------------------- | ---------------------- |
-| `@medusa/eslint-plugin` | `packages/eslint-plugin` | ESLint 9 rules (plugin) | Node, loaded by ESLint |
+| Package                 | Path                     | Framework                  | Runtime                                            |
+| ----------------------- | ------------------------ | -------------------------- | -------------------------------------------------- |
+| `@medusa/db`            | `packages/db`            | Drizzle ORM, node-postgres | Bun, in the backend                                |
+| `@medusa/emails`        | `packages/emails`        | react-email                | Bun, in the worker                                 |
+| `@medusa/eslint-plugin` | `packages/eslint-plugin` | ESLint 9 rules (plugin)    | Node, loaded by ESLint                             |
+| `@medusa/events`        | `packages/events`        | zod, Pub/Sub               | Bun, in the backend                                |
+| `@medusa/gql`           | `packages/gql`           | GraphQL schema, codegen    | Bun, in the backend; clients import its operations |
+| `@medusa/seed`          | `packages/seed`          | Better Auth                | Bun, `yarn seed`, local only                       |
 
 Every package exports its TypeScript source; there is no build step.
 
@@ -49,6 +54,8 @@ Every package exports its TypeScript source; there is no build step.
 - [`docs/style-guide/test-quality.md`](./docs/style-guide/test-quality.md) — what a good test asserts, the anti-patterns.
 - [`docs/style-guide/testing-patterns.md`](./docs/style-guide/testing-patterns.md) — each testing rule in a snippet.
 - [`docs/typescript/conventions.md`](./docs/typescript/conventions.md) — type prefixes, names, dates with Luxon.
+- [`docs/auth.md`](./docs/auth.md) — sign-up with a code, sign-in, password reset, rate limits, sessions and the error codes.
+- [`docs/graphql/index.md`](./docs/graphql/index.md) — the schema and operations in `packages/gql`, adding one, and the codegen.
 - [`docs/environment.md`](./docs/environment.md) — the environments, where each reads its values, every variable.
 - [`docs/deployment.md`](./docs/deployment.md) — what a push to `stg` does, rollback, and the variables the deploy reads.
 - [`docs/dependencies.md`](./docs/dependencies.md) — why each `resolutions` override exists.
@@ -72,22 +79,27 @@ Each one lists the docs to read and the rules that matter most.
 - Branch from `dev` and open pull requests against `dev`; `stg` only receives promotions from `dev`.
 - Do not add a `resolutions` entry without its row in [`docs/dependencies.md`](./docs/dependencies.md).
 - Never commit secrets: no keys, tokens or `.env` files.
+- Never edit or commit a `__generated__` folder; change the `.graphql` files and run `yarn codegen`.
+- The backend's tests need Docker for Testcontainers; on Colima set `DOCKER_HOST` and `TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE` as the README says.
 
 ## Commands
 
 From the repository root.
 
-| Task                      | Command                                                                                            |
-| ------------------------- | -------------------------------------------------------------------------------------------------- |
-| Typecheck all             | `yarn typecheck`                                                                                   |
-| Typecheck one workspace   | `yarn workspace @medusa/backend typecheck`                                                         |
-| Test                      | `yarn test`                                                                                        |
-| Lint                      | `yarn lint`                                                                                        |
-| Format (check)            | `yarn format`; `yarn format:write` to apply                                                        |
-| Run the API in watch mode | `yarn dev`; `yarn dev --native` also starts the app's Metro                                        |
-| Run the app on the iPhone | `yarn workspace @medusa/native ios --device` once, then `yarn dev --native`                        |
-| Tests with coverage       | `yarn test:coverage`                                                                               |
-| Fallow, with coverage     | `yarn fallow --fail-on-issues --coverage coverage/coverage-final.json`, after `yarn test:coverage` |
+| Task                       | Command                                                                                            |
+| -------------------------- | -------------------------------------------------------------------------------------------------- |
+| Typecheck all              | `yarn typecheck`                                                                                   |
+| Typecheck one workspace    | `yarn workspace @medusa/backend typecheck`                                                         |
+| Test                       | `yarn test`                                                                                        |
+| Lint                       | `yarn lint`                                                                                        |
+| Format (check)             | `yarn format`; `yarn format:write` to apply                                                        |
+| Start Postgres and Pub/Sub | `yarn local:create` once (migrates and seeds), then `yarn local:start` / `yarn local:stop`         |
+| Run the API in watch mode  | `yarn dev`, the API and the worker; `yarn dev --native` also starts the app's Metro                |
+| Regenerate GraphQL types   | `yarn codegen`, after changing a `.graphql` file                                                   |
+| Migrate / seed locally     | `SHOULD_RUN_MIGRATION=true yarn migrate`; `yarn seed`                                              |
+| Run the app on the iPhone  | `yarn workspace @medusa/native ios --device` once, then `yarn dev --native`                        |
+| Tests with coverage        | `yarn test:coverage`                                                                               |
+| Fallow, with coverage      | `yarn fallow --fail-on-issues --coverage coverage/coverage-final.json`, after `yarn test:coverage` |
 
 ## Commits
 

@@ -1,7 +1,6 @@
 import { afterEach, beforeEach } from "vitest";
-import { generateConfig } from "@/shared/__mocks__/generate-config";
+import { generateUseCaseContext } from "@/shared/__mocks__/generate-use-case-context";
 import { resetCtx, setCtxForTests, type TUseCaseContext } from "@/use-cases";
-import { testLogger } from "./test-logger";
 
 /**
  * Register a fresh use-case context before each test in the calling file and
@@ -12,11 +11,7 @@ export function useCaseContextForEachTest(
 	overrides: () => Partial<TUseCaseContext> = () => ({}),
 ): void {
 	beforeEach(() => {
-		setCtxForTests({
-			config: generateConfig(),
-			logger: testLogger,
-			...overrides(),
-		});
+		setCtxForTests({ ...generateUseCaseContext(), ...overrides() });
 	});
 	afterEach(() => resetCtx());
 }

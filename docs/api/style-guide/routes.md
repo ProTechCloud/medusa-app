@@ -34,7 +34,7 @@ its own `/` and never repeats its path; a deeper path is a folder inside it.
 `kebab-case-folders` in `@medusa/eslint-plugin` reports a folder under `src/` whose name is
 not kebab-case, so a URL segment is always kebab-case too.
 
-## `ROUTES` is the only place a top-level route is mounted
+## `ROUTES` is where a top-level REST route is mounted
 
 `services/api/http/index.ts` holds the `ROUTES` table, and `buildHttp()` mounts each entry at
 its path. A new top-level route is a folder plus one line there:
@@ -49,13 +49,19 @@ A deeper path is the one exception: `/version/history` would be a folder inside
 `routes/version/`, mounted by its parent with `.route("/history", ...)`, and gets no line in
 `ROUTES`. A route inside a grouping folder, which has no `index.ts`, is top-level and does.
 The [routes README](../../../apps/backend/src/services/api/http/README.md) shows both. A
-route never mounts a sibling, and the entry point mounts only `/health`; every other route
-goes through `ROUTES`.
+route never mounts a sibling, and every REST route goes through `ROUTES`.
 
-## `/health` is the one path the entry point mounts
+Two paths are mounted outside it. `buildServiceApp` mounts `/health`, which every service
+answers ([below](#health-is-mounted-by-the-shell-every-service-shares)). The entry point,
+`services/api/index.ts`, mounts `/graphql`: GraphQL Yoga answers `GET` and `POST` there with
+`yoga.fetch`, and its resolvers, one use case each, live under `services/api/graphql/`
+([GraphQL](../../graphql/schema.md)).
 
-`services/api/index.ts` answers `GET` on `HEALTH_PATH`, from
-`services/api/http/lib/health-path.ts`, before `buildHttp()`. It is liveness only, so it stays
+## `/health` is mounted by the shell every service shares
+
+`buildServiceApp` in `shared/http/service-app.ts`, which the API and the worker both build
+on, answers `GET` on `HEALTH_PATH`, from `shared/http/health-path.ts`, before the service's
+own routes. It is liveness only, so it stays
 outside `ROUTES` and calls no use case: see [Production](./production.md#liveness).
 
 ## Only use cases hold dependencies
@@ -74,37 +80,48 @@ export const loadVersionUseCase = defineUseCase<void, TVersion>(
 ```
 
 That is `use-cases/cases/load-version.use-case.ts`. A new client is a field on
-`TUseCaseContext`, built in the entry point's builder; a route or a module never imports a
-client of its own.
+`TUseCaseContext`, built in `buildUseCaseContext` (`use-cases/lib/build-use-case-context.ts`);
+a route or a module never imports a client of its own.
 
 ## Entry points call `initUseCaseContext` once, before serving
 
 `initUseCaseContext` takes an async builder and builds the context at once, so a bad
 environment or an unreachable client fails the boot rather than the first request. The entry
-point awaits it before `Bun.serve`, as `services/api/index.ts` does:
+point awaits it before `Bun.serve`, as `serveService` in `shared/serve-service.ts` does for
+the API and the worker:
 
 ```ts
-const { config } = await initUseCaseContext(async () => ({
-	config: getConfig(),
-	logger,
-}));
+const { config } = await initUseCaseContext(createServiceContext);
 ```
+
+`createServiceContext` parses the config, builds every client from it and runs a first query,
+so a database that does not answer stops the boot.
 
 A later entry point, such as a job runner, does the same before it starts work.
 
 ## Expected failures are typed errors with a stable code
 
-A failure the caller can act on — not found, not allowed, a conflict — is an error the use
-case throws with a stable `code`, in snake_case. The route catches it and answers its status
-with `{ error: code }`, the same shape as the 404 in `services/api/index.ts` and the 500 in
-`services/api/http/lib/request-errors.ts`. The code is the contract; the message can change.
-No use case has an expected failure yet, so the first one adds the error type beside the
-use cases.
+A failure the caller can act on is an error the use case throws from
+[`shared/domain-errors.ts`](../../../apps/backend/src/shared/domain-errors.ts):
+`badInput(message)`, `unauthenticated()` or `tooManyRequests(retryAfterSeconds)`. Each is
+an `Error` whose `name` is one of `DOMAIN_ERROR_NAMES`; the transport reads the name, never
+the class, since a library loaded twice would fail `instanceof`. A new kind of failure is a
+new entry there and a new branch in each transport that maps them.
+
+- **GraphQL.** `maskError` in `services/api/graphql/index.ts` turns each into a
+  `GraphQLError` with the message and `extensions.code`: `BAD_USER_INPUT`,
+  `UNAUTHENTICATED` or `TOO_MANY_REQUESTS`, which adds `extensions.retryAfterSeconds`. A
+  `ZodError` from a resolver's input parse is `BAD_USER_INPUT` too. Anything else becomes
+  `INTERNAL_SERVER_ERROR` with a generic message, and the detail stays in the log. The code
+  is the contract; the message can change.
+- **REST.** A route catches the error and answers its status with `{ error: code }`, the code
+  in snake_case, the same shape as the 404 in `shared/http/service-app.ts` and the 500 in
+  `shared/http/request-errors.ts`. No REST route has an expected failure yet.
 
 ## Unexpected failures propagate to `request-errors.ts`
 
 Anything else is not caught. `defineUseCase` logs it as `<name> failed` and rethrows it
-unchanged, and `requestErrors` in `services/api/http/lib/request-errors.ts` logs it once with
+unchanged, and `requestErrors` in `shared/http/request-errors.ts` logs it once with
 the request and answers `500` with `{ error: "internal_error" }`. No message, stack or path
 reaches the caller. A route never wraps a use case in `try`/`catch` to answer 500 itself.
 

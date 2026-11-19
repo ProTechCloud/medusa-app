@@ -2,7 +2,7 @@ import { faker } from "@faker-js/faker";
 import { Hono } from "hono";
 import { describe, expect, it } from "vitest";
 import { correlationFields } from "@/opentelemetry/lib/log-correlation";
-import { requestCorrelation } from "@/services/api/http/lib/request-correlation";
+import { requestCorrelation } from "@/shared/http/request-correlation";
 
 function app(): Hono {
 	return new Hono()

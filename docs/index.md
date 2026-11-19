@@ -11,6 +11,8 @@ the commands, CI/CD and the deploy.
 | [Expo Style Guide](expo/style-guide/index.md)       | Structure, components, hooks, context, state and testing for `apps/native`             |
 | [i18n](style-guide/i18n.md)                         | Where the app's strings live, one file per domain, and tests that assert on keys       |
 | [TypeScript Conventions](typescript/conventions.md) | Type prefixes, no single-letter names, dates and times with Luxon                      |
+| [Auth](auth.md)                                     | Sign-up with a code, sign-in, password reset, the limits, sessions and the errors      |
+| [GraphQL](graphql/index.md)                         | Where the schema and operations live, how to add one, and the code generation          |
 | [Environment](environment.md)                       | The three environments, where each reads its values, and every variable                |
 | [Deployment](deployment.md)                         | What a push to `stg` does, how to roll back, and the GitHub configuration it needs     |
 | [Dependencies](dependencies.md)                     | Why each `resolutions` override exists and when it can go                              |

@@ -2,8 +2,8 @@
 
 ## Alias
 
-Inside an app or package, `@/` resolves to `src/`. Each workspace that uses it sets it in its
-own `tsconfig.json`, as `apps/backend/tsconfig.json` does:
+Inside an app, `@/` resolves to `src/`. Each app sets it in its own `tsconfig.json`, as
+`apps/backend/tsconfig.json` does:
 
 ```json
 {
@@ -18,9 +18,26 @@ own `tsconfig.json`, as `apps/backend/tsconfig.json` does:
 The test runner needs the same alias: `resolve.alias` in the workspace's `vitest.config.ts`,
 or `moduleNameMapper` in `apps/native/jest.config.js`.
 
+A package an app imports uses `#src/` instead, from `imports` in its own `package.json`:
+
+```json
+{
+	"imports": {
+		"#src/*": "./src/*"
+	}
+}
+```
+
+An app type-checks a package's source with the app's own `paths`, so a package's `@/` would
+resolve into the app's `src/`. `#src/` resolves from the package's own `package.json`
+wherever it is read, by TypeScript, Bun and Vitest alike, with no alias to repeat. Those
+three do not add an extension to an `imports` target, so the import names the file:
+`#src/lib/catalog.ts`, `#src/shared/components/code/index.tsx`.
+
 ## Rules
 
-1. **Use `@/` for anything outside the current folder.**
+1. **Use `@/` for anything outside the current folder**, or `#src/` in a package an app
+   imports.
 
    ```ts
    // good
@@ -42,7 +59,8 @@ or `moduleNameMapper` in `apps/native/jest.config.js`.
    import { formatEmail } from "@/users/lib/format-email";
    ```
 
-3. **Inside `src/`, never `../`.** If you need `../` there, use `@/` instead. Files outside
+3. **Inside `src/`, never `../`.** If you need `../` there, use `@/` instead, or `#src/` in a
+   package. Files outside
    `src/` that have no alias, such as `packages/eslint-plugin/tests/`, import `../src/`.
 
    ```ts

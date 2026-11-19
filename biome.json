@@ -6,6 +6,7 @@
 			"!**/.turbo",
 			"!**/dist",
 			"!**/coverage",
+			"!**/__generated__",
 			"!apps/native/ios",
 			"!apps/native/android",
 			"!apps/native/.expo",

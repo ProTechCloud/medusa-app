@@ -72,6 +72,7 @@ describe("createLogger", () => {
 		"authorization",
 		"cookie",
 		"email",
+		"to",
 	])(
 		"replaces %s with [redacted] at the top level and one level down",
 		(key) => {

@@ -1,0 +1,41 @@
+{
+	"name": "@medusa/db",
+	"version": "0.0.0",
+	"private": true,
+	"type": "module",
+	"imports": {
+		"#src/*": "./src/*"
+	},
+	"exports": {
+		".": "./src/index.ts",
+		"./migrate": "./src/lib/migrate.ts",
+		"./testing": "./src/testing/index.ts"
+	},
+	"scripts": {
+		"test": "vitest run",
+		"test:coverage": "vitest run --coverage",
+		"db:generate": "drizzle-kit generate",
+		"typecheck": "tsc --noEmit",
+		"lint": "eslint .",
+		"format": "biome check --error-on-warnings .",
+		"format:write": "biome check --write ."
+	},
+	"dependencies": {
+		"drizzle-orm": "~0.45.4",
+		"luxon": "^3.7.2",
+		"pg": "^8.23.1"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "^2.6.3",
+		"@faker-js/faker": "^10.6.0",
+		"@types/luxon": "^3.7.1",
+		"@types/node": "^26.0.0",
+		"@types/pg": "^8.23.1",
+		"@vitest/coverage-istanbul": "^5.0.5",
+		"drizzle-kit": "~0.31.11",
+		"eslint": "^9.0.0",
+		"typescript": "~6.0.3",
+		"vite": "^8.3.5",
+		"vitest": "^5.0.5"
+	}
+}

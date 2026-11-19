@@ -7,28 +7,75 @@
 		"vitest.shared.ts",
 		".nvmrc"
 	],
-	"globalEnv": ["NODE_ENV"],
+	"globalEnv": [
+		"NODE_ENV"
+	],
 	"globalPassThroughEnv": [
 		"CI",
 		"FORCE_COLOR",
 		"GITHUB_*",
 		"ACTIONS_*",
-		"TURBO_*"
+		"TURBO_*",
+		"DOCKER_HOST",
+		"TESTCONTAINERS_*"
 	],
 	"tasks": {
+		"codegen": {
+			"inputs": [
+				"$TURBO_DEFAULT$",
+				"$TURBO_ROOT$/packages/gql/schema/**/*.graphql",
+				"$TURBO_ROOT$/packages/gql/operations/**/*.graphql"
+			],
+			"outputs": [
+				"src/__generated__/**"
+			]
+		},
 		"dev": {
+			"dependsOn": [
+				"^codegen",
+				"codegen"
+			],
 			"cache": false,
 			"persistent": true
 		},
-		"typecheck": {},
-		"lint": {},
+		"dev:worker": {
+			"dependsOn": [
+				"^codegen",
+				"codegen"
+			],
+			"cache": false,
+			"persistent": true
+		},
+		"typecheck": {
+			"dependsOn": [
+				"^codegen",
+				"codegen"
+			]
+		},
+		"lint": {
+			"dependsOn": [
+				"^codegen",
+				"codegen"
+			]
+		},
 		"format": {},
 		"format:write": {
 			"cache": false
 		},
-		"test": {},
+		"test": {
+			"dependsOn": [
+				"^codegen",
+				"codegen"
+			]
+		},
 		"test:coverage": {
-			"outputs": ["coverage/**"]
+			"dependsOn": [
+				"^codegen",
+				"codegen"
+			],
+			"outputs": [
+				"coverage/**"
+			]
 		}
 	}
 }

@@ -4,8 +4,8 @@
 # shortcuts and its QR code, so --native runs it in the foreground instead and
 # the rest through turbo in the background. Any other argument goes to turbo.
 #
-#   yarn dev              the API
-#   yarn dev --native     the API, and Metro for the app on a phone
+#   yarn dev              the API and the worker
+#   yarn dev --native     both, and Metro for the app on a phone
 set -euo pipefail
 
 NATIVE=false
@@ -22,7 +22,7 @@ for arg in "$@"; do
 	esac
 done
 
-TURBO=(turbo run dev "--filter=!@medusa/native" ${TURBO_ARGS[@]+"${TURBO_ARGS[@]}"})
+TURBO=(turbo run dev dev:worker "--filter=!@medusa/native" ${TURBO_ARGS[@]+"${TURBO_ARGS[@]}"})
 
 if [[ "$NATIVE" != true ]]; then
 	exec "${TURBO[@]}"

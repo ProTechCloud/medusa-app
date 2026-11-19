@@ -2,12 +2,12 @@ import { faker } from "@faker-js/faker";
 import { Hono } from "hono";
 import { describe, expect, it, vi } from "vitest";
 import { captureError } from "@/posthog";
-import { requestErrors } from "@/services/api/http/lib/request-errors";
+import { requestErrors } from "@/shared/http/request-errors";
 
 vi.mock("@/posthog", async (importOriginal) => ({
 	...(await importOriginal<typeof import("@/posthog")>()),
 	...(
-		await import("@/services/api/http/lib/__mocks__/mock-capture-error")
+		await import("@/shared/http/__mocks__/mock-capture-error")
 	).mockCaptureError(),
 }));
 

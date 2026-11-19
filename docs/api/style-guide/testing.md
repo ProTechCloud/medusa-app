@@ -59,6 +59,23 @@ route would. It overrides only the fields the test is about, as
 what a use case logged, pass a logger from `createCapturingLogger` in
 `testing/test-logger.ts`; do not spy on pino.
 
+## Tests against the database
+
+A use case that reads or writes the database is tested against Postgres, not a mock of it.
+`testing/global-setup.ts` starts one Postgres container with Testcontainers for the whole run
+and migrates a template database once. `integrationContextForEachTest()` in
+`testing/integration-context.ts` gives each test a clone of that template, with Better Auth
+on it, the memory bus and the memory mailer, and drops it afterwards; it returns accessors
+for what a test asserts on, such as `bus().published` or `mailer().sent`. `testing/test-user.ts`
+signs a user up through the use cases, and `testing/graphql-request.ts` sends an operation
+from `@medusa/gql/operations` to `/graphql`, or, with `graphqlQuery`, a raw query string that
+no typed operation can ask.
+
+Docker must be running. On Colima, Testcontainers needs `DOCKER_HOST` and
+`TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE`; the [README](../../../README.md#local-services)
+gives both. These tests hash passwords and share one container, so `vitest.config.ts` gives
+each test 30 seconds.
+
 ## Mocks default to failure
 
 A mock rejects until the test sets a result. `mockLoadVersionUseCase()` builds a `vi.fn`
@@ -81,19 +98,22 @@ test, as in `shared/__tests__/env.test.ts`.
 ## What to assert
 
 - The happy path answers the shape the route promises, with its status.
-- An expected failure answers its status and its stable `error` code.
+- An expected failure answers its stable code: a REST route its status and `error`, a
+  GraphQL operation its `extensions.code`, as `services/api/graphql/__tests__/auth.test.ts`
+  checks.
 - A dependency that fails propagates: the use case rejects with the same error, as
   `use-cases/__tests__/define-use-case.test.ts` shows. The JSON 500 comes from
   `requestErrors`, which `buildApp()` installs and `buildHttp()` does not, so a route test
   that asserts it adds `.onError(requestErrors)` to the app it builds, as
-  `services/api/http/lib/__tests__/request-errors.test.ts` does.
+  `shared/http/__tests__/request-errors.test.ts` does.
 
 ## Keep HTTP-level tests few
 
 Most behaviour is tested on the use case, which is fast and needs no HTTP. A route gets one
-test per answer it can give. Tests of the whole app, through `buildApp()` in
-`services/api/__tests__/index.test.ts`, cover only what the entry point adds: `/health` and
-the 404.
+test per answer it can give. Tests of the whole app, through `buildApp()`, cover only what
+the entry point adds: `/health` and the 404 in `services/api/__tests__/index.test.ts`, and
+the GraphQL layer in `services/api/graphql/__tests__/`: input parsing, the error mask,
+introspection, the limits, and one run of the auth operations end to end.
 
 ## Anti-patterns
 

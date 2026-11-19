@@ -1,0 +1,40 @@
+{
+	"name": "@medusa/gql",
+	"version": "0.0.0",
+	"private": true,
+	"type": "module",
+	"imports": {
+		"#src/*": "./src/*"
+	},
+	"exports": {
+		".": "./src/index.ts",
+		"./operations": "./src/__generated__/graphql.ts"
+	},
+	"scripts": {
+		"codegen": "graphql-codegen --config codegen.yml",
+		"test": "vitest run",
+		"test:coverage": "vitest run --coverage",
+		"typecheck": "tsc --noEmit",
+		"lint": "eslint .",
+		"format": "biome check --error-on-warnings .",
+		"format:write": "biome check --write ."
+	},
+	"dependencies": {
+		"@graphql-tools/load-files": "^8.0.9",
+		"@graphql-tools/merge": "^10.0.9",
+		"@graphql-typed-document-node/core": "^3.2.0",
+		"graphql": "^16.15.0"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "^2.6.3",
+		"@graphql-codegen/cli": "^8.0.0",
+		"@graphql-codegen/typed-document-node": "^8.0.0",
+		"@graphql-codegen/typescript-operations": "^7.0.1",
+		"@types/node": "^26.0.0",
+		"@vitest/coverage-istanbul": "^5.0.5",
+		"eslint": "^9.0.0",
+		"typescript": "~6.0.3",
+		"vite": "^8.3.5",
+		"vitest": "^5.0.5"
+	}
+}

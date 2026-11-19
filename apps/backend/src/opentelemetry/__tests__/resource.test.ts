@@ -31,7 +31,7 @@ describe("readServiceIdentity", () => {
 		).toBe(name);
 	});
 
-	it("never refuses an environment, so a bad one reaches the config parse in start()", () => {
+	it("never refuses an environment, so a bad one reaches the config parse in serveService", () => {
 		const identity = readServiceIdentity(
 			{ APP_ENV: faker.lorem.word() },
 			`/app/${faker.system.fileName()}`,

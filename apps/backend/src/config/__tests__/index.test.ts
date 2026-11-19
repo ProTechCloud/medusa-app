@@ -18,7 +18,129 @@ describe("buildConfig", () => {
 			port: Number(env.PORT),
 			version: env.APP_VERSION,
 			commit: env.APP_COMMIT,
+			db: {
+				url: `postgresql://${encodeURIComponent(String(env.DB_USER))}:${encodeURIComponent(String(env.DB_PASSWORD))}@${env.DB_HOST}:${env.DB_PORT}/${env.DB_NAME}`,
+			},
+			auth: { secret: env.BETTER_AUTH_SECRET, url: env.BETTER_AUTH_URL },
+			pubsub: {
+				projectId: env.PUBSUB_PROJECT_ID,
+				emailsTopic: env.PUBSUB_EMAILS_TOPIC,
+				push: {
+					audience: env.PUBSUB_PUSH_AUDIENCE,
+					serviceAccount: env.PUBSUB_PUSH_SERVICE_ACCOUNT,
+				},
+			},
+			trustedProxies: Number(env.TRUSTED_PROXIES),
+			mailgun: {
+				apiKey: env.MAILGUN_API_KEY,
+				domain: env.MAILGUN_DOMAIN,
+				from: env.MAILGUN_FROM,
+				apiUrl: env.MAILGUN_API_URL,
+			},
+			workerPort: Number(env.WORKER_PORT),
+			shouldRunMigration: env.SHOULD_RUN_MIGRATION === "true",
 		});
+	});
+
+	it("names every missing database, auth and queue variable in one error", () => {
+		const env = generateEnv({
+			DB_HOST: undefined,
+			DB_NAME: undefined,
+			DB_USER: undefined,
+			DB_PASSWORD: undefined,
+			BETTER_AUTH_SECRET: undefined,
+			BETTER_AUTH_URL: undefined,
+			PUBSUB_EMAILS_TOPIC: undefined,
+		});
+
+		expect(() => buildConfig(env, API_ENTRY_POINT)).toThrow(
+			[
+				"Invalid environment:",
+				"  DB_HOST: is not set",
+				"  DB_NAME: is not set",
+				"  DB_USER: is not set",
+				"  DB_PASSWORD: is not set",
+				"  BETTER_AUTH_SECRET: is not set",
+				"  BETTER_AUTH_URL: is not set",
+				"  PUBSUB_EMAILS_TOPIC: is not set",
+			].join("\n"),
+		);
+	});
+
+	it.each([
+		[
+			"BETTER_AUTH_SECRET",
+			faker.string.alphanumeric(31),
+			"must be at least 32 characters",
+		],
+		["BETTER_AUTH_URL", faker.lorem.word(), "must be a URL"],
+		["TRUSTED_PROXIES", "-1", "must be 0 or more"],
+		["SHOULD_RUN_MIGRATION", "yes", "must be true or false"],
+		["MAILGUN_API_URL", faker.lorem.word(), "must be a URL"],
+	])("a bad %s is named in the error", (name, value, reason) => {
+		const env = generateEnv({ [name]: value });
+
+		expect(() => buildConfig(env, API_ENTRY_POINT)).toThrow(
+			`${name}: ${reason}`,
+		);
+	});
+
+	it("refuses prd without a Mailgun key", () => {
+		const env = generateEnv({ APP_ENV: "prd", MAILGUN_API_KEY: undefined });
+
+		expect(() => buildConfig(env, API_ENTRY_POINT)).toThrow(
+			"MAILGUN_API_KEY: is not set",
+		);
+	});
+
+	it.each(["local", "stg"])("runs %s without a Mailgun key", (environment) => {
+		const env = generateEnv({
+			APP_ENV: environment,
+			MAILGUN_API_KEY: undefined,
+		});
+
+		expect(buildConfig(env, API_ENTRY_POINT).mailgun.apiKey).toBeUndefined();
+	});
+
+	it("refuses a Mailgun key without its domain and sender", () => {
+		const env = generateEnv({
+			MAILGUN_DOMAIN: undefined,
+			MAILGUN_FROM: undefined,
+		});
+
+		expect(() => buildConfig(env, API_ENTRY_POINT)).toThrow(
+			["  MAILGUN_DOMAIN: is not set", "  MAILGUN_FROM: is not set"].join("\n"),
+		);
+	});
+
+	it.each(["PUBSUB_PUSH_AUDIENCE", "PUBSUB_PUSH_SERVICE_ACCOUNT"])(
+		"refuses %s alone",
+		(missing) => {
+			const env = generateEnv({ [missing]: undefined });
+
+			expect(() => buildConfig(env, API_ENTRY_POINT)).toThrow(
+				`${missing}: is not set`,
+			);
+		},
+	);
+
+	it("leaves the push unverified without either push variable", () => {
+		const env = generateEnv({
+			PUBSUB_PUSH_AUDIENCE: undefined,
+			PUBSUB_PUSH_SERVICE_ACCOUNT: undefined,
+		});
+
+		expect(buildConfig(env, API_ENTRY_POINT).pubsub.push).toBeUndefined();
+	});
+
+	it("escapes the database password in the connection string", () => {
+		const password = `${faker.internet.password()}@:/#?`;
+		const env = generateEnv({ DB_PASSWORD: password });
+
+		const url = new URL(buildConfig(env, API_ENTRY_POINT).db.url);
+
+		expect(decodeURIComponent(url.password)).toBe(password);
+		expect(url.hostname).toBe(env.DB_HOST);
 	});
 
 	it.each([
@@ -48,6 +170,7 @@ describe("buildConfig", () => {
 		{ name: "PORT", field: "port", fallback: 8080 },
 		{ name: "APP_VERSION", field: "version", fallback: "dev" },
 		{ name: "APP_COMMIT", field: "commit", fallback: "local" },
+		{ name: "TRUSTED_PROXIES", field: "trustedProxies", fallback: 1 },
 	] as const)(
 		"a blank $name falls back to its default",
 		({ name, field, fallback }) => {

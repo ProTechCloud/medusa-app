@@ -8,9 +8,17 @@ from one `yarn.lock`; Turborepo runs their scripts and caches the results.
 ```
 .
 ├── apps/
-│   ├── backend/          @medusa/backend — the API
+│   ├── backend/          @medusa/backend — the API, the email worker and the migration runner
 │   └── native/           @medusa/native — the iOS and Android app
-├── packages/             shared code; none yet
+├── packages/
+│   ├── db/               @medusa/db — the Drizzle schema, the client and the migrations
+│   ├── emails/           @medusa/emails — the react-email templates, rendered by event
+│   ├── eslint-plugin/    @medusa/eslint-plugin — the repository's own lint rules
+│   ├── events/           @medusa/events — the event catalog, the envelope and the message bus
+│   ├── gql/              @medusa/gql — the GraphQL schema and the clients' operations
+│   └── seed/             @medusa/seed — the local users, signed up through Better Auth
+├── bin/                  yarn dev and the local:* scripts
+├── docker-compose.yml    Postgres and the Pub/Sub emulator, for local development
 ├── docs/
 ├── package.json          the workspace: lists apps/* and packages/*, pins Yarn
 ├── turbo.json            the tasks turbo runs in every workspace
@@ -29,6 +37,10 @@ Root files hold what every workspace shares. A workspace holds only what is its 
 | Deployed           | yes, each on its own                             | never on its own, only inside an app |
 | Imported by others | no                                               | yes                                  |
 | Name               | `@medusa/<name>`                                 | `@medusa/<name>`                     |
+
+`@medusa/seed` is the one job under `packages/`, and the backend's foundation packages are
+imported only by the backend, `@medusa/seed` and each other:
+[Package conventions](style-guide/packages.md#when-to-extract) says why.
 
 An app depends on packages; a package never depends on an app. If two apps need the same
 code, that code becomes a package rather than one app importing from the other.
@@ -64,16 +76,19 @@ here does.
 
 ## Tasks
 
-`turbo.json` defines `dev`, `typecheck`, `lint`, `format`, `format:write`, `test` and
-`test:coverage`. From the root, `yarn <task>` runs it in every workspace that has a script of
+`turbo.json` defines `codegen`, `dev`, `dev:worker`, `typecheck`, `lint`, `format`,
+`format:write`, `test` and `test:coverage`. From the root, `yarn <task>` runs it in every workspace that has a script of
 that name; a workspace without the script is skipped.
 
 Turbo caches a task by hashing its inputs. `globalDependencies` lists the root files whose
 change invalidates every workspace's cache: `tsconfig.json`, `biome.json`,
 `eslint.config.mjs`, `vitest.shared.ts` and `.nvmrc`. `test:coverage` caches its
 `coverage/` folder too, so a replayed run still leaves the report for the root merge.
-`dev` and `format:write` are never cached: one is a server that keeps running, the other
-changes files.
+`dev`, `dev:worker` and `format:write` are never cached: the first two are servers that keep
+running, the other changes files. `typecheck`, `lint`, `test` and `test:coverage` depend on
+`codegen`, in the workspace and in the packages it depends on, so the generated GraphQL files
+exist before they run ([Code generation](graphql/codegen.md)). `dev` and `dev:worker` depend
+on it too.
 
 To run one workspace only:
 
@@ -130,6 +145,8 @@ The same as a package, under `apps/<name>/`, plus:
    and run `yarn install`.
 3. If it ships as an image, a `Dockerfile` in the app that builds from the repository root
    with `yarn workspaces focus @medusa/<name> --production`, like `apps/backend/Dockerfile`.
+   It copies the manifest and the source of every workspace package the app depends on, since
+   Bun runs their TypeScript too.
 4. Its own quality and deploy workflows. `backend-code-quality.yml` is the model: a
    `discover` job decides what the pull request touches, and a final summary job is the
    check branch protection requires.

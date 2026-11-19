@@ -1,0 +1,6 @@
+"""
+The roots every area extends with its own fields, in its own file.
+"""
+type Query
+
+type Mutation

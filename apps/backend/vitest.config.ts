@@ -24,6 +24,13 @@ export default defineConfig({
 		// back to returning `undefined`. Mocks are created with an implementation
 		// that throws, so they fail again until a test sets a result.
 		mockReset: true,
+		// One Postgres container for the whole run, migrated once; each test
+		// that needs a database clones it (src/testing/integration-context.ts).
+		globalSetup: ["./src/testing/global-setup.ts"],
+		hookTimeout: 120_000,
+		// Many tests run against that database and hash passwords, which is
+		// slow on purpose; under a parallel turbo run, 5 s is not enough.
+		testTimeout: 30_000,
 		coverage,
 	},
 });

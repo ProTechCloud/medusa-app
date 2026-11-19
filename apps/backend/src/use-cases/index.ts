@@ -1,17 +1,34 @@
+import type { TDb } from "@medusa/db";
+import type { IMessageBus } from "@medusa/events";
 import { SpanStatusCode, trace } from "@opentelemetry/api";
 import { ATTR_ERROR_TYPE } from "@opentelemetry/semantic-conventions";
 import type { Logger } from "pino";
+import type { TAuth, TSessionCache } from "@/better-auth";
 import type { TConfig } from "@/config";
+import type { IPushVerifier } from "@/google-auth";
+import type { IMailer } from "@/mailgun";
+import { isDomainError } from "@/shared/domain-errors";
 
 /**
- * What every use case receives. The transport layer — routes, and later
- * jobs — never holds these: it calls a use case, and the use case reaches the
- * config, the logger and, as they arrive, the clients.
+ * What every use case receives. The transport layer — routes, resolvers and
+ * the worker's push handler — never holds these: it calls a use case, and the
+ * use case reaches the config, the logger and the clients.
  */
 export type TUseCaseContext = {
 	config: TConfig;
 	logger: Logger;
+	db: TDb;
+	auth: TAuth;
+	sessionCache: TSessionCache;
+	bus: IMessageBus;
+	mailer: IMailer;
+	pushVerifier: IPushVerifier;
 };
+
+export {
+	buildUseCaseContext,
+	createServiceContext,
+} from "./lib/build-use-case-context";
 
 export type TUseCase<TArgs, TResult> = (
 	ctx: TUseCaseContext,
@@ -99,7 +116,8 @@ export function resetCtx(): void {
  *   loadVersionUseCase ok      durationMs=1
  *
  * Each call is also a span, `use-case <name>`, under the request's. A
- * failure is logged with its duration, marked on the span with its
+ * failure is logged with its duration, as a warning when it is a
+ * domain error the client caused, marked on the span with its
  * `error.type` and the error status, and rethrown unchanged, so the caller
  * decides what it means.
  */
@@ -128,7 +146,9 @@ export function defineUseCase<TArgs = void, TResult = unknown>(
 				);
 				return result;
 			} catch (error) {
-				context.logger.error(
+				// A wrong password or a reached limit is the client's, and its
+				// code reaches the client: a warning. Anything else is an error.
+				context.logger[isDomainError(error) ? "warn" : "error"](
 					{ useCase: name, durationMs: elapsed(), err: error },
 					`${name} failed`,
 				);
