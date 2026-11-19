@@ -161,7 +161,8 @@ export function buildYoga({ local = false }: { local?: boolean } = {}) {
 		// `#private` field no object can have: a class with a private member
 		// takes only its own instances
 		// (https://www.typescriptlang.org/docs/handbook/type-compatibility.html#private-and-protected-members-in-classes).
-		// `yogaLogger` has every method Yoga calls on it, each tested.
+		// `yogaLogger` has every method Yoga calls on it, each tested, and its
+		// logging methods are checked against that class's in yoga-logger.ts.
 		logging: yogaLogger(logger) as unknown as TYogaLogging,
 		graphiql: local,
 		plugins: local ? [limitRootFields] : [limitRootFields, noIntrospection],
