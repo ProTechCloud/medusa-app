@@ -79,26 +79,32 @@ describe("migrate", () => {
 		expect(ctxForTests().config.db.url).toBe(url);
 	});
 
-	it("prunes an expired code each time it runs", async () => {
+	it("prunes an expired code each time it runs, and keeps a live one", async () => {
 		empty = await cloner.createEmpty();
 		const { url } = empty;
 		const config = generateConfig({ shouldRunMigration: true, db: { url } });
 		await migrate(config);
-		await query(
-			url,
-			"insert into verification (id, identifier, value, expires_at) values ($1, $2, $3, $4)",
-			[
-				faker.string.uuid(),
-				`sign-up:${faker.internet.email()}`,
-				faker.string.alphanumeric(64),
-				// An ISO string with its offset, so the stored time does not
-				// depend on the machine's time zone.
-				DateTime.utc().minus({ minutes: 1 }).toISO(),
-			],
-		);
+		const insertCode = (id: string, expiresAt: DateTime) =>
+			query(
+				url,
+				"insert into verification (id, identifier, value, expires_at) values ($1, $2, $3, $4)",
+				[
+					id,
+					`sign-up:${faker.internet.email()}`,
+					faker.string.alphanumeric(64),
+					// An ISO string with its offset, so the stored time does not
+					// depend on the machine's time zone.
+					expiresAt.toISO(),
+				],
+			);
+		const live = faker.string.uuid();
+		await insertCode(faker.string.uuid(), DateTime.utc().minus({ minutes: 1 }));
+		await insertCode(live, DateTime.utc().plus({ minutes: 15 }));
 
 		await migrate(config);
 
-		expect(await query(url, "select id from verification")).toEqual([]);
+		expect(await query(url, "select id from verification")).toEqual([
+			{ id: live },
+		]);
 	});
 });

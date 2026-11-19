@@ -1,4 +1,6 @@
-import { describe, expect, it } from "vitest";
+import { faker } from "@faker-js/faker";
+import pg from "pg";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { createDb, databaseUrl } from "#src/index.ts";
 import { runMigrations } from "#src/lib/migrate.ts";
 
@@ -30,7 +32,7 @@ describe("createDb", () => {
 	it("hands an idle connection's error to the caller instead of throwing it", async () => {
 		const errors: Error[] = [];
 		const db = createDb(UNREACHABLE, (error) => errors.push(error));
-		const error = new Error("connection terminated");
+		const error = new Error(faker.lorem.sentence());
 
 		db.$client.emit("error", error);
 		await db.$client.end();
@@ -42,7 +44,15 @@ describe("createDb", () => {
 // A migration that applies is tested in @medusa/backend, whose tests run a
 // Postgres: `services/migrate/__tests__`.
 describe("runMigrations", () => {
-	it("rejects when the database does not answer, and leaves no pool open", async () => {
+	afterEach(() => {
+		vi.restoreAllMocks();
+	});
+
+	it("rejects when the database does not answer, and closes its pool", async () => {
+		const end = vi.spyOn(pg.Pool.prototype, "end");
+
 		await expect(runMigrations(UNREACHABLE)).rejects.toThrow();
+
+		expect(end).toHaveBeenCalledOnce();
 	});
 });

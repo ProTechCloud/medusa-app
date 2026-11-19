@@ -16,12 +16,15 @@ create a package.
    - **The backend's foundations.** `@medusa/db` (the schema, the client and the
      migrations), `@medusa/events` (the event catalog and the bus), `@medusa/emails` (the
      templates), `@medusa/gql` (the GraphQL schema and the clients' operations) and
-     `@medusa/seed` (the local users) were planned as packages when sign-in was built, though
-     only the backend and `@medusa/seed` import them. Each is a contract more than one
-     workspace meets: the seed signs up through `@medusa/db`'s tables, `@medusa/emails`
-     renders `@medusa/events`' catalog, and a client builds from `@medusa/gql`.
+     `@medusa/seed` (the local users) are packages by the team's decision in
+     [CUBE-275](https://linear.app/cube-group/issue/CUBE-275), the ticket that built sign-in
+     and names each of them, though only the backend, `@medusa/seed` and each other import
+     them. Each is a contract more than one workspace meets: the seed signs up through
+     `@medusa/db`'s tables, `@medusa/emails` renders `@medusa/events`' catalog, and a client
+     builds from `@medusa/gql`.
      `@medusa/seed` is a job, run with `yarn seed`, kept beside `@medusa/db` because it only
-     fills that database locally. Anything else the backend alone uses still starts in `apps/backend/src/`.
+     fills that database locally. Anything else the backend alone uses still starts in
+     `apps/backend/src/`.
 
 ## Exports
 
@@ -42,9 +45,9 @@ create a package.
    import { formatMoney } from "@medusa/example";
    ```
 
-4. **Test data for a shape a package owns is exported from a `testing` subpath.** Only tests
-   and `__mocks__/` import it; production code never does, so faker and the factories stay
-   out of the runtime.
+4. **Test data and test helpers for what a package owns are exported from a `testing`
+   subpath.** Only tests, `__mocks__/` and other packages' `testing` entries import it;
+   production code never does, so faker and the factories stay out of the runtime.
 
    ```json
    {

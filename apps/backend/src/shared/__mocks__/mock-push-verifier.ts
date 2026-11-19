@@ -4,3 +4,12 @@ import type { IPushVerifier } from "@/google-auth";
 export function mockPushVerifier(trusted: boolean): IPushVerifier {
 	return { verify: async () => trusted };
 }
+
+/** A push verifier that throws `error`, as one does when Google's certificates fail to load. */
+export function mockFailingPushVerifier(error: Error): IPushVerifier {
+	return {
+		verify: async () => {
+			throw error;
+		},
+	};
+}

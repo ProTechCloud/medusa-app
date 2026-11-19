@@ -114,21 +114,31 @@ describe("/graphql auth, on a local API", () => {
 		]);
 	});
 
-	it("trims and lowercases an email, so a sign-up and a sign-in agree on it", async () => {
+	it("trims and lowercases the email a sign-up is typed with", async () => {
 		const { email, name, password } = generateSignUp();
 		const typed = `  ${email.toUpperCase()}  `;
-
 		await graphqlRequest(RequestSignUpCodeDocument, {
 			input: { email: typed },
 		});
+
 		const signedUp = await graphqlRequest(SignUpDocument, {
 			input: { email: typed, code: "111111", name, password },
 		});
+
 		expect(signedUp.data?.signUp.user.email).toBe(email);
+	});
+
+	it("trims and lowercases the email a sign-in is typed with, so it finds the account", async () => {
+		const { email, name, password } = generateSignUp();
+		await graphqlRequest(RequestSignUpCodeDocument, { input: { email } });
+		await graphqlRequest(SignUpDocument, {
+			input: { email, code: "111111", name, password },
+		});
 
 		const signedIn = await graphqlRequest(SignInDocument, {
-			input: { email: typed, password },
+			input: { email: `  ${email.toUpperCase()}  `, password },
 		});
+
 		expect(signedIn.data?.signIn.user.email).toBe(email);
 	});
 

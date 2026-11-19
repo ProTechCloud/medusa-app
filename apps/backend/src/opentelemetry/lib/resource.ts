@@ -28,8 +28,8 @@ export function serviceNameFromEntryPoint(
 
 // Read as they are, and never refused here: the preload and the logger run
 // before the entry point, and a bad value must reach the entry point's config
-// parse (`serveService`, or `migrate`), which names it in one line. Unset
-// stays unset.
+// parse (`serveService`, or `services/migrate/index.ts`), which names it in
+// one line. Unset stays unset.
 const schema = z.object({
 	OTEL_SERVICE_NAME: z.string().optional(),
 	APP_ENV: z.string().optional(),

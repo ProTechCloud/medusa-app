@@ -1,15 +1,10 @@
 import { faker } from "@faker-js/faker";
 import { generateEmail } from "@medusa/emails/testing";
-import { createMemoryBus } from "@medusa/events";
 import { describe, expect, it } from "vitest";
 import { generateConfig } from "@/shared/__mocks__/generate-config";
-import { mockMailer } from "@/shared/__mocks__/mock-mailer";
-import { mockPushVerifier } from "@/shared/__mocks__/mock-push-verifier";
+import { generateUseCaseContext } from "@/shared/__mocks__/generate-use-case-context";
 import { createCapturingLogger } from "@/testing/test-logger";
-import {
-	buildUseCaseContext,
-	chooseServiceClients,
-} from "@/use-cases/lib/build-use-case-context";
+import { chooseServiceClients } from "@/use-cases/lib/build-use-case-context";
 
 const ANY_TOKEN = `Bearer ${faker.string.alphanumeric(40)}`;
 
@@ -74,13 +69,7 @@ describe("chooseServiceClients", () => {
 describe("buildUseCaseContext", () => {
 	it("logs an idle database connection's error instead of throwing it", async () => {
 		const capture = createCapturingLogger();
-		const { db } = buildUseCaseContext({
-			config: generateConfig(),
-			logger: capture.logger,
-			bus: createMemoryBus(),
-			mailer: mockMailer(),
-			pushVerifier: mockPushVerifier(true),
-		});
+		const { db } = generateUseCaseContext({ logger: capture.logger });
 		const message = faker.lorem.sentence();
 
 		db.$client.emit("error", new Error(message));

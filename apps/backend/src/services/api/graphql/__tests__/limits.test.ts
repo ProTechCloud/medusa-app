@@ -52,7 +52,7 @@ describe("/graphql's cap on top-level fields", () => {
 		);
 	});
 
-	it("refuses a body past GRAPHQL_MAX_BODY_BYTES before parsing it", async () => {
+	it("answers a body past GRAPHQL_MAX_BODY_BYTES with a 413 and payload_too_large", async () => {
 		const response = await buildApp({ environment: "prd" }).request(
 			GRAPHQL_PATH,
 			{
@@ -65,6 +65,7 @@ describe("/graphql's cap on top-level fields", () => {
 		);
 
 		expect(response.status).toBe(413);
+		expect(await response.json()).toEqual({ error: "payload_too_large" });
 	});
 
 	it("lets one operation at the cap through validation", async () => {

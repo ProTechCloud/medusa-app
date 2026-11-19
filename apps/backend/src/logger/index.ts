@@ -70,7 +70,7 @@ export function createLogger(options: {
 
 // Parsed at import, before anything can log. The config is not: a bad
 // environment must reach the entry point's config parse (`serveService`, or
-// `migrate`), which names it in one line, so the service's identity is read
+// `services/migrate/index.ts`), which names it in one line, so the service's identity is read
 // from the environment as it is.
 const env = parseEnv(schema, process.env);
 const identity = readServiceIdentity(process.env);

@@ -69,8 +69,8 @@ the variables.
   fails. The health probe gets no span. Neither the preload nor the logger parses the
   config: they read the service's identity from the environment as it is
   (`readServiceIdentity` in `opentelemetry/lib/resource.ts`), so a bad environment still
-  reaches the entry point's config parse (`serveService`, or `migrate`) and stops the boot
-  in one line.
+  reaches the entry point's config parse (`serveService`, or `services/migrate/index.ts`)
+  and stops the boot in one line.
 - **Log lines** go to stdout and, from `LOG_POSTHOG_LEVEL` up (`LOG_LEVEL` unless set), to
   PostHog's logs, tied to the span they were written in.
 - **Errors** reach PostHog's error tracking through `captureError` in `posthog/index.ts`,

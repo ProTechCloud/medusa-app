@@ -92,7 +92,7 @@ describe("createMailgunMailer", () => {
 });
 
 describe("createLogMailer", () => {
-	it("logs the address and subject, never the body", async () => {
+	it("hands the logger the recipient as `to` and the subject, never the body", async () => {
 		const capture = createCapturingLogger();
 		const email = generateEmail();
 

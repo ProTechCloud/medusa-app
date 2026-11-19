@@ -68,7 +68,8 @@ and migrates a template database once. `integrationContextForEachTest()` in
 on it, the memory bus and the memory mailer, and drops it afterwards; it returns accessors
 for what a test asserts on, such as `bus().published` or `mailer().sent`. `testing/test-user.ts`
 signs a user up through the use cases, and `testing/graphql-request.ts` sends an operation
-from `@medusa/gql/operations` to `/graphql`.
+from `@medusa/gql/operations` to `/graphql`, or, with `graphqlQuery`, a raw query string that
+no typed operation can ask.
 
 Docker must be running. On Colima, Testcontainers needs `DOCKER_HOST` and
 `TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE`; the [README](../../../README.md#local-services)
@@ -109,9 +110,10 @@ test, as in `shared/__tests__/env.test.ts`.
 ## Keep HTTP-level tests few
 
 Most behaviour is tested on the use case, which is fast and needs no HTTP. A route gets one
-test per answer it can give. Tests of the whole app, through `buildApp()`, cover only what the entry point adds: `/health`
-and the 404 in `services/api/__tests__/index.test.ts`, and what `/graphql` refuses before a
-resolver runs, in `services/api/graphql/__tests__/`.
+test per answer it can give. Tests of the whole app, through `buildApp()`, cover only what
+the entry point adds: `/health` and the 404 in `services/api/__tests__/index.test.ts`, and
+the GraphQL layer in `services/api/graphql/__tests__/`: input parsing, the error mask,
+introspection, the limits, and one run of the auth operations end to end.
 
 ## Anti-patterns
 

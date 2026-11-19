@@ -5,7 +5,10 @@ import { MailgunRefusedError } from "@/mailgun";
 import { buildWorker } from "@/services/worker";
 import { PUSH_EMAILS_PATH } from "@/services/worker/lib/push-emails";
 import { mockFailingMailer, mockMailer } from "@/shared/__mocks__/mock-mailer";
-import { mockPushVerifier } from "@/shared/__mocks__/mock-push-verifier";
+import {
+	mockFailingPushVerifier,
+	mockPushVerifier,
+} from "@/shared/__mocks__/mock-push-verifier";
 import { useCaseContextForEachTest } from "@/testing/use-case-context";
 
 /** The body a Pub/Sub push subscription posts, around `data`. */
@@ -88,6 +91,21 @@ describe("the worker, with a push it does not trust", () => {
 		const response = await push(signUpCodePush());
 
 		expect(response.status).toBe(401);
+		expect(mailer.sent).toEqual([]);
+	});
+});
+
+describe("the worker, when it cannot check a push", () => {
+	const mailer = mockMailer();
+	useCaseContextForEachTest(() => ({
+		mailer,
+		pushVerifier: mockFailingPushVerifier(new Error(faker.lorem.sentence())),
+	}));
+
+	it("answers with a 500, so Pub/Sub delivers the push again", async () => {
+		const response = await push(signUpCodePush());
+
+		expect(response.status).toBe(500);
 		expect(mailer.sent).toEqual([]);
 	});
 });
