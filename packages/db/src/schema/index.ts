@@ -9,6 +9,7 @@ import {
 	text,
 	timestamp,
 } from "drizzle-orm/pg-core";
+import { DateTime } from "luxon";
 
 // Better Auth's four tables, in the shape its Drizzle adapter expects, plus
 // `rate_limit`. Column names are snake_case; the adapter maps its camelCase
@@ -27,7 +28,7 @@ export const user = pgTable("user", {
 		.notNull(),
 	updatedAt: timestamp("updated_at", { withTimezone: true })
 		.defaultNow()
-		.$onUpdate(() => /* @__PURE__ */ new Date())
+		.$onUpdate(() => /* @__PURE__ */ DateTime.utc().toJSDate())
 		.notNull(),
 	// Better Auth's additional field: set here, never from a sign-up's input.
 	role: userRoleEnum("role").default("application_user").notNull(),
@@ -43,7 +44,7 @@ export const session = pgTable(
 			.defaultNow()
 			.notNull(),
 		updatedAt: timestamp("updated_at", { withTimezone: true })
-			.$onUpdate(() => /* @__PURE__ */ new Date())
+			.$onUpdate(() => /* @__PURE__ */ DateTime.utc().toJSDate())
 			.notNull(),
 		ipAddress: text("ip_address"),
 		userAgent: text("user_agent"),
@@ -78,7 +79,7 @@ export const account = pgTable(
 			.defaultNow()
 			.notNull(),
 		updatedAt: timestamp("updated_at", { withTimezone: true })
-			.$onUpdate(() => /* @__PURE__ */ new Date())
+			.$onUpdate(() => /* @__PURE__ */ DateTime.utc().toJSDate())
 			.notNull(),
 	},
 	(table) => [index("account_userId_idx").on(table.userId)],
@@ -98,7 +99,7 @@ export const verification = pgTable(
 			.notNull(),
 		updatedAt: timestamp("updated_at", { withTimezone: true })
 			.defaultNow()
-			.$onUpdate(() => /* @__PURE__ */ new Date())
+			.$onUpdate(() => /* @__PURE__ */ DateTime.utc().toJSDate())
 			.notNull(),
 	},
 	(table) => [index("verification_identifier_idx").on(table.identifier)],
